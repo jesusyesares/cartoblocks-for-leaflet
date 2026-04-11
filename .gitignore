@@ -51,3 +51,8 @@ Thumbs.db
 vendor/
 /coverage/
 *.log
+
+# -----------------------------------------------------------------------
+# Claude Code — local session settings (permissions, not project config)
+# -----------------------------------------------------------------------
+.claude/settings.local.json
