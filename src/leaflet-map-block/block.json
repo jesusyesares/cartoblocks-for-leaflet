@@ -64,7 +64,7 @@
 		}
 	},
 	"textdomain": "blocks-for-leaflet-map",
-	"editorScript": "file:./index.js",
+	"editorScript": ["file:./index.js", "file:./view-editor.js"],
 	"editorStyle": "file:./index.css",
 	"style": "file:./style-index.css",
 	"render": "file:./render.php"
