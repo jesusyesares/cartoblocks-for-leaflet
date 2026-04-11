@@ -1,21 +1,26 @@
 /**
  * view-editor.js
  *
- * Loaded inside the block editor iframe as an editorScript (block.json).
- * Watches for .WPLeafletMap containers injected by ServerSideRender and
- * re-initialises Leaflet maps after each server response.
+ * Re-initialises Leaflet maps after ServerSideRender injects the shortcode HTML.
  *
- * Why a MutationObserver?
- * React renders <ServerSideRender> output via dangerouslySetInnerHTML.
- * Browsers intentionally skip <script> tags inserted this way, so the
- * WPLeafletMapPlugin.push() callbacks in the [leaflet-map] shortcode output
- * never run. We detect the new container and replay those scripts.
+ * FRAME ARCHITECTURE (WordPress 6.3+ iframed editor)
+ * ─────────────────────────────────────────────────
+ * - editorScript files (including this one) execute in the OUTER admin frame.
+ * - Block React components portal their DOM into the IFRAME document.
+ * - Leaflet (L) and WPLeafletMapPlugin are injected into the IFRAME window
+ *   via _wp_get_iframed_editor_assets() which captures enqueue_block_assets.
+ * - This file therefore MUST NOT observe document.body (outer frame) nor call
+ *   window.WPLeafletMapPlugin (outer frame – undefined).
  *
- * Race-condition fix:
- * A per-container debounce (setTimeout 50 ms) ensures we wait for the browser
- * to fully commit the new HTML before reading the DOM. This avoids the
- * "Map container not found" error that Leaflet throws when createMap() is
- * called during an intermediate render state.
+ * CORRECT PATTERN
+ * ─────────────────────────────────────────────────
+ * 1. edit.js attaches a MutationObserver to the block container (a portal node
+ *    in the IFRAME document).  When SSR inserts a new .WPLeafletMap it calls
+ *    wp.hooks.doAction('blocks-for-leaflet-map.reinitMaps', root).
+ * 2. bflmScheduleReinit (this file) debounces and calls bflmReinitLeafletMaps.
+ * 3. bflmReinitLeafletMaps uses root.ownerDocument.defaultView (IFRAME window)
+ *    for all Leaflet globals and creates script elements via the IFRAME document
+ *    so they execute in the correct global scope.
  *
  * @package BlocksForLeafletMap
  */
@@ -27,27 +32,69 @@ import domReady from '@wordpress/dom-ready';
 console.log( 'BFLM: Editor script loaded' );
 
 /**
- * Map of pending debounce timers keyed by the root element.
- * Prevents multiple rapid-fire mutations from triggering concurrent reinits
- * on the same container.
+ * Per-root debounce timers.
  *
- * @type {Map<Element, number>}
+ * @type {Map<Element, ReturnType<typeof setTimeout>>}
  */
 const bflmPendingTimers = new Map();
 
 /**
- * Destroy any Leaflet map instance that lives inside `root`, remove it from
- * WPLeafletMapPlugin, then re-execute every <script> so that the fresh
- * shortcode callbacks run and a new map is created.
+ * Wait for Leaflet globals to be available in the iframe window, then run cb.
+ * Retries up to MAX_ATTEMPTS times with DELAY_MS between each attempt.
  *
- * @param {Element} root Element that wraps the .WPLeafletMap div and scripts.
+ * @param {Window}   iframeWin   The iframe's window object.
+ * @param {Function} cb          Callback to invoke when Leaflet is ready.
+ * @param {number}   [attempt=0] Current retry count (internal use).
+ */
+function bflmWhenLeafletReady( iframeWin, cb, attempt = 0 ) {
+	const MAX_ATTEMPTS = 5;
+	const DELAY_MS     = 250;
+
+	const leafletExists = !! ( iframeWin && iframeWin.L && iframeWin.WPLeafletMapPlugin );
+
+	// eslint-disable-next-line no-console
+	console.log(
+		'BFLM: Checking for Leaflet library... ' + ( leafletExists ? 'Exists' : 'Missing' ) +
+		( attempt > 0 ? ' (attempt ' + attempt + '/' + MAX_ATTEMPTS + ')' : '' )
+	);
+
+	if ( leafletExists ) {
+		cb();
+		return;
+	}
+
+	if ( attempt >= MAX_ATTEMPTS ) {
+		// eslint-disable-next-line no-console
+		console.warn( 'BFLM: Leaflet not available after ' + MAX_ATTEMPTS + ' attempts. Giving up.' );
+		return;
+	}
+
+	setTimeout( () => bflmWhenLeafletReady( iframeWin, cb, attempt + 1 ), DELAY_MS );
+}
+
+/**
+ * Destroy any Leaflet map inside `root`, then re-execute the shortcode scripts
+ * so WPLeafletMapPlugin recreates the map with the updated attributes.
+ *
+ * All Leaflet operations use the IFRAME's window via root.ownerDocument.defaultView.
+ * All script elements are created via the IFRAME's document so they execute
+ * in the correct global scope.
+ *
+ * @param {Element} root Element wrapping the .WPLeafletMap div and its scripts.
  */
 function bflmReinitLeafletMaps( root ) {
-	// --- 1. Validate -------------------------------------------------------
+	// ── 1. Validate ─────────────────────────────────────────────────────────
 
 	if ( ! ( root instanceof Element ) ) {
 		return;
 	}
+
+	// Identify the iframe context from the root element's owner document.
+	const iframeDoc = root.ownerDocument;
+	const iframeWin = iframeDoc.defaultView;
+
+	// eslint-disable-next-line no-console
+	console.log( 'BFLM: Observer is running in document: ' + iframeDoc.location.href );
 
 	const mapContainer = root.querySelector( '.WPLeafletMap' );
 
@@ -57,97 +104,107 @@ function bflmReinitLeafletMaps( root ) {
 		return;
 	}
 
-	if ( ! document.contains( mapContainer ) ) {
+	// isConnected works across frame boundaries (unlike document.contains).
+	if ( ! mapContainer.isConnected ) {
 		// eslint-disable-next-line no-console
-		console.log( 'BFLM: Container is not attached to the DOM, skipping.' );
+		console.log( 'BFLM: Container is not connected to the DOM, skipping.' );
 		return;
 	}
 
 	// eslint-disable-next-line no-console
 	console.log( 'BFLM: Container found, re-initializing...', mapContainer );
 
-	// --- 2. Destroy existing Leaflet instances in this block ---------------
+	// Wait for Leaflet to be available in the iframe before proceeding.
+	bflmWhenLeafletReady( iframeWin, () => {
+		const plugin = iframeWin.WPLeafletMapPlugin;
 
-	const plugin = window.WPLeafletMapPlugin;
+		// ── 2. Destroy existing Leaflet instances in this block ──────────────
 
-	if ( plugin && Array.isArray( plugin.maps ) ) {
-		plugin.maps = plugin.maps.filter( ( map ) => {
-			try {
-				const container = map.getContainer();
+		if ( plugin && Array.isArray( plugin.maps ) ) {
+			plugin.maps = plugin.maps.filter( ( map ) => {
+				try {
+					const container = map.getContainer();
+					// Destroy maps that left the document OR belong to this block.
+					const shouldDestroy =
+						! container.isConnected || root.contains( container );
 
-				// Remove maps that have left the document OR belong to
-				// the block we are about to reinit.
-				const shouldDestroy =
-					! document.contains( container ) ||
-					root.contains( container );
-
-				if ( shouldDestroy ) {
-					map.remove();
+					if ( shouldDestroy ) {
+						map.remove();
+						return false;
+					}
+					return true;
+				} catch ( e ) {
 					return false;
 				}
+			} );
 
-				return true;
-			} catch ( e ) {
-				// getContainer() throws if the map was already removed.
-				return false;
-			}
+			// Keep markergroups index aligned with surviving maps.
+			const pruned = {};
+			plugin.maps.forEach( ( _map, idx ) => {
+				const key = idx + 1;
+				if ( plugin.markergroups[ key ] ) {
+					pruned[ key ] = plugin.markergroups[ key ];
+				}
+			} );
+			plugin.markergroups = pruned;
+		}
+
+		// Belt-and-suspenders: clear stale _leaflet_id so L.map() won't throw.
+		if ( mapContainer._leaflet_id ) {
+			// eslint-disable-next-line no-console
+			console.log( 'BFLM: Stale _leaflet_id detected, clearing before reinit.' );
+			delete mapContainer._leaflet_id;
+		}
+
+		// ── 3. Re-execute shortcode scripts ─────────────────────────────────
+		// Scripts must be created via the IFRAME's document so they execute
+		// in the iframe's global scope (where L and WPLeafletMapPlugin live).
+
+		const scripts = root.querySelectorAll( 'script' );
+
+		if ( ! scripts.length ) {
+			// eslint-disable-next-line no-console
+			console.log( 'BFLM: No shortcode scripts found in root.' );
+			return;
+		}
+
+		scripts.forEach( ( oldScript ) => {
+			const newScript = iframeDoc.createElement( 'script' ); // ← iframe doc!
+			Array.from( oldScript.attributes ).forEach( ( attr ) =>
+				newScript.setAttribute( attr.name, attr.value )
+			);
+			newScript.textContent = oldScript.textContent;
+			oldScript.parentNode.replaceChild( newScript, oldScript );
 		} );
 
-		// Keep markergroups index aligned with the surviving maps array.
-		const pruned = {};
-		plugin.maps.forEach( ( _map, idx ) => {
-			const key = idx + 1;
-			if ( plugin.markergroups[ key ] ) {
-				pruned[ key ] = plugin.markergroups[ key ];
-			}
-		} );
-		plugin.markergroups = pruned;
-	}
+		// ── 4. Flush the WPLeafletMapPlugin callback queue ──────────────────
+		// construct-leaflet-map.js listens for window.load. In the iframed
+		// editor the load event may have already fired before the scripts were
+		// injected, leaving ready=false and callbacks queued. Calling init()
+		// here flushes the queue and sets ready=true so subsequent push()
+		// calls execute immediately.
+		if ( typeof plugin.init === 'function' ) {
+			plugin.init();
+		}
 
-	// Belt-and-suspenders: if Leaflet still has _leaflet_id on the container
-	// (e.g. after a failed destroy), clear it so L.map() does not throw
-	// "Map container is already initialized".
-	if ( mapContainer._leaflet_id ) {
 		// eslint-disable-next-line no-console
-		console.log( 'BFLM: Stale _leaflet_id detected, clearing before reinit.' );
-		delete mapContainer._leaflet_id;
-	}
-
-	// --- 3. Re-execute shortcode scripts -----------------------------------
-	// Replacing a <script> node with a clone is the only way to force
-	// execution after innerHTML/dangerouslySetInnerHTML injection.
-
-	const scripts = root.querySelectorAll( 'script' );
-
-	if ( ! scripts.length ) {
-		// eslint-disable-next-line no-console
-		console.log( 'BFLM: No scripts found in root, nothing to execute.' );
-		return;
-	}
-
-	scripts.forEach( ( oldScript ) => {
-		const newScript = document.createElement( 'script' );
-		Array.from( oldScript.attributes ).forEach( ( attr ) =>
-			newScript.setAttribute( attr.name, attr.value )
+		console.log(
+			'BFLM: Scripts executed. WPLeafletMapPlugin maps:',
+			plugin?.maps?.length
 		);
-		newScript.textContent = oldScript.textContent;
-		oldScript.parentNode.replaceChild( newScript, oldScript );
 	} );
-
-	// eslint-disable-next-line no-console
-	console.log( 'BFLM: Scripts executed. WPLeafletMapPlugin maps:', plugin?.maps?.length );
 }
 
 /**
- * Schedule a debounced reinit for `root`.
- *
- * If the same root triggers another mutation within 50 ms (common when
- * ServerSideRender transitions through loading states), the earlier timer
- * is cancelled and replaced, so reinit only runs once on the final DOM state.
+ * Debounce reinit calls for the same root element.
+ * Multiple rapid SSR responses (loading → content) coalesce into one call.
  *
  * @param {Element} root
  */
 function bflmScheduleReinit( root ) {
+	// eslint-disable-next-line no-console
+	console.log( 'BFLM: Mutation detected!' );
+
 	if ( bflmPendingTimers.has( root ) ) {
 		clearTimeout( bflmPendingTimers.get( root ) );
 	}
@@ -160,49 +217,25 @@ function bflmScheduleReinit( root ) {
 	bflmPendingTimers.set( root, timer );
 }
 
-// Expose reinit as a wp.hooks action so edit.js (or external code) can
-// call it without importing this module directly.
+/**
+ * wp.hooks action — called from edit.js when its block-scoped observer
+ * (which watches the portal DOM inside the iframe) detects a new .WPLeafletMap.
+ * Using a hooks action keeps view-editor.js independent of edit.js.
+ */
 addAction(
 	'blocks-for-leaflet-map.reinitMaps',
 	'blocks-for-leaflet-map/view-editor',
-	bflmScheduleReinit  // schedules, does not run immediately.
+	bflmScheduleReinit
 );
 
 /**
- * Single MutationObserver on document.body (inside the editor iframe).
- * edit.js intentionally has no observer of its own — this is the sole
- * trigger point to avoid double-fires on the same mutation.
+ * On domReady, log the outer-frame URL so we can confirm this script is running
+ * in the outer admin frame (not the iframe). No observer is started here —
+ * observation is handled by edit.js which has access to the portal DOM.
  */
 domReady( function () {
-	if ( typeof MutationObserver === 'undefined' ) {
-		return;
-	}
-
-	const observer = new MutationObserver( ( mutations ) => {
-		for ( const mutation of mutations ) {
-			for ( const node of mutation.addedNodes ) {
-				if ( node.nodeType !== Node.ELEMENT_NODE ) {
-					continue;
-				}
-
-				// ServerSideRender wraps its output in a div; the .WPLeafletMap
-				// container and its sibling <script> are children of that div.
-				const mapNodes = node.querySelectorAll( '.WPLeafletMap' );
-				if ( ! mapNodes.length ) {
-					continue;
-				}
-
-				const scriptsRoot = mapNodes[ 0 ].parentElement || node;
-
-				// eslint-disable-next-line no-console
-				console.log( 'BFLM: MutationObserver detected .WPLeafletMap, scheduling reinit.' );
-				bflmScheduleReinit( scriptsRoot );
-			}
-		}
-	} );
-
-	observer.observe( document.body, {
-		childList: true,
-		subtree: true,
-	} );
+	// eslint-disable-next-line no-console
+	console.log(
+		'BFLM: view-editor.js domReady in outer frame: ' + window.location.href
+	);
 } );
