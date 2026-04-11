@@ -95,49 +95,37 @@ add_action( 'init', 'bflm_register_blocks' );
 // ---------------------------------------------------------------------------
 // Editor asset loading — make Leaflet JS/CSS available in the block editor.
 //
-// Leaflet Map only hooks its enqueue_and_register() to wp_enqueue_scripts
-// (frontend), so its handles are never registered in the admin context.
-// We call the same static method here to register them, then enqueue the
-// three handles the [leaflet-map] shortcode pipeline depends on:
-//   • leaflet_stylesheet  – Leaflet CSS (CDN or custom URL from settings)
-//   • leaflet_js          – Leaflet core JS
-//   • wp_leaflet_map      – construct-leaflet-map.js (bootstraps every map)
+// IMPORTANT: `enqueue_block_assets` fires inside the block editor iframe
+// (WP 6.3+) as well as on the frontend, unlike `enqueue_block_editor_assets`
+// which only fires in the outer admin frame. Leaflet must load inside the
+// iframe where ServerSideRender renders the block preview.
+//
+// On the frontend the Leaflet Map plugin's own shortcode enqueue handles
+// Leaflet automatically, so we guard with is_admin() to avoid double-loading.
+//
+// view-editor.js is NOT enqueued here — it is declared as a second entry in
+// the block's editorScript array (block.json) so WordPress registers and
+// loads it inside the iframe automatically.
 // ---------------------------------------------------------------------------
 
 /**
- * Enqueue Leaflet Map assets in the block editor so ServerSideRender
- * can render a live map preview inside the editor iframe.
+ * Enqueue Leaflet Map core assets inside the block editor iframe.
  *
- * Also enqueues view-editor.js — the MutationObserver script that re-runs
- * the Leaflet shortcode <script> tags after each ServerSideRender response,
- * because React's dangerouslySetInnerHTML intentionally skips inline scripts.
+ * Leaflet_Map::enqueue_and_register() is normally hooked to wp_enqueue_scripts
+ * (frontend only). We call it explicitly here so the handles are registered
+ * in the admin/iframe context before we enqueue them.
  */
-function bflm_enqueue_editor_assets(): void {
-	// Register the Leaflet handles in the admin context (no-op on frontend).
+function bflm_enqueue_block_assets(): void {
+	if ( ! is_admin() ) {
+		// On the frontend the parent plugin's shortcode handles Leaflet.
+		return;
+	}
+
+	// Register handles in the current (iframe) context, then enqueue.
 	Leaflet_Map::enqueue_and_register();
 
 	wp_enqueue_style( 'leaflet_stylesheet' );
 	wp_enqueue_script( 'leaflet_js' );
 	wp_enqueue_script( 'wp_leaflet_map' );
-
-	// view-editor.js — compiled by @wordpress/scripts from:
-	//   src/leaflet-map-block/view-editor.js
-	// Listed as a second editorScript entry in block.json so the build
-	// produces build/leaflet-map-block/view-editor.js + its .asset.php.
-	$asset_file = BFLM_PLUGIN_DIR . 'build/leaflet-map-block/view-editor.asset.php';
-
-	if ( ! file_exists( $asset_file ) ) {
-		return;
-	}
-
-	$asset = require $asset_file;
-
-	wp_enqueue_script(
-		'bflm-view-editor',
-		BFLM_PLUGIN_URL . 'build/leaflet-map-block/view-editor.js',
-		array_merge( $asset['dependencies'], array( 'wp-hooks', 'wp-element', 'wp_leaflet_map' ) ),
-		$asset['version'],
-		true
-	);
 }
-add_action( 'enqueue_block_editor_assets', 'bflm_enqueue_editor_assets' );
+add_action( 'enqueue_block_assets', 'bflm_enqueue_block_assets' );
