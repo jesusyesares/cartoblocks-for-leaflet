@@ -1,0 +1,71 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "blocks-for-leaflet-map/leaflet-map-block",
+	"version": "0.1.0",
+	"title": "Leaflet Map Block",
+	"category": "embed",
+	"icon": "location-alt",
+	"description": "Embed an interactive Leaflet map using the Leaflet Map plugin shortcodes.",
+	"keywords": ["map", "leaflet", "location", "embed"],
+	"example": {
+		"attributes": {
+			"lat": 40.4168,
+			"lng": -3.7038,
+			"zoom": 13,
+			"height": 400
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": ["wide", "full"]
+	},
+	"attributes": {
+		"lat": {
+			"type": "number",
+			"default": 0
+		},
+		"lng": {
+			"type": "number",
+			"default": 0
+		},
+		"zoom": {
+			"type": "number",
+			"default": 12
+		},
+		"height": {
+			"type": "number",
+			"default": 400
+		},
+		"scrollWheelZoom": {
+			"type": "boolean",
+			"default": false
+		},
+		"zoomControl": {
+			"type": "boolean",
+			"default": true
+		},
+		"fitMarkers": {
+			"type": "boolean",
+			"default": false
+		},
+		"markers": {
+			"type": "array",
+			"default": [],
+			"items": {
+				"type": "object",
+				"properties": {
+					"lat":     { "type": "number" },
+					"lng":     { "type": "number" },
+					"title":   { "type": "string" },
+					"content": { "type": "string" }
+				}
+			}
+		}
+	},
+	"textdomain": "blocks-for-leaflet-map",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"render": "file:./render.php"
+}
