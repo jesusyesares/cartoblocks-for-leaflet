@@ -96,7 +96,14 @@ function bflmReinitLeafletMaps( root ) {
 	// eslint-disable-next-line no-console
 	console.log( 'BFLM: Observer is running in document: ' + iframeDoc.location.href );
 
-	const mapContainer = root.querySelector( '.WPLeafletMap' );
+	// eslint-disable-next-line no-console
+	console.log( 'BFLM: Mutation root HTML:', root.outerHTML );
+
+	// The root itself may be the .WPLeafletMap node (when triggerReinit receives
+	// the map element directly) or it may be a wrapper containing it.
+	const mapContainer = root.classList?.contains( 'WPLeafletMap' )
+		? root
+		: root.querySelector( '.WPLeafletMap' );
 
 	if ( ! mapContainer ) {
 		// eslint-disable-next-line no-console
@@ -192,6 +199,17 @@ function bflmReinitLeafletMaps( root ) {
 			'BFLM: Scripts executed. WPLeafletMapPlugin maps:',
 			plugin?.maps?.length
 		);
+
+		// ── 5. Force Leaflet tile recalculation ─────────────────────────────
+		// Leaflet initialised inside an iframe or a hidden/dynamic container
+		// may not calculate tile positions correctly until it receives a resize
+		// event. Dispatching one after a short delay (to let Leaflet finish its
+		// own init cycle) ensures tiles fill the map container.
+		setTimeout( () => {
+			iframeWin.dispatchEvent( new iframeWin.Event( 'resize' ) );
+			// eslint-disable-next-line no-console
+			console.log( 'BFLM: Dispatched resize event to iframe window.' );
+		}, 100 );
 	} );
 }
 
