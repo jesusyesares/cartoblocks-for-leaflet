@@ -14,10 +14,16 @@
  *   never see mutations inside the iframe.
  * - useRef here gives us a live reference to a portal node inside the iframe.
  *
- * The observer calls wp.hooks.doAction('blocks-for-leaflet-map.reinitMaps')
- * which delegates to view-editor.js's bflmScheduleReinit/bflmReinitLeafletMaps.
- * Those functions use root.ownerDocument.defaultView (the iframe's window) for
- * all Leaflet globals, so they work regardless of which frame calls them.
+ * The observer calls window.bflmScheduleReinit(root), the debounced entry point
+ * exposed by view-editor.js. Routing all calls through the scheduler ensures the
+ * debounce always applies and prevents double execution on each SSR cycle.
+ *
+ * BI-DIRECTIONAL SYNC
+ * ───────────────────
+ * After Leaflet re-initialises, view-editor.js attaches moveend/zoomend listeners
+ * that dispatch a `bflm-map-updated` CustomEvent from the .WPLeafletMap node.
+ * The event bubbles up through the iframe DOM to previewRef.current, where a
+ * second useEffect catches it and calls setAttributes to sync the sidebar.
  *
  * @package BlocksForLeafletMap
  */
@@ -27,7 +33,6 @@ import { useEffect, useRef } from '@wordpress/element';
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
 import { ServerSideRender } from '@wordpress/server-side-render';
 import {
-	Disabled,
 	PanelBody,
 	__experimentalNumberControl as NumberControl,
 	RangeControl,
@@ -61,8 +66,8 @@ export default function Edit( { attributes, setAttributes } ) {
 	 * Runs once on mount; cleaned up on unmount to avoid memory leaks.
 	 *
 	 * When ServerSideRender finishes loading and inserts new HTML, the observer
-	 * fires, finds the .WPLeafletMap node, then delegates to view-editor.js's
-	 * reinit logic via wp.hooks so there is a single reinit code path.
+	 * fires, finds the .WPLeafletMap node, then calls window.bflmScheduleReinit
+	 * so all callers route through the debounce in view-editor.js.
 	 */
 	useEffect( () => {
 		const container = previewRef.current;
@@ -72,20 +77,16 @@ export default function Edit( { attributes, setAttributes } ) {
 		}
 
 		/**
-		 * Trigger the map reinit for a given root element.
-		 *
-		 * Calls window.bflmReinitLeafletMaps directly (exposed by view-editor.js)
-		 * as the primary path. This avoids any cross-frame hook timing issues.
-		 * Also fires the wp.hooks action for any other listeners.
+		 * Schedule a map reinit for a given root element via the debounced
+		 * scheduler exposed by view-editor.js. Falls back to the wp.hooks
+		 * action if the window function is not yet available.
 		 *
 		 * @param {Element} root
 		 */
 		function triggerReinit( root ) {
-			// Primary: direct call — view-editor.js exposes this on window.
-			if ( typeof window.bflmReinitLeafletMaps === 'function' ) {
-				window.bflmReinitLeafletMaps( root );
+			if ( typeof window.bflmScheduleReinit === 'function' ) {
+				window.bflmScheduleReinit( root );
 			} else if ( window.wp?.hooks ) {
-				// Fallback: hooks action (requires view-editor.js to have registered).
 				window.wp.hooks.doAction(
 					'blocks-for-leaflet-map.reinitMaps',
 					root
@@ -94,7 +95,7 @@ export default function Edit( { attributes, setAttributes } ) {
 		}
 
 		// Initial scan: if a .WPLeafletMap already exists when the component
-		// mounts (e.g. block is in the post on page load), reinit immediately.
+		// mounts (e.g. block already in the post on page load), reinit immediately.
 		const existing = container.querySelector( '.WPLeafletMap' );
 		if ( existing ) {
 			triggerReinit( existing.parentElement || container );
@@ -122,6 +123,38 @@ export default function Edit( { attributes, setAttributes } ) {
 
 		return () => observer.disconnect();
 	}, [] ); // Empty deps: set up once on mount, torn down on unmount.
+
+	/**
+	 * Bi-directional sync: listen for bflm-map-updated events dispatched by
+	 * view-editor.js when the user moves or zooms the Leaflet map.
+	 *
+	 * The event is dispatched from .WPLeafletMap (inside the iframe) with
+	 * bubbles:true and propagates up to previewRef.current (also inside the
+	 * iframe), so this listener fires correctly via same-origin cross-frame access.
+	 */
+	useEffect( () => {
+		const container = previewRef.current;
+		if ( ! container ) {
+			return;
+		}
+
+		/**
+		 * Sync Leaflet map position and zoom back to block attributes.
+		 *
+		 * @param {CustomEvent} event
+		 */
+		function handleMapUpdated( event ) {
+			const { lat: newLat, lng: newLng, zoom: newZoom } = event.detail;
+			setAttributes( {
+				lat:  parseFloat( newLat.toFixed( 6 ) ),
+				lng:  parseFloat( newLng.toFixed( 6 ) ),
+				zoom: newZoom,
+			} );
+		}
+
+		container.addEventListener( 'bflm-map-updated', handleMapUpdated );
+		return () => container.removeEventListener( 'bflm-map-updated', handleMapUpdated );
+	}, [] ); // Empty deps: ref and setAttributes are both stable across renders.
 
 	return (
 		<>
@@ -193,12 +226,10 @@ export default function Edit( { attributes, setAttributes } ) {
 			</InspectorControls>
 
 			<div { ...blockProps }>
-				<Disabled>
-					<ServerSideRender
-						block="blocks-for-leaflet-map/leaflet-map-block"
-						attributes={ attributes }
-					/>
-				</Disabled>
+				<ServerSideRender
+					block="blocks-for-leaflet-map/leaflet-map-block"
+					attributes={ attributes }
+				/>
 			</div>
 		</>
 	);
