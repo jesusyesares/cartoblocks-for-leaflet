@@ -72,12 +72,20 @@ export default function Edit( { attributes, setAttributes } ) {
 		}
 
 		/**
-		 * Trigger the map reinit action for a given root element.
+		 * Trigger the map reinit for a given root element.
+		 *
+		 * Calls window.bflmReinitLeafletMaps directly (exposed by view-editor.js)
+		 * as the primary path. This avoids any cross-frame hook timing issues.
+		 * Also fires the wp.hooks action for any other listeners.
 		 *
 		 * @param {Element} root
 		 */
 		function triggerReinit( root ) {
-			if ( window.wp?.hooks ) {
+			// Primary: direct call — view-editor.js exposes this on window.
+			if ( typeof window.bflmReinitLeafletMaps === 'function' ) {
+				window.bflmReinitLeafletMaps( root );
+			} else if ( window.wp?.hooks ) {
+				// Fallback: hooks action (requires view-editor.js to have registered).
 				window.wp.hooks.doAction(
 					'blocks-for-leaflet-map.reinitMaps',
 					root
