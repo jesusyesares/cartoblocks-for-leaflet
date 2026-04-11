@@ -1,88 +1,92 @@
 /**
  * view-editor.js
  *
- * Re-initializes Leaflet maps after ServerSideRender injects the shortcode
- * HTML into the block editor.
+ * Loaded inside the block editor iframe as an editorScript (block.json).
+ * Watches for .WPLeafletMap containers injected by ServerSideRender and
+ * re-initialises Leaflet maps after each server response.
  *
- * Root cause: React renders <ServerSideRender> output via dangerouslySetInnerHTML.
- * Browsers intentionally skip <script> tags inside innerHTML, so the
- * WPLeafletMapPlugin.push() callbacks in the shortcode output never run.
+ * Why a MutationObserver?
+ * React renders <ServerSideRender> output via dangerouslySetInnerHTML.
+ * Browsers intentionally skip <script> tags inserted this way, so the
+ * WPLeafletMapPlugin.push() callbacks in the [leaflet-map] shortcode output
+ * never run. We detect the new container and replay those scripts.
  *
- * Fix: a MutationObserver watches for new .WPLeafletMap divs; when one
- * appears it prunes stale map instances from WPLeafletMapPlugin (so that
- * createMap()'s index counter stays correct) and then re-executes every
- * <script> in the parent container by cloning them into a new node.
+ * Why not window.WPLeafletMapPlugin.init()?
+ * init() is a one-shot "flush the queue" call. The queue is empty because
+ * the shortcode scripts never ran — so calling init() again does nothing.
+ * The only fix is to actually execute the inline scripts.
+ *
+ * @package BlocksForLeafletMap
  */
 
 import { addAction } from '@wordpress/hooks';
+import domReady from '@wordpress/dom-ready';
 
-( function () {
-	if ( typeof window === 'undefined' || typeof MutationObserver === 'undefined' ) {
+console.log( 'BFLM: Editor script loaded' ); // eslint-disable-line no-console
+
+/**
+ * Remove stale Leaflet map instances whose containers are no longer in the
+ * document, then re-execute every <script> inside `root` by replacing each
+ * with a freshly created clone — the only reliable way to force script
+ * execution after an innerHTML injection.
+ *
+ * @param {Element} root Element that wraps the map div and its sibling scripts.
+ */
+function bflmReinitLeafletMaps( root ) {
+	const plugin = window.WPLeafletMapPlugin;
+
+	if ( plugin && Array.isArray( plugin.maps ) ) {
+		// Destroy and prune maps whose DOM containers left the document.
+		plugin.maps = plugin.maps.filter( ( map ) => {
+			try {
+				if ( document.contains( map.getContainer() ) ) {
+					return true;
+				}
+				map.remove();
+				return false;
+			} catch ( e ) {
+				return false;
+			}
+		} );
+
+		// Keep markergroups index in sync with the surviving maps.
+		const pruned = {};
+		plugin.maps.forEach( ( _map, idx ) => {
+			const key = idx + 1;
+			if ( plugin.markergroups[ key ] ) {
+				pruned[ key ] = plugin.markergroups[ key ];
+			}
+		} );
+		plugin.markergroups = pruned;
+	}
+
+	// Re-execute each <script> in the rendered output.
+	root.querySelectorAll( 'script' ).forEach( ( oldScript ) => {
+		const newScript = document.createElement( 'script' );
+		Array.from( oldScript.attributes ).forEach( ( attr ) =>
+			newScript.setAttribute( attr.name, attr.value )
+		);
+		newScript.textContent = oldScript.textContent;
+		oldScript.parentNode.replaceChild( newScript, oldScript );
+	} );
+}
+
+// Expose as a named wp.hooks action so external code can trigger reinit.
+addAction(
+	'blocks-for-leaflet-map.reinitMaps',
+	'blocks-for-leaflet-map/view-editor',
+	bflmReinitLeafletMaps
+);
+
+/**
+ * Start a MutationObserver scoped to document.body (inside the editor iframe).
+ * Fires whenever ServerSideRender inserts a new .WPLeafletMap node.
+ */
+domReady( function () {
+	if ( typeof MutationObserver === 'undefined' ) {
 		return;
 	}
 
-	/**
-	 * Remove stale Leaflet map instances whose DOM containers are no
-	 * longer attached to the document, then re-execute every <script>
-	 * inside `root` so that WPLeafletMapPlugin callbacks run.
-	 *
-	 * @param {Element} root - Element that contains the map div + scripts.
-	 */
-	function reinitLeafletMaps( root ) {
-		const plugin = window.WPLeafletMapPlugin;
-
-		if ( plugin && Array.isArray( plugin.maps ) ) {
-			// Destroy and remove any map whose container left the DOM.
-			plugin.maps = plugin.maps.filter( ( map ) => {
-				try {
-					const container = map.getContainer();
-					if ( ! document.contains( container ) ) {
-						map.remove();
-						return false;
-					}
-					return true;
-				} catch ( e ) {
-					return false;
-				}
-			} );
-
-			// Keep markergroups in sync with the pruned maps array.
-			const surviving = plugin.maps.length;
-			const pruned = {};
-			for ( let i = 1; i <= surviving; i++ ) {
-				if ( plugin.markergroups[ i ] ) {
-					pruned[ i ] = plugin.markergroups[ i ];
-				}
-			}
-			plugin.markergroups = pruned;
-		}
-
-		// Re-execute every <script> in the rendered output by replacing each
-		// one with a freshly created clone — the only way to force script
-		// execution after innerHTML injection.
-		root.querySelectorAll( 'script' ).forEach( ( oldScript ) => {
-			const newScript = document.createElement( 'script' );
-			Array.from( oldScript.attributes ).forEach( ( attr ) =>
-				newScript.setAttribute( attr.name, attr.value )
-			);
-			newScript.textContent = oldScript.textContent;
-			oldScript.parentNode.replaceChild( newScript, oldScript );
-		} );
-	}
-
-	// Expose a named action so other editor code can trigger a reinit manually.
-	addAction(
-		'blocks-for-leaflet-map.reinitMaps',
-		'blocks-for-leaflet-map/view-editor',
-		reinitLeafletMaps
-	);
-
-	/**
-	 * Watch for .WPLeafletMap containers injected by ServerSideRender.
-	 * The observer must run in the same document as the editor canvas —
-	 * wp-scripts bundles this file into the editor iframe automatically
-	 * when it is listed as an editorScript in block.json.
-	 */
 	const observer = new MutationObserver( ( mutations ) => {
 		for ( const mutation of mutations ) {
 			for ( const node of mutation.addedNodes ) {
@@ -90,32 +94,20 @@ import { addAction } from '@wordpress/hooks';
 					continue;
 				}
 
-				// ServerSideRender renders the full PHP output as direct
-				// children; find any map container within the added subtree.
 				const mapNodes = node.querySelectorAll( '.WPLeafletMap' );
-				if ( mapNodes.length === 0 ) {
+				if ( ! mapNodes.length ) {
 					continue;
 				}
 
-				// Scripts sit next to the map div inside the same wrapper.
+				// Scripts live next to the .WPLeafletMap div in the same wrapper.
 				const scriptsRoot = mapNodes[ 0 ].parentElement || node;
-				reinitLeafletMaps( scriptsRoot );
+				bflmReinitLeafletMaps( scriptsRoot );
 			}
 		}
 	} );
 
-	function startObserver() {
-		if ( document.body ) {
-			observer.observe( document.body, {
-				childList: true,
-				subtree: true,
-			} );
-		}
-	}
-
-	if ( document.readyState === 'loading' ) {
-		document.addEventListener( 'DOMContentLoaded', startObserver );
-	} else {
-		startObserver();
-	}
-} )();
+	observer.observe( document.body, {
+		childList: true,
+		subtree: true,
+	} );
+} );

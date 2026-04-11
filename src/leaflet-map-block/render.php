@@ -80,5 +80,5 @@ $wrapper_attributes = get_block_wrapper_attributes(
 // Render: wrapper div → shortcode output (Leaflet Map plugin handles the rest).
 ?>
 <div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitized by get_block_wrapper_attributes(). ?>>
-	<?php echo do_shortcode( $map_shortcode . $marker_shortcodes ); ?>
+	<?php echo do_shortcode( $map_shortcode . $marker_shortcodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted output from registered shortcodes; escaping would corrupt the map HTML and inline scripts. ?>
 </div>
