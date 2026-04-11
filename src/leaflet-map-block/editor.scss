@@ -1,9 +1,18 @@
 /**
- * The following styles get applied inside the editor only.
+ * Editor-only styles for the Leaflet Map Block.
  *
- * Replace them with your own styles or remove the file completely.
+ * .bflm-leaflet-map-block is added via useBlockProps className in edit.js.
  */
 
-.wp-block-blocks-for-leaflet-map-leaflet-map-block {
-	border: 1px dotted #f00;
+.bflm-leaflet-map-block {
+	// Prevent the browser from selecting text or triggering a native drag
+	// when the user clicks and drags to pan the Leaflet map.
+	user-select: none;
+	-webkit-user-drag: none;
+
+	// Ensure the Leaflet map container receives all pointer events so that
+	// panning, zooming, and clicking work correctly inside the block editor.
+	.WPLeafletMap {
+		pointer-events: all;
+	}
 }

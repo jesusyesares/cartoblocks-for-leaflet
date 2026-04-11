@@ -138,7 +138,52 @@ function bflmReinitLeafletMaps( root ) {
 		bflmWhenLeafletReady( iframeWin, () => {
 			const plugin = iframeWin.WPLeafletMapPlugin;
 
-			// ── 2. Destroy existing Leaflet instances in this block ──────────
+			// ── 2. Skip reinit if coordinates are already correct ────────────
+			// When a map-drag triggers setAttributes → SSR re-render, the new
+			// server output encodes the same lat/lng/zoom the map is already at.
+			// Detecting this early avoids destroying and recreating a perfectly
+			// valid Leaflet instance, eliminating the lag and tile re-fetches.
+			//
+			// Strategy: extract target lat/lng/zoom from the SSR script text
+			// (using a regex for the common WPLeafletMapPlugin setView pattern),
+			// then compare with the existing Leaflet map's current state.
+			if ( mapContainer._leaflet_id && Array.isArray( plugin?.maps ) ) {
+				const existingMap = plugin.maps.find( ( m ) => {
+					try { return m.getContainer() === mapContainer; } catch ( e ) { return false; }
+				} );
+
+				if ( existingMap ) {
+					const scriptText = Array.from( root.querySelectorAll( 'script' ) )
+						.map( ( s ) => s.textContent )
+						.join( '\n' );
+
+					// Match L.map / setView( [lat, lng], zoom ) — the most common
+					// WPLeafletMapPlugin rendering pattern.
+					const viewMatch = scriptText.match(
+						/setView\s*\(\s*\[\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*\]\s*,\s*(\d+)/
+					);
+
+					if ( viewMatch ) {
+						const targetLat  = parseFloat( viewMatch[ 1 ] );
+						const targetLng  = parseFloat( viewMatch[ 2 ] );
+						const targetZoom = parseInt( viewMatch[ 3 ], 10 );
+						const center     = existingMap.getCenter();
+						const epsilon    = 0.00001;
+
+						if (
+							Math.abs( center.lat - targetLat ) < epsilon &&
+							Math.abs( center.lng - targetLng ) < epsilon &&
+							existingMap.getZoom() === targetZoom
+						) {
+							// eslint-disable-next-line no-console
+							console.log( 'BFLM: Coordinates unchanged — skipping reinit.' );
+							return;
+						}
+					}
+				}
+			}
+
+			// ── 4. Destroy existing Leaflet instances in this block ──────────
 
 			if ( plugin && Array.isArray( plugin.maps ) ) {
 				plugin.maps = plugin.maps.filter( ( map ) => {
@@ -174,7 +219,7 @@ function bflmReinitLeafletMaps( root ) {
 				delete mapContainer._leaflet_id;
 			}
 
-			// ── 3. Re-execute shortcode scripts ─────────────────────────────
+			// ── 5. Re-execute shortcode scripts ─────────────────────────────
 			// Scripts created via iframeDoc execute in the iframe's global scope.
 
 			const scripts = root.querySelectorAll( 'script' );
@@ -194,7 +239,7 @@ function bflmReinitLeafletMaps( root ) {
 				oldScript.parentNode.replaceChild( newScript, oldScript );
 			} );
 
-			// ── 4. Flush the WPLeafletMapPlugin callback queue ──────────────
+			// ── 6. Flush the WPLeafletMapPlugin callback queue ──────────────
 			// In the iframed editor the load event may have already fired before
 			// scripts were injected, leaving ready=false and callbacks queued.
 			// init() flushes the queue and sets ready=true.
@@ -208,7 +253,7 @@ function bflmReinitLeafletMaps( root ) {
 				plugin?.maps?.length
 			);
 
-			// ── 5. Attach bi-directional sync listeners ──────────────────────
+			// ── 7. Attach bi-directional sync listeners ──────────────────────
 			// Find the Leaflet map whose DOM container is our .WPLeafletMap div.
 			// After plugin.init() the map is fully created and present in plugin.maps.
 			const leafletMap = Array.isArray( plugin.maps )
@@ -242,7 +287,7 @@ function bflmReinitLeafletMaps( root ) {
 				console.warn( 'BFLM: Could not find Leaflet map instance for container.' );
 			}
 
-			// ── 6. Force Leaflet tile recalculation ─────────────────────────
+			// ── 8. Force Leaflet tile recalculation ─────────────────────────
 			// Leaflet in an iframe may not calculate tile positions correctly
 			// until it receives a resize event.
 			setTimeout( () => {

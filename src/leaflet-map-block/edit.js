@@ -14,16 +14,15 @@
  *   never see mutations inside the iframe.
  * - useRef here gives us a live reference to a portal node inside the iframe.
  *
- * The observer calls window.bflmScheduleReinit(root), the debounced entry point
- * exposed by view-editor.js. Routing all calls through the scheduler ensures the
- * debounce always applies and prevents double execution on each SSR cycle.
+ * LOOP PREVENTION
+ * ───────────────
+ * Without a guard, dragging the map causes a feedback loop:
+ *   drag → bflm-map-updated → setAttributes → SSR re-render → reinit → repeat.
  *
- * BI-DIRECTIONAL SYNC
- * ───────────────────
- * After Leaflet re-initialises, view-editor.js attaches moveend/zoomend listeners
- * that dispatch a `bflm-map-updated` CustomEvent from the .WPLeafletMap node.
- * The event bubbles up through the iframe DOM to previewRef.current, where a
- * second useEffect catches it and calls setAttributes to sync the sidebar.
+ * `isInternalUpdateRef` acts as a lock: it is set to true when a map-drag
+ * triggers setAttributes, and automatically cleared after 1500 ms (long enough
+ * for the SSR request + DOM mutation to complete). While the lock is held the
+ * MutationObserver skips reinit, breaking the loop.
  *
  * @package BlocksForLeafletMap
  */
@@ -53,21 +52,36 @@ export default function Edit( { attributes, setAttributes } ) {
 	const { lat, lng, zoom, height, scrollWheelZoom, zoomControl } = attributes;
 
 	/**
-	 * ref to the block's outermost DOM node.
-	 * Because React portals this into the iframe, previewRef.current is an
-	 * IFRAME DOM element — this is what makes same-origin cross-frame
-	 * observation work correctly.
+	 * ref to the block's outermost DOM node (inside the iframe via React portal).
 	 */
 	const previewRef = useRef( null );
-	const blockProps = useBlockProps( { ref: previewRef } );
 
 	/**
-	 * Set up a MutationObserver scoped to this block's container (iframe DOM).
-	 * Runs once on mount; cleaned up on unmount to avoid memory leaks.
+	 * Lock flag: true while a map-drag-originated setAttributes call is in flight.
+	 * Prevents the resulting SSR re-render from triggering an unnecessary reinit.
 	 *
-	 * When ServerSideRender finishes loading and inserts new HTML, the observer
-	 * fires, finds the .WPLeafletMap node, then calls window.bflmScheduleReinit
-	 * so all callers route through the debounce in view-editor.js.
+	 * @type {React.MutableRefObject<boolean>}
+	 */
+	const isInternalUpdateRef = useRef( false );
+
+	/**
+	 * Handle for the setTimeout that clears isInternalUpdateRef.
+	 *
+	 * @type {React.MutableRefObject<ReturnType<typeof setTimeout>|null>}
+	 */
+	const clearFlagTimerRef = useRef( null );
+
+	const blockProps = useBlockProps( {
+		ref:       previewRef,
+		className: 'bflm-leaflet-map-block',
+	} );
+
+	/**
+	 * MutationObserver scoped to this block's container (iframe DOM).
+	 * Runs once on mount; cleaned up on unmount.
+	 *
+	 * Skips reinit while isInternalUpdateRef is true so that SSR re-renders
+	 * caused by map drags do not trigger redundant re-initialization.
 	 */
 	useEffect( () => {
 		const container = previewRef.current;
@@ -77,9 +91,7 @@ export default function Edit( { attributes, setAttributes } ) {
 		}
 
 		/**
-		 * Schedule a map reinit for a given root element via the debounced
-		 * scheduler exposed by view-editor.js. Falls back to the wp.hooks
-		 * action if the window function is not yet available.
+		 * Schedule a map reinit via the debounced scheduler in view-editor.js.
 		 *
 		 * @param {Element} root
 		 */
@@ -94,15 +106,19 @@ export default function Edit( { attributes, setAttributes } ) {
 			}
 		}
 
-		// Initial scan: if a .WPLeafletMap already exists when the component
-		// mounts (e.g. block already in the post on page load), reinit immediately.
+		// Initial scan: reinit immediately if a map is already in the DOM.
 		const existing = container.querySelector( '.WPLeafletMap' );
 		if ( existing ) {
 			triggerReinit( existing.parentElement || container );
 		}
 
-		// Ongoing observation: fires whenever SSR replaces the block preview.
 		const observer = new MutationObserver( ( mutations ) => {
+			// Skip mutations triggered by internal map-drag attribute updates.
+			// The lock is set in the bflm-map-updated handler below.
+			if ( isInternalUpdateRef.current ) {
+				return;
+			}
+
 			for ( const mutation of mutations ) {
 				for ( const node of mutation.addedNodes ) {
 					if ( node.nodeType !== Node.ELEMENT_NODE ) {
@@ -122,15 +138,17 @@ export default function Edit( { attributes, setAttributes } ) {
 		observer.observe( container, { childList: true, subtree: true } );
 
 		return () => observer.disconnect();
-	}, [] ); // Empty deps: set up once on mount, torn down on unmount.
+	}, [] );
 
 	/**
-	 * Bi-directional sync: listen for bflm-map-updated events dispatched by
-	 * view-editor.js when the user moves or zooms the Leaflet map.
+	 * Bi-directional sync: receive bflm-map-updated events from view-editor.js.
 	 *
 	 * The event is dispatched from .WPLeafletMap (inside the iframe) with
-	 * bubbles:true and propagates up to previewRef.current (also inside the
-	 * iframe), so this listener fires correctly via same-origin cross-frame access.
+	 * bubbles:true. It propagates up to previewRef.current (also in the iframe),
+	 * where this listener catches it and syncs the sidebar attributes.
+	 *
+	 * Sets isInternalUpdateRef before calling setAttributes so the resulting
+	 * SSR re-render is ignored by the MutationObserver above.
 	 */
 	useEffect( () => {
 		const container = previewRef.current;
@@ -139,12 +157,18 @@ export default function Edit( { attributes, setAttributes } ) {
 		}
 
 		/**
-		 * Sync Leaflet map position and zoom back to block attributes.
-		 *
 		 * @param {CustomEvent} event
 		 */
 		function handleMapUpdated( event ) {
 			const { lat: newLat, lng: newLng, zoom: newZoom } = event.detail;
+
+			// Engage the lock so the upcoming SSR re-render does not trigger reinit.
+			isInternalUpdateRef.current = true;
+			clearTimeout( clearFlagTimerRef.current );
+			clearFlagTimerRef.current = setTimeout( () => {
+				isInternalUpdateRef.current = false;
+			}, 1500 );
+
 			setAttributes( {
 				lat:  parseFloat( newLat.toFixed( 6 ) ),
 				lng:  parseFloat( newLng.toFixed( 6 ) ),
@@ -153,8 +177,11 @@ export default function Edit( { attributes, setAttributes } ) {
 		}
 
 		container.addEventListener( 'bflm-map-updated', handleMapUpdated );
-		return () => container.removeEventListener( 'bflm-map-updated', handleMapUpdated );
-	}, [] ); // Empty deps: ref and setAttributes are both stable across renders.
+		return () => {
+			container.removeEventListener( 'bflm-map-updated', handleMapUpdated );
+			clearTimeout( clearFlagTimerRef.current );
+		};
+	}, [] );
 
 	return (
 		<>
