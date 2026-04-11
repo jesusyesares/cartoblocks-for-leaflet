@@ -2,17 +2,28 @@
  * edit.js
  *
  * Editor component for the Leaflet Map Block.
- * Renders InspectorControls for map settings and a live server-side preview.
  *
- * Map re-initialisation after each ServerSideRender response is handled
- * exclusively by view-editor.js (a single MutationObserver on document.body).
- * No second observer is created here to avoid double-firing on the same
- * DOM mutation, which caused the "Map container not found" race condition.
+ * FRAME ARCHITECTURE NOTE
+ * ───────────────────────
+ * In WordPress 6.3+ the block canvas renders inside an iframe. React portals
+ * the block's DOM into that iframe, so `previewRef.current` points to a node
+ * in the IFRAME's document even though the JS closure runs in the outer frame.
+ *
+ * This is the ONLY place in the plugin that can reliably observe the iframe DOM:
+ * - view-editor.js runs in the outer frame → its document.body observer would
+ *   never see mutations inside the iframe.
+ * - useRef here gives us a live reference to a portal node inside the iframe.
+ *
+ * The observer calls wp.hooks.doAction('blocks-for-leaflet-map.reinitMaps')
+ * which delegates to view-editor.js's bflmScheduleReinit/bflmReinitLeafletMaps.
+ * Those functions use root.ownerDocument.defaultView (the iframe's window) for
+ * all Leaflet globals, so they work regardless of which frame calls them.
  *
  * @package BlocksForLeafletMap
  */
 
 import { __ } from '@wordpress/i18n';
+import { useEffect, useRef } from '@wordpress/element';
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
 import { ServerSideRender } from '@wordpress/server-side-render';
 import {
@@ -36,7 +47,73 @@ import './editor.scss';
 export default function Edit( { attributes, setAttributes } ) {
 	const { lat, lng, zoom, height, scrollWheelZoom, zoomControl } = attributes;
 
-	const blockProps = useBlockProps();
+	/**
+	 * ref to the block's outermost DOM node.
+	 * Because React portals this into the iframe, previewRef.current is an
+	 * IFRAME DOM element — this is what makes same-origin cross-frame
+	 * observation work correctly.
+	 */
+	const previewRef = useRef( null );
+	const blockProps = useBlockProps( { ref: previewRef } );
+
+	/**
+	 * Set up a MutationObserver scoped to this block's container (iframe DOM).
+	 * Runs once on mount; cleaned up on unmount to avoid memory leaks.
+	 *
+	 * When ServerSideRender finishes loading and inserts new HTML, the observer
+	 * fires, finds the .WPLeafletMap node, then delegates to view-editor.js's
+	 * reinit logic via wp.hooks so there is a single reinit code path.
+	 */
+	useEffect( () => {
+		const container = previewRef.current;
+
+		if ( ! container || typeof MutationObserver === 'undefined' ) {
+			return;
+		}
+
+		/**
+		 * Trigger the map reinit action for a given root element.
+		 *
+		 * @param {Element} root
+		 */
+		function triggerReinit( root ) {
+			if ( window.wp?.hooks ) {
+				window.wp.hooks.doAction(
+					'blocks-for-leaflet-map.reinitMaps',
+					root
+				);
+			}
+		}
+
+		// Initial scan: if a .WPLeafletMap already exists when the component
+		// mounts (e.g. block is in the post on page load), reinit immediately.
+		const existing = container.querySelector( '.WPLeafletMap' );
+		if ( existing ) {
+			triggerReinit( existing.parentElement || container );
+		}
+
+		// Ongoing observation: fires whenever SSR replaces the block preview.
+		const observer = new MutationObserver( ( mutations ) => {
+			for ( const mutation of mutations ) {
+				for ( const node of mutation.addedNodes ) {
+					if ( node.nodeType !== Node.ELEMENT_NODE ) {
+						continue;
+					}
+
+					const mapNodes = node.querySelectorAll( '.WPLeafletMap' );
+					if ( ! mapNodes.length ) {
+						continue;
+					}
+
+					triggerReinit( mapNodes[ 0 ].parentElement || node );
+				}
+			}
+		} );
+
+		observer.observe( container, { childList: true, subtree: true } );
+
+		return () => observer.disconnect();
+	}, [] ); // Empty deps: set up once on mount, torn down on unmount.
 
 	return (
 		<>
