@@ -3,7 +3,7 @@
  * Plugin Name:       Blocks for Leaflet Map
  * Plugin URI:        https://github.com/jesusyesares/blocks-for-leaflet-map
  * Description:       A dynamic Gutenberg block that wraps the Leaflet Map plugin shortcodes. Requires the "Leaflet Map" plugin to be installed and active.
- * Version:           0.1.1
+ * Version:           0.1.2
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Jesús Yesares García
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-define( 'BFLM_VERSION', '0.1.1' );
+define( 'BFLM_VERSION', '0.1.2' );
 define( 'BFLM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BFLM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BFLM_LEAFLET_MAP_PLUGIN', 'leaflet-map/leaflet-map.php' );
@@ -127,6 +127,21 @@ function bflm_enqueue_block_assets(): void {
 	wp_enqueue_style( 'leaflet_stylesheet' );
 	wp_enqueue_script( 'leaflet_js' );
 	wp_enqueue_script( 'wp_leaflet_map' );
+
+	// Inject a <meta name="referrer"> into the editor iframe's <head> so that
+	// tile requests sent from inside the iframe include the site URL as the
+	// Referer header. Without this, the iframe's default referrer policy
+	// ("strict-origin-when-cross-origin") strips the path, causing tile servers
+	// (e.g. OpenStreetMap) to return 403 "Referer required" errors.
+	//
+	// wp_add_inline_script on 'leaflet_js' (a handle loaded inside the iframe
+	// via _wp_get_iframed_editor_assets) is the correct mechanism — admin_head
+	// only affects the outer frame, not the iframe document.
+	wp_add_inline_script(
+		'leaflet_js',
+		"( function () { var m = document.createElement( 'meta' ); m.name = 'referrer'; m.content = 'no-referrer-when-downgrade'; document.head.insertBefore( m, document.head.firstChild ); }() );",
+		'before'
+	);
 }
 add_action( 'enqueue_block_assets', 'bflm_enqueue_block_assets' );
 
