@@ -107,6 +107,10 @@ add_action( 'init', 'bflm_register_blocks' );
 /**
  * Enqueue Leaflet Map assets in the block editor so ServerSideRender
  * can render a live map preview inside the editor iframe.
+ *
+ * Also enqueues view-editor.js — the MutationObserver script that re-runs
+ * the Leaflet shortcode <script> tags after each ServerSideRender response,
+ * because React's dangerouslySetInnerHTML intentionally skips inline scripts.
  */
 function bflm_enqueue_editor_assets(): void {
 	// Register the Leaflet handles in the admin context (no-op on frontend).
@@ -115,5 +119,25 @@ function bflm_enqueue_editor_assets(): void {
 	wp_enqueue_style( 'leaflet_stylesheet' );
 	wp_enqueue_script( 'leaflet_js' );
 	wp_enqueue_script( 'wp_leaflet_map' );
+
+	// view-editor.js — compiled by @wordpress/scripts from:
+	//   src/leaflet-map-block/view-editor.js
+	// Listed as a second editorScript entry in block.json so the build
+	// produces build/leaflet-map-block/view-editor.js + its .asset.php.
+	$asset_file = BFLM_PLUGIN_DIR . 'build/leaflet-map-block/view-editor.asset.php';
+
+	if ( ! file_exists( $asset_file ) ) {
+		return;
+	}
+
+	$asset = require $asset_file;
+
+	wp_enqueue_script(
+		'bflm-view-editor',
+		BFLM_PLUGIN_URL . 'build/leaflet-map-block/view-editor.js',
+		array_merge( $asset['dependencies'], array( 'wp-hooks', 'wp-element', 'wp_leaflet_map' ) ),
+		$asset['version'],
+		true
+	);
 }
 add_action( 'enqueue_block_editor_assets', 'bflm_enqueue_editor_assets' );
