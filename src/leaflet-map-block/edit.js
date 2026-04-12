@@ -215,15 +215,47 @@ export default function Edit( { attributes, setAttributes } ) {
 			// eslint-disable-next-line no-console
 			console.log( 'BFLM: Initialising map. Tile URL:', tileUrl );
 
+			// ── Referrer policy — inject into the iframe document ─────────────
+			// The block editor iframe has a blob: / about:srcdoc origin. Without
+			// an explicit policy, tile requests carry no Referer header and OSM
+			// returns 403 "Referer is required". Injecting the meta tag here
+			// (before any tile is fetched) causes the iframe to send the parent
+			// page URL as Referer for all subsequent cross-origin requests.
+			const iframeDoc = container.ownerDocument;
+			if ( ! iframeDoc.querySelector( 'meta[name="referrer"]' ) ) {
+				const meta   = iframeDoc.createElement( 'meta' );
+				meta.name    = 'referrer';
+				meta.content = 'origin';
+				iframeDoc.head.appendChild( meta );
+			}
+
 			const map = L.map( container, {
 				scrollWheelZoom,
 				zoomControl,
 				attributionControl: true,
 			} ).setView( [ lat, lng ], zoom );
 
-			L.tileLayer( tileUrl, {
+			// ── Custom tile layer with per-<img> referrerPolicy ────────────────
+			// Leaflet renders tiles as <img> elements. Extending createTile lets
+			// us set referrerPolicy directly on each element — belt-and-suspenders
+			// companion to the <meta> tag above, covering browsers that check the
+			// attribute rather than (or in addition to) the document policy.
+			const TileLayerWithReferrer = L.TileLayer.extend( {
+				/**
+				 * @param {Object}   coords Tile coordinates.
+				 * @param {Function} done   Leaflet callback.
+				 * @return {HTMLImageElement} Tile image element.
+				 */
+				createTile( coords, done ) {
+					const tile          = L.TileLayer.prototype.createTile.call( this, coords, done );
+					tile.referrerPolicy = 'origin';
+					return tile;
+				},
+			} );
+
+			new TileLayerWithReferrer( tileUrl, {
 				attribution,
-				subdomains,
+				subdomains:  subdomains || undefined,
 				maxZoom:     19,
 				crossOrigin: true,
 			} ).addTo( map );
