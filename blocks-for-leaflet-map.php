@@ -3,7 +3,7 @@
  * Plugin Name:       Blocks for Leaflet Map
  * Plugin URI:        https://github.com/jesusyesares/blocks-for-leaflet-map
  * Description:       A dynamic Gutenberg block that wraps the Leaflet Map plugin shortcodes. Requires the "Leaflet Map" plugin to be installed and active.
- * Version:           0.1.0
+ * Version:           0.2.1
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Jesús Yesares García
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-define( 'BFLM_VERSION', '0.1.0' );
+define( 'BFLM_VERSION', '0.2.1' );
 define( 'BFLM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BFLM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BFLM_LEAFLET_MAP_PLUGIN', 'leaflet-map/leaflet-map.php' );
@@ -93,23 +93,22 @@ function bflm_register_blocks(): void {
 add_action( 'init', 'bflm_register_blocks' );
 
 // ---------------------------------------------------------------------------
-// Editor asset loading — make Leaflet JS/CSS available in the block editor.
+// Editor asset loading — make Leaflet JS/CSS available in the block editor
+// iframe (WP 6.3+).
 //
-// IMPORTANT: `enqueue_block_assets` fires inside the block editor iframe
-// (WP 6.3+) as well as on the frontend, unlike `enqueue_block_editor_assets`
-// which only fires in the outer admin frame. Leaflet must load inside the
-// iframe where ServerSideRender renders the block preview.
-//
+// `enqueue_block_assets` fires inside the iframe as well as on the frontend.
 // On the frontend the Leaflet Map plugin's own shortcode enqueue handles
 // Leaflet automatically, so we guard with is_admin() to avoid double-loading.
 //
-// view-editor.js is NOT enqueued here — it is declared as a second entry in
-// the block's editorScript array (block.json) so WordPress registers and
-// loads it inside the iframe automatically.
+// edit.js (editorScript) runs in the OUTER admin frame and accesses Leaflet
+// via `mapContainerRef.current.ownerDocument.defaultView.L`. It reads tile
+// configuration from `iframeWin.bflmConfig`, which we inject here via
+// wp_add_inline_script on the `leaflet_js` handle (iframe scope).
 // ---------------------------------------------------------------------------
 
 /**
- * Enqueue Leaflet Map core assets inside the block editor iframe.
+ * Enqueue Leaflet core assets inside the block editor iframe and inject the
+ * tile configuration object (bflmConfig) that edit.js reads at map init time.
  *
  * Leaflet_Map::enqueue_and_register() is normally hooked to wp_enqueue_scripts
  * (frontend only). We call it explicitly here so the handles are registered
@@ -126,6 +125,60 @@ function bflm_enqueue_block_assets(): void {
 
 	wp_enqueue_style( 'leaflet_stylesheet' );
 	wp_enqueue_script( 'leaflet_js' );
-	wp_enqueue_script( 'wp_leaflet_map' );
+
+	// ── Referrer policy (iframe) ─────────────────────────────────────────────
+	// The iframe's default referrer policy ("strict-origin-when-cross-origin")
+	// strips the URL path, causing tile servers (e.g. OpenStreetMap) to return
+	// 403 "Referer required" errors.
+	//
+	// We use document.head.prepend() so the meta becomes the absolute first
+	// element in <head>, guaranteeing it is parsed before any network request
+	// (including the Leaflet CSS from unpkg) that might otherwise fire under
+	// the stricter default policy.
+	wp_add_inline_script(
+		'leaflet_js',
+		"( function () { var m = document.createElement( 'meta' ); m.name = 'referrer'; m.content = 'no-referrer-when-downgrade'; document.head.prepend( m ); }() );",
+		'before'
+	);
+
+	// ── Tile configuration for edit.js ───────────────────────────────────────
+	// edit.js reads window.bflmConfig from the iframe window to initialise the
+	// tile layer with the same URL/subdomains/attribution the admin has chosen
+	// in the parent Leaflet Map plugin settings.
+	$settings = Leaflet_Map::settings();
+
+	$bflm_config = array(
+		'tileUrl'        => $settings->get( 'map_tile_url' ),
+		'tileSubdomains' => $settings->get( 'map_tile_url_subdomains' ),
+		'attribution'    => $settings->get( 'default_attribution' ),
+	);
+
+	wp_add_inline_script(
+		'leaflet_js',
+		'window.bflmConfig = ' . wp_json_encode( $bflm_config ) . ';'
+	);
 }
 add_action( 'enqueue_block_assets', 'bflm_enqueue_block_assets' );
+
+// ---------------------------------------------------------------------------
+// Referrer policy (outer frame) — belt-and-suspenders companion to the inline
+// script injected into the iframe above.
+//
+// admin_head targets the outer admin document. WordPress propagates assets
+// collected via _wp_get_iframed_editor_assets() into the iframe, but an
+// explicit meta in the outer frame ensures the policy is active from the very
+// first navigation, before the iframe initialises.
+// ---------------------------------------------------------------------------
+
+/**
+ * Print a Referrer-Policy meta tag in the outer admin frame for the block
+ * editor so tile servers receive the full site URL as Referer.
+ */
+function bflm_admin_referrer_policy(): void {
+	if ( ! get_current_screen()?->is_block_editor() ) {
+		return;
+	}
+
+	echo '<meta name="referrer" content="no-referrer-when-downgrade">' . "\n";
+}
+add_action( 'admin_head', 'bflm_admin_referrer_policy' );
