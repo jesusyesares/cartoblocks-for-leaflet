@@ -3,26 +3,27 @@
  *
  * Editor component for the Leaflet Map Block.
  *
- * FRAME ARCHITECTURE NOTE
- * ───────────────────────
- * In WordPress 6.3+ the block canvas renders inside an iframe. React portals
- * the block's DOM into that iframe, so `previewRef.current` points to a node
- * in the IFRAME's document even though the JS closure runs in the outer frame.
+ * ARCHITECTURE: CLIENT-SIDE RENDERING
+ * ────────────────────────────────────
+ * Instead of ServerSideRender (which required script-cloning and MutationObserver
+ * hacks to work inside the WP 6.3+ iframed editor), we initialize Leaflet directly
+ * from React using the parent plugin's Leaflet global.
  *
- * This is the ONLY place in the plugin that can reliably observe the iframe DOM:
- * - view-editor.js runs in the outer frame → its document.body observer would
- *   never see mutations inside the iframe.
- * - useRef here gives us a live reference to a portal node inside the iframe.
+ * FRAME CONTEXT
+ * ─────────────
+ * - This file (editorScript) runs in the OUTER admin frame.
+ * - The block's DOM is portaled into the IFRAME by React.
+ * - `mapContainerRef.current` is therefore a node in the IFRAME document.
+ * - We reach the iframe's Leaflet via `container.ownerDocument.defaultView.L`.
+ * - Tile configuration (bflmConfig) is injected into the iframe window by PHP
+ *   via wp_add_inline_script on the `leaflet_js` handle.
  *
- * LOOP PREVENTION
- * ───────────────
- * Without a guard, dragging the map causes a feedback loop:
- *   drag → bflm-map-updated → setAttributes → SSR re-render → reinit → repeat.
- *
- * `isInternalUpdateRef` acts as a lock: it is set to true when a map-drag
- * triggers setAttributes, and automatically cleared after 1500 ms (long enough
- * for the SSR request + DOM mutation to complete). While the lock is held the
- * MutationObserver skips reinit, breaking the loop.
+ * FEEDBACK LOOP PREVENTION
+ * ─────────────────────────
+ * Dragging the map fires moveend → setAttributes → Effect 2 wants to call
+ * setView again. We guard with:
+ *   1. `isMapDragRef` flag: skips Effect 2 for one cycle after a drag.
+ *   2. Coordinate equality check: Effect 2 bails if position already matches.
  *
  * @package BlocksForLeafletMap
  */
@@ -30,7 +31,6 @@
 import { __ } from '@wordpress/i18n';
 import { useEffect, useRef } from '@wordpress/element';
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
-import { ServerSideRender } from '@wordpress/server-side-render';
 import {
 	PanelBody,
 	__experimentalNumberControl as NumberControl,
@@ -39,6 +39,10 @@ import {
 } from '@wordpress/components';
 
 import './editor.scss';
+
+/** Fallback tile URL if bflmConfig is not available in the iframe. */
+const FALLBACK_TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const FALLBACK_ATTRIBUTION = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 /**
  * Edit component for the Leaflet Map Block.
@@ -51,137 +55,177 @@ import './editor.scss';
 export default function Edit( { attributes, setAttributes } ) {
 	const { lat, lng, zoom, height, scrollWheelZoom, zoomControl } = attributes;
 
-	/**
-	 * ref to the block's outermost DOM node (inside the iframe via React portal).
-	 */
-	const previewRef = useRef( null );
+	/** Ref to the raw <div> that Leaflet will own as its map container. */
+	const mapContainerRef = useRef( null );
+
+	/** Ref to the live Leaflet map instance. */
+	const mapInstanceRef = useRef( null );
 
 	/**
-	 * Lock flag: true while a map-drag-originated setAttributes call is in flight.
-	 * Prevents the resulting SSR re-render from triggering an unnecessary reinit.
+	 * Flag set to true immediately after a map-drag triggers setAttributes.
+	 * Effect 2 reads this flag and skips the redundant setView call, then
+	 * resets the flag to false.
 	 *
 	 * @type {React.MutableRefObject<boolean>}
 	 */
-	const isInternalUpdateRef = useRef( false );
-
-	/**
-	 * Handle for the setTimeout that clears isInternalUpdateRef.
-	 *
-	 * @type {React.MutableRefObject<ReturnType<typeof setTimeout>|null>}
-	 */
-	const clearFlagTimerRef = useRef( null );
+	const isMapDragRef = useRef( false );
 
 	const blockProps = useBlockProps( {
-		ref:       previewRef,
 		className: 'bflm-leaflet-map-block',
 	} );
 
-	/**
-	 * MutationObserver scoped to this block's container (iframe DOM).
-	 * Runs once on mount; cleaned up on unmount.
-	 *
-	 * Skips reinit while isInternalUpdateRef is true so that SSR re-renders
-	 * caused by map drags do not trigger redundant re-initialization.
-	 */
+	// ── Effect 1: Mount — initialise the Leaflet map ─────────────────────────
+	//
+	// Runs once when the block mounts. Polls for the Leaflet global (L) in the
+	// iframe window, then creates the map, tile layer, and event listeners.
+	// Cleanup destroys the map instance on unmount.
 	useEffect( () => {
-		const container = previewRef.current;
-
-		if ( ! container || typeof MutationObserver === 'undefined' ) {
-			return;
-		}
-
-		/**
-		 * Schedule a map reinit via the debounced scheduler in view-editor.js.
-		 *
-		 * @param {Element} root
-		 */
-		function triggerReinit( root ) {
-			if ( typeof window.bflmScheduleReinit === 'function' ) {
-				window.bflmScheduleReinit( root );
-			} else if ( window.wp?.hooks ) {
-				window.wp.hooks.doAction(
-					'blocks-for-leaflet-map.reinitMaps',
-					root
-				);
-			}
-		}
-
-		// Initial scan: reinit immediately if a map is already in the DOM.
-		const existing = container.querySelector( '.WPLeafletMap' );
-		if ( existing ) {
-			triggerReinit( existing.parentElement || container );
-		}
-
-		const observer = new MutationObserver( ( mutations ) => {
-			// Skip mutations triggered by internal map-drag attribute updates.
-			// The lock is set in the bflm-map-updated handler below.
-			if ( isInternalUpdateRef.current ) {
-				return;
-			}
-
-			for ( const mutation of mutations ) {
-				for ( const node of mutation.addedNodes ) {
-					if ( node.nodeType !== Node.ELEMENT_NODE ) {
-						continue;
-					}
-
-					const mapNodes = node.querySelectorAll( '.WPLeafletMap' );
-					if ( ! mapNodes.length ) {
-						continue;
-					}
-
-					triggerReinit( mapNodes[ 0 ].parentElement || node );
-				}
-			}
-		} );
-
-		observer.observe( container, { childList: true, subtree: true } );
-
-		return () => observer.disconnect();
-	}, [] );
-
-	/**
-	 * Bi-directional sync: receive bflm-map-updated events from view-editor.js.
-	 *
-	 * The event is dispatched from .WPLeafletMap (inside the iframe) with
-	 * bubbles:true. It propagates up to previewRef.current (also in the iframe),
-	 * where this listener catches it and syncs the sidebar attributes.
-	 *
-	 * Sets isInternalUpdateRef before calling setAttributes so the resulting
-	 * SSR re-render is ignored by the MutationObserver above.
-	 */
-	useEffect( () => {
-		const container = previewRef.current;
+		const container = mapContainerRef.current;
 		if ( ! container ) {
 			return;
 		}
 
-		/**
-		 * @param {CustomEvent} event
-		 */
-		function handleMapUpdated( event ) {
-			const { lat: newLat, lng: newLng, zoom: newZoom } = event.detail;
-
-			// Engage the lock so the upcoming SSR re-render does not trigger reinit.
-			isInternalUpdateRef.current = true;
-			clearTimeout( clearFlagTimerRef.current );
-			clearFlagTimerRef.current = setTimeout( () => {
-				isInternalUpdateRef.current = false;
-			}, 1500 );
-
-			setAttributes( {
-				lat:  parseFloat( newLat.toFixed( 6 ) ),
-				lng:  parseFloat( newLng.toFixed( 6 ) ),
-				zoom: newZoom,
-			} );
+		// The container lives in the iframe; access globals from its window.
+		const iframeWin = container.ownerDocument?.defaultView;
+		if ( ! iframeWin ) {
+			return;
 		}
 
-		container.addEventListener( 'bflm-map-updated', handleMapUpdated );
+		let attempts = 0;
+		const MAX_ATTEMPTS = 20;
+
+		/**
+		 * Poll for L and initialise once available.
+		 */
+		function tryInit() {
+			// Guard: unmounted or already initialised.
+			if ( ! mapContainerRef.current || mapInstanceRef.current ) {
+				return;
+			}
+
+			const L = iframeWin.L;
+
+			if ( ! L ) {
+				if ( ++attempts < MAX_ATTEMPTS ) {
+					setTimeout( tryInit, 300 );
+				} else {
+					// eslint-disable-next-line no-console
+					console.warn( 'BFLM: Leaflet (L) not found in iframe after ' + MAX_ATTEMPTS + ' attempts.' );
+				}
+				return;
+			}
+
+			// Read tile settings injected by PHP into the iframe window.
+			const config      = iframeWin.bflmConfig || {};
+			const tileUrl     = config.tileUrl    || FALLBACK_TILE_URL;
+			const subdomains  = config.tileSubdomains || '';
+			const attribution = config.attribution || FALLBACK_ATTRIBUTION;
+
+			// eslint-disable-next-line no-console
+			console.log( 'BFLM: Initialising Leaflet map. Tile URL:', tileUrl );
+
+			const map = L.map( container, {
+				scrollWheelZoom,
+				zoomControl,
+				attributionControl: true,
+			} ).setView( [ lat, lng ], zoom );
+
+			L.tileLayer( tileUrl, {
+				attribution,
+				subdomains,
+				maxZoom: 19,
+			} ).addTo( map );
+
+			// Bi-directional sync: propagate map position back to block attributes.
+			map.on( 'moveend zoomend', () => {
+				const center = map.getCenter();
+				isMapDragRef.current = true;
+				setAttributes( {
+					lat:  parseFloat( center.lat.toFixed( 6 ) ),
+					lng:  parseFloat( center.lng.toFixed( 6 ) ),
+					zoom: map.getZoom(),
+				} );
+			} );
+
+			mapInstanceRef.current = map;
+			// eslint-disable-next-line no-console
+			console.log( 'BFLM: Map initialised.' );
+		}
+
+		tryInit();
+
 		return () => {
-			container.removeEventListener( 'bflm-map-updated', handleMapUpdated );
-			clearTimeout( clearFlagTimerRef.current );
+			if ( mapInstanceRef.current ) {
+				mapInstanceRef.current.remove();
+				mapInstanceRef.current = null;
+			}
 		};
-	}, [] );
+	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
+	// ^ Intentionally empty: we only want to init/destroy with mount/unmount.
+	//   Attribute changes are handled by dedicated effects below.
+
+	// ── Effect 2: Sync lat / lng / zoom from sidebar to existing map ─────────
+	useEffect( () => {
+		const map = mapInstanceRef.current;
+		if ( ! map ) {
+			return;
+		}
+
+		// Skip if this change was triggered by a map drag (not the user typing
+		// in the sidebar) to avoid an immediate setView echo.
+		if ( isMapDragRef.current ) {
+			isMapDragRef.current = false;
+			return;
+		}
+
+		const center  = map.getCenter();
+		const epsilon = 0.000001;
+		const same    =
+			Math.abs( center.lat - lat ) < epsilon &&
+			Math.abs( center.lng - lng ) < epsilon &&
+			map.getZoom() === zoom;
+
+		if ( ! same ) {
+			map.setView( [ lat, lng ], zoom, { animate: false } );
+		}
+	}, [ lat, lng, zoom ] ); // eslint-disable-line react-hooks/exhaustive-deps
+
+	// ── Effect 3: Respond to height changes ───────────────────────────────────
+	useEffect( () => {
+		if ( ! mapInstanceRef.current ) {
+			return;
+		}
+		// Allow the CSS change to apply before asking Leaflet to recalculate.
+		const id = setTimeout( () => mapInstanceRef.current?.invalidateSize(), 0 );
+		return () => clearTimeout( id );
+	}, [ height ] );
+
+	// ── Effect 4: Toggle scroll-wheel zoom ────────────────────────────────────
+	useEffect( () => {
+		const map = mapInstanceRef.current;
+		if ( ! map ) {
+			return;
+		}
+		if ( scrollWheelZoom ) {
+			map.scrollWheelZoom.enable();
+		} else {
+			map.scrollWheelZoom.disable();
+		}
+	}, [ scrollWheelZoom ] );
+
+	// ── Effect 5: Toggle zoom control ─────────────────────────────────────────
+	useEffect( () => {
+		const map = mapInstanceRef.current;
+		if ( ! map ) {
+			return;
+		}
+		if ( zoomControl ) {
+			// addTo is safe to call even if already added.
+			map.zoomControl.addTo( map );
+		} else {
+			map.zoomControl.remove();
+		}
+	}, [ zoomControl ] );
 
 	return (
 		<>
@@ -252,10 +296,14 @@ export default function Edit( { attributes, setAttributes } ) {
 				</PanelBody>
 			</InspectorControls>
 
-			<div { ...blockProps }>
-				<ServerSideRender
-					block="blocks-for-leaflet-map/leaflet-map-block"
-					attributes={ attributes }
+			<div
+				{ ...blockProps }
+				onMouseDown={ ( e ) => e.stopPropagation() }
+			>
+				<div
+					ref={ mapContainerRef }
+					className="bflm-map-canvas"
+					style={ { height: height + 'px' } }
 				/>
 			</div>
 		</>

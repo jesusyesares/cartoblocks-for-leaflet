@@ -1,18 +1,21 @@
 /**
  * Editor-only styles for the Leaflet Map Block.
  *
- * .bflm-leaflet-map-block is added via useBlockProps className in edit.js.
+ * .bflm-leaflet-map-block  — the useBlockProps wrapper (outer frame / React).
+ * .bflm-map-canvas         — the raw <div> Leaflet owns as its map container.
  */
 
 .bflm-leaflet-map-block {
-	// Prevent the browser from selecting text or triggering a native drag
-	// when the user clicks and drags to pan the Leaflet map.
+	// Prevent text selection and native browser drag from interfering when
+	// the user clicks and drags to pan the Leaflet map.
 	user-select: none;
 	-webkit-user-drag: none;
 
-	// Ensure the Leaflet map container receives all pointer events so that
-	// panning, zooming, and clicking work correctly inside the block editor.
-	.WPLeafletMap {
+	// The map canvas must receive all pointer events so panning, zooming,
+	// and clicking work correctly inside the block editor iframe.
+	.bflm-map-canvas {
 		pointer-events: all;
+		width: 100%;
+		display: block;
 	}
 }
