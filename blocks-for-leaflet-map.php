@@ -3,7 +3,7 @@
  * Plugin Name:       Blocks for Leaflet Map
  * Plugin URI:        https://github.com/jesusyesares/blocks-for-leaflet-map
  * Description:       A dynamic Gutenberg block that wraps the Leaflet Map plugin shortcodes. Requires the "Leaflet Map" plugin to be installed and active.
- * Version:           0.2.0
+ * Version:           0.2.1
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Jesús Yesares García
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-define( 'BFLM_VERSION', '0.2.0' );
+define( 'BFLM_VERSION', '0.2.1' );
 define( 'BFLM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BFLM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BFLM_LEAFLET_MAP_PLUGIN', 'leaflet-map/leaflet-map.php' );
@@ -126,14 +126,18 @@ function bflm_enqueue_block_assets(): void {
 	wp_enqueue_style( 'leaflet_stylesheet' );
 	wp_enqueue_script( 'leaflet_js' );
 
-	// ── Referrer policy ──────────────────────────────────────────────────────
+	// ── Referrer policy (iframe) ─────────────────────────────────────────────
 	// The iframe's default referrer policy ("strict-origin-when-cross-origin")
 	// strips the URL path, causing tile servers (e.g. OpenStreetMap) to return
-	// 403 "Referer required" errors. Injecting a <meta name="referrer"> before
-	// Leaflet loads ensures the full site URL is sent with tile requests.
+	// 403 "Referer required" errors.
+	//
+	// We use document.head.prepend() so the meta becomes the absolute first
+	// element in <head>, guaranteeing it is parsed before any network request
+	// (including the Leaflet CSS from unpkg) that might otherwise fire under
+	// the stricter default policy.
 	wp_add_inline_script(
 		'leaflet_js',
-		"( function () { var m = document.createElement( 'meta' ); m.name = 'referrer'; m.content = 'no-referrer-when-downgrade'; document.head.insertBefore( m, document.head.firstChild ); }() );",
+		"( function () { var m = document.createElement( 'meta' ); m.name = 'referrer'; m.content = 'no-referrer-when-downgrade'; document.head.prepend( m ); }() );",
 		'before'
 	);
 
@@ -157,19 +161,18 @@ function bflm_enqueue_block_assets(): void {
 add_action( 'enqueue_block_assets', 'bflm_enqueue_block_assets' );
 
 // ---------------------------------------------------------------------------
-// Referrer policy — tile servers (e.g. OpenStreetMap) require a Referer header
-// to serve tiles. WordPress 6.3+ renders the block editor inside an iframe
-// whose default referrer policy is "strict-origin-when-cross-origin", which
-// strips the full URL and can cause 403 "Access blocked" errors on map tiles.
+// Referrer policy (outer frame) — belt-and-suspenders companion to the inline
+// script injected into the iframe above.
 //
-// Printing a <meta name="referrer"> tag in admin_head propagates into the
-// editor iframe via _wp_get_iframed_editor_assets(), ensuring the site URL
-// is sent as Referer on cross-origin tile requests.
+// admin_head targets the outer admin document. WordPress propagates assets
+// collected via _wp_get_iframed_editor_assets() into the iframe, but an
+// explicit meta in the outer frame ensures the policy is active from the very
+// first navigation, before the iframe initialises.
 // ---------------------------------------------------------------------------
 
 /**
- * Print a Referrer-Policy meta tag in the block editor so tile servers receive
- * the full site URL as Referer and do not block tile requests with 403 errors.
+ * Print a Referrer-Policy meta tag in the outer admin frame for the block
+ * editor so tile servers receive the full site URL as Referer.
  */
 function bflm_admin_referrer_policy(): void {
 	if ( ! get_current_screen()?->is_block_editor() ) {
