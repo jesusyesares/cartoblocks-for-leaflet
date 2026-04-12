@@ -133,12 +133,15 @@ export default function Edit( { attributes, setAttributes } ) {
 			L.tileLayer( tileUrl, {
 				attribution,
 				subdomains,
-				maxZoom: 19,
+				maxZoom:     19,
+				crossOrigin: true,
 			} ).addTo( map );
 
 			// Bi-directional sync: propagate map position back to block attributes.
 			map.on( 'moveend zoomend', () => {
 				const center = map.getCenter();
+				// eslint-disable-next-line no-console
+				console.log( 'BFLM: drag lock engaged — skipping next setView.' );
 				isMapDragRef.current = true;
 				setAttributes( {
 					lat:  parseFloat( center.lat.toFixed( 6 ) ),
@@ -175,6 +178,8 @@ export default function Edit( { attributes, setAttributes } ) {
 		// in the sidebar) to avoid an immediate setView echo.
 		if ( isMapDragRef.current ) {
 			isMapDragRef.current = false;
+			// eslint-disable-next-line no-console
+			console.log( 'BFLM: drag lock released — setView skipped.' );
 			return;
 		}
 
