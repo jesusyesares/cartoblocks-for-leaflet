@@ -1,21 +1,58 @@
 /**
  * Editor-only styles for the Leaflet Map Block.
  *
- * .bflm-leaflet-map-block  — the useBlockProps wrapper (outer frame / React).
+ * .bflm-leaflet-map-block  — the useBlockProps wrapper added by React.
  * .bflm-map-canvas         — the raw <div> Leaflet owns as its map container.
  */
 
 .bflm-leaflet-map-block {
-	// Prevent text selection and native browser drag from interfering when
-	// the user clicks and drags to pan the Leaflet map.
+	// Prevent the browser from treating a map-pan drag as text selection or
+	// as a native element drag (which would move the whole block).
 	user-select: none;
 	-webkit-user-drag: none;
 
-	// The map canvas must receive all pointer events so panning, zooming,
-	// and clicking work correctly inside the block editor iframe.
 	.bflm-map-canvas {
+		// The container must receive all pointer events so that Leaflet's own
+		// mouse/touch handlers work correctly inside the iframed editor.
 		pointer-events: all;
 		width: 100%;
 		display: block;
+
+		// Show a grab cursor while hovering and a grabbing cursor while panning.
+		cursor: grab;
+
+		&:active {
+			cursor: grabbing;
+		}
+
+		// ── Leaflet overrides for the block editor context ──────────────────
+
+		// Ensure the map pane and its children stack above Gutenberg UI
+		// layers (e.g. block movers, selection outline) so map controls
+		// remain fully clickable.
+		.leaflet-pane,
+		.leaflet-top,
+		.leaflet-bottom {
+			z-index: 1;
+		}
+
+		// The zoom +/− control and attribution link must be clickable.
+		.leaflet-control {
+			cursor: pointer;
+			pointer-events: all;
+		}
+
+		// Draggable marker icons need a move cursor and full pointer events.
+		.leaflet-marker-icon,
+		.leaflet-marker-shadow {
+			cursor: move;
+			pointer-events: all;
+		}
+
+		// Keep the attribution text readable regardless of the block theme.
+		.leaflet-control-attribution {
+			font-size: 11px;
+			line-height: 1.4;
+		}
 	}
 }
