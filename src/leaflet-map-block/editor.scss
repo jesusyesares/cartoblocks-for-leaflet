@@ -1,58 +1,15 @@
 /**
  * Editor-only styles for the Leaflet Map Block.
  *
- * .bflm-leaflet-map-block  — the useBlockProps wrapper added by React.
- * .bflm-map-canvas         — the raw <div> Leaflet owns as its map container.
+ * The map is rendered inside an <iframe> (wp_ajax_bflm_preview), so Leaflet
+ * cursor, z-index, and pointer-event overrides are not needed here.
+ * Only the block wrapper needs to opt out of browser text-selection and
+ * native-drag behaviour that would interfere with Gutenberg's block controls.
  */
 
 .bflm-leaflet-map-block {
-	// Prevent the browser from treating a map-pan drag as text selection or
-	// as a native element drag (which would move the whole block).
+	// Prevent the browser from treating a drag gesture as text selection or
+	// as a native element drag (which would move the whole block in the editor).
 	user-select: none;
 	-webkit-user-drag: none;
-
-	.bflm-map-canvas {
-		// The container must receive all pointer events so that Leaflet's own
-		// mouse/touch handlers work correctly inside the iframed editor.
-		pointer-events: all;
-		width: 100%;
-		display: block;
-
-		// Show a grab cursor while hovering and a grabbing cursor while panning.
-		cursor: grab;
-
-		&:active {
-			cursor: grabbing;
-		}
-
-		// ── Leaflet overrides for the block editor context ──────────────────
-
-		// Ensure the map pane and its children stack above Gutenberg UI
-		// layers (e.g. block movers, selection outline) so map controls
-		// remain fully clickable.
-		.leaflet-pane,
-		.leaflet-top,
-		.leaflet-bottom {
-			z-index: 1;
-		}
-
-		// The zoom +/− control and attribution link must be clickable.
-		.leaflet-control {
-			cursor: pointer;
-			pointer-events: all;
-		}
-
-		// Draggable marker icons need a move cursor and full pointer events.
-		.leaflet-marker-icon,
-		.leaflet-marker-shadow {
-			cursor: move;
-			pointer-events: all;
-		}
-
-		// Keep the attribution text readable regardless of the block theme.
-		.leaflet-control-attribution {
-			font-size: 11px;
-			line-height: 1.4;
-		}
-	}
 }
