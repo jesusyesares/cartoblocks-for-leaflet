@@ -3,26 +3,46 @@
  *
  * Editor component for the Leaflet Map Block.
  *
- * ARCHITECTURE: IFRAME PREVIEW
- * ─────────────────────────────
- * The editor renders an <iframe> whose src points to a WordPress AJAX endpoint
- * (wp_ajax_bflm_preview). That endpoint outputs a complete HTML page that
- * processes [leaflet-map] / [leaflet-marker] shortcodes through the Leaflet Map
- * plugin — identical to the frontend render. This means tiles are requested
- * from a real WordPress page context (not a blob: / about:srcdoc iframe), so
- * the browser sends a proper Referer header and OSM 403 errors are eliminated.
+ * ARCHITECTURE: IFRAME PREVIEW + postMessage BIDIRECTIONAL SYNC
+ * ──────────────────────────────────────────────────────────────
+ * The editor renders an <iframe> whose src points to wp_ajax_bflm_preview,
+ * a WordPress AJAX endpoint that outputs a full HTML page with the map
+ * rendered via Leaflet Map shortcodes — identical to the frontend.
  *
- * When attributes change, the iframe src is rebuilt with updated query params.
- * A 500 ms debounce prevents excessive reloads on rapid sidebar input.
+ * FRAME HIERARCHY (WP 6.3+ iframed editor)
+ * ─────────────────────────────────────────
+ *   outer admin frame  ← edit.js runs here (this file)
+ *     └─ WP canvas iframe  (srcdoc, same-origin)
+ *          └─ our preview iframe  (admin-ajax.php, same-origin)
  *
- * The InspectorControls panels (Map Settings, Markers) are kept exactly as
- * they were in the client-side-rendering architecture.
+ * COMMUNICATION CHANNELS
+ * ──────────────────────
+ *   Outer → Preview  (iframeRef.current.contentWindow.postMessage)
+ *     type: 'bflm_set_view'  — sidebar lat/lng/zoom change → map.setView()
+ *
+ *   Preview → Outer  (window.top.postMessage, received on window here)
+ *     type: 'bflm_map_update'    — user pan/zoom → update lat/lng/zoom attrs
+ *     type: 'bflm_marker_update' — marker drag  → update marker lat/lng attr
+ *
+ * SRC REBUILD vs. postMessage
+ * ───────────────────────────
+ *   Structural changes (height, scrollWheelZoom, zoomControl, markers):
+ *     Rebuild iframe.src → full reload (500 ms debounce).
+ *
+ *   View changes (lat, lng, zoom) from the sidebar:
+ *     Send bflm_set_view postMessage → no tile reload (100 ms debounce).
+ *
+ * ECHO LOOP PREVENTION
+ * ─────────────────────
+ *   isIframeUpdateRef is set true before setAttributes() calls that originate
+ *   from incoming iframe messages. The lat/lng/zoom view-change effect reads
+ *   this flag, skips the echo postMessage, then clears the flag.
  *
  * @package BlocksForLeafletMap
  */
 
 import { __, sprintf } from '@wordpress/i18n';
-import { useEffect, useRef, useCallback } from '@wordpress/element';
+import { useEffect, useRef } from '@wordpress/element';
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
 import {
 	PanelBody,
@@ -37,10 +57,12 @@ import {
 import './editor.scss';
 
 /**
- * Build the preview iframe src URL from block attributes.
+ * Build the full preview iframe src URL from block attributes.
+ * All attributes are included so the map initialises at the correct position
+ * on every full reload (mount or structural change).
  *
  * @param {Object} attributes Block attributes.
- * @return {string} Full URL with query parameters.
+ * @return {string} URL string, or empty string if bflmEditor is unavailable.
  */
 function buildPreviewUrl( attributes ) {
 	const { lat, lng, zoom, height, scrollWheelZoom, zoomControl, markers } =
@@ -54,10 +76,10 @@ function buildPreviewUrl( attributes ) {
 	const params = new URLSearchParams( {
 		action:          'bflm_preview',
 		bflm_nonce:      previewNonce,
-		lat:             lat,
-		lng:             lng,
-		zoom:            zoom,
-		height:          height,
+		lat,
+		lng,
+		zoom,
+		height,
 		scrollWheelZoom: scrollWheelZoom ? 'true' : 'false',
 		zoomControl:     zoomControl     ? 'true' : 'false',
 		markers:         JSON.stringify( markers ),
@@ -88,36 +110,150 @@ export default function Edit( { attributes, setAttributes } ) {
 	/** Reference to the <iframe> DOM element. */
 	const iframeRef = useRef( null );
 
-	/** setTimeout handle for the 500 ms src-update debounce. */
-	const debounceRef = useRef( null );
+	/**
+	 * Always-current snapshot of all block attributes. Debounced callbacks in
+	 * structural and view effects capture this ref to avoid stale closures.
+	 *
+	 * @type {React.MutableRefObject<Object>}
+	 */
+	const attributesRef = useRef( attributes );
+
+	/**
+	 * Set true before setAttributes() calls triggered by incoming iframe
+	 * postMessages so the view-change effect does not echo back to the iframe.
+	 *
+	 * @type {React.MutableRefObject<boolean>}
+	 */
+	const isIframeUpdateRef = useRef( false );
+
+	/** setTimeout handle for the 500 ms structural-change src-rebuild debounce. */
+	const srcDebounceRef = useRef( null );
+
+	/** setTimeout handle for the 100 ms view postMessage debounce. */
+	const viewDebounceRef = useRef( null );
 
 	const blockProps = useBlockProps( {
 		className: 'bflm-leaflet-map-block',
 	} );
 
-	// Update iframe src whenever any map attribute changes, debounced 500 ms.
+	// Keep attributesRef current after every render (no dep array = always).
 	useEffect( () => {
-		clearTimeout( debounceRef.current );
-		debounceRef.current = setTimeout( () => {
+		attributesRef.current = attributes;
+	} );
+
+	// ── Mount: set initial iframe src immediately ─────────────────────────────
+	useEffect( () => {
+		const iframe = iframeRef.current;
+		if ( ! iframe ) {
+			return;
+		}
+		const url = buildPreviewUrl( attributesRef.current );
+		if ( url ) {
+			iframe.src = url;
+		}
+	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
+
+	// ── Structural changes → rebuild iframe src (500 ms debounce) ─────────────
+	//
+	// Fired by height, scrollWheelZoom, zoomControl, or markers changes.
+	// Uses attributesRef so the rebuilt URL reflects the current lat/lng/zoom
+	// (which may have drifted via postMessage since the last full load).
+	useEffect( () => {
+		clearTimeout( srcDebounceRef.current );
+		srcDebounceRef.current = setTimeout( () => {
 			const iframe = iframeRef.current;
 			if ( ! iframe ) {
 				return;
 			}
-			const url = buildPreviewUrl( attributes );
+			const url = buildPreviewUrl( attributesRef.current );
+			// Guard against a spurious reload on first mount (mount effect
+			// already set the same URL synchronously).
 			if ( url && iframe.src !== url ) {
 				iframe.src = url;
 			}
 		}, 500 );
 
-		return () => clearTimeout( debounceRef.current );
-	}, [ lat, lng, zoom, height, scrollWheelZoom, zoomControl, markers ] ); // eslint-disable-line react-hooks/exhaustive-deps
+		return () => clearTimeout( srcDebounceRef.current );
+	}, [ height, scrollWheelZoom, zoomControl, markers ] ); // eslint-disable-line react-hooks/exhaustive-deps
+
+	// ── View changes (sidebar) → postMessage to iframe (100 ms debounce) ──────
+	//
+	// When lat/lng/zoom change from the sidebar send bflm_set_view so the
+	// iframe calls map.setView() without reloading. Skip when the change
+	// originated from the iframe itself (isIframeUpdateRef echo prevention).
+	useEffect( () => {
+		if ( isIframeUpdateRef.current ) {
+			isIframeUpdateRef.current = false;
+			return;
+		}
+
+		clearTimeout( viewDebounceRef.current );
+		viewDebounceRef.current = setTimeout( () => {
+			const iframe = iframeRef.current;
+			if ( ! iframe?.contentWindow ) {
+				return;
+			}
+			const { lat: currentLat, lng: currentLng, zoom: currentZoom } =
+				attributesRef.current;
+			iframe.contentWindow.postMessage(
+				{ type: 'bflm_set_view', lat: currentLat, lng: currentLng, zoom: currentZoom },
+				'*'
+			);
+		}, 100 );
+
+		return () => clearTimeout( viewDebounceRef.current );
+	}, [ lat, lng, zoom ] ); // eslint-disable-line react-hooks/exhaustive-deps
+
+	// ── Incoming postMessages from the preview iframe ─────────────────────────
+	useEffect( () => {
+		/**
+		 * Handle postMessages sent by the preview iframe via window.top.
+		 *
+		 * @param {MessageEvent} event Browser message event.
+		 */
+		function handleMessage( event ) {
+			const msg = event.data;
+			if ( ! msg || typeof msg.type !== 'string' ) {
+				return;
+			}
+
+			if ( msg.type === 'bflm_map_update' ) {
+				// Flag the update so the lat/lng/zoom effect skips the echo.
+				isIframeUpdateRef.current = true;
+				setAttributes( {
+					lat:  parseFloat( msg.lat.toFixed( 6 ) ),
+					lng:  parseFloat( msg.lng.toFixed( 6 ) ),
+					zoom: msg.zoom,
+				} );
+				return;
+			}
+
+			if ( msg.type === 'bflm_marker_update' ) {
+				const currentMarkers = attributesRef.current.markers;
+				setAttributes( {
+					markers: currentMarkers.map( ( m, i ) =>
+						i === msg.index
+							? {
+								...m,
+								lat: parseFloat( msg.lat.toFixed( 6 ) ),
+								lng: parseFloat( msg.lng.toFixed( 6 ) ),
+							}
+							: m
+					),
+				} );
+			}
+		}
+
+		window.addEventListener( 'message', handleMessage );
+		return () => window.removeEventListener( 'message', handleMessage );
+	}, [ setAttributes ] );
 
 	// ── Marker attribute helpers ──────────────────────────────────────────────
 
 	/**
 	 * Append a new marker at the current lat/lng attribute values.
 	 */
-	const handleAddMarker = useCallback( () => {
+	function handleAddMarker() {
 		setAttributes( {
 			markers: [
 				...markers,
@@ -129,7 +265,7 @@ export default function Edit( { attributes, setAttributes } ) {
 				},
 			],
 		} );
-	}, [ markers, lat, lng, setAttributes ] );
+	}
 
 	/**
 	 * Merge an update object into a single marker by index.
@@ -315,7 +451,6 @@ export default function Edit( { attributes, setAttributes } ) {
 			<div { ...blockProps }>
 				<iframe
 					ref={ iframeRef }
-					src={ buildPreviewUrl( attributes ) }
 					width="100%"
 					height={ height }
 					style={ { border: 'none', display: 'block' } }

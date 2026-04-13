@@ -185,6 +185,80 @@ function bflm_preview_map(): void {
 	echo do_shortcode( $map_shortcode . $marker_shortcodes );
 	?>
 </div>
+<script>
+( function () {
+	var attempts          = 0;
+	var MAX_ATTEMPTS      = 50;
+	var isProgrammaticMove = false;
+
+	/**
+	 * Poll for the Leaflet Map plugin's map instance, then wire up
+	 * bidirectional postMessage communication with the editor frame.
+	 *
+	 * window.top is used (not window.parent) because this iframe is nested
+	 * two levels deep: outer admin frame → WP canvas iframe → this iframe.
+	 * window.top reaches the outer admin frame where edit.js listens.
+	 *
+	 * '*' is used as the target origin for postMessage. Both this iframe and
+	 * the editor run on the same WordPress origin (admin-ajax.php / wp-admin),
+	 * so this is safe. Restrict to a specific origin for stricter isolation.
+	 */
+	function init() {
+		var plugin = window.WPLeafletMapPlugin;
+		if ( ! plugin || ! plugin.maps || ! plugin.maps[ 0 ] ) {
+			if ( ++attempts < MAX_ATTEMPTS ) {
+				setTimeout( init, 200 );
+			}
+			return;
+		}
+
+		var map     = plugin.maps[ 0 ];
+		var markers = plugin.markers || [];
+
+		// User pans / zooms → notify the editor.
+		map.on( 'moveend zoomend', function () {
+			if ( isProgrammaticMove ) {
+				return;
+			}
+			var center = map.getCenter();
+			window.top.postMessage(
+				{ type: 'bflm_map_update', lat: center.lat, lng: center.lng, zoom: map.getZoom() },
+				'*'
+			);
+		} );
+
+		// Make each marker draggable and relay dragend to the editor.
+		markers.forEach( function ( marker, i ) {
+			if ( marker.dragging && ! marker.dragging.enabled() ) {
+				marker.dragging.enable();
+			}
+			marker.on( 'dragend', function ( e ) {
+				var pos = e.target.getLatLng();
+				window.top.postMessage(
+					{ type: 'bflm_marker_update', index: i, lat: pos.lat, lng: pos.lng },
+					'*'
+				);
+			} );
+		} );
+
+		// Receive setView commands sent by the editor.
+		window.addEventListener( 'message', function ( e ) {
+			if ( ! e.data || e.data.type !== 'bflm_set_view' ) {
+				return;
+			}
+			// Clear the guard flag only after the (animated) move ends, not
+			// immediately, so moveend does not echo during the transition.
+			isProgrammaticMove = true;
+			map.once( 'moveend', function () {
+				isProgrammaticMove = false;
+			} );
+			map.setView( [ e.data.lat, e.data.lng ], e.data.zoom, { animate: true } );
+		} );
+	}
+
+	init();
+}() );
+</script>
 <?php wp_footer(); ?>
 </body>
 </html>
