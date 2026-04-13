@@ -119,6 +119,7 @@ function bflm_preview_map(): void {
 	$height           = isset( $_GET['height'] ) ? absint( $_GET['height'] ) : 400;
 	$scroll_wheel     = ! empty( $_GET['scrollWheelZoom'] ) && 'true' === $_GET['scrollWheelZoom'] ? 'true' : 'false';
 	$zoom_ctrl        = ! isset( $_GET['zoomControl'] ) || 'false' !== $_GET['zoomControl'] ? 'true' : 'false';
+	$block_id         = isset( $_GET['blockId'] ) ? sanitize_text_field( wp_unslash( $_GET['blockId'] ) ) : '';
 	$markers_raw      = isset( $_GET['markers'] ) ? wp_unslash( $_GET['markers'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON decoded and each field sanitised below.
 	$markers_decoded  = json_decode( $markers_raw, true );
 	$markers          = is_array( $markers_decoded ) ? $markers_decoded : array();
@@ -187,6 +188,7 @@ function bflm_preview_map(): void {
 </div>
 <script>
 ( function () {
+	var blockId           = <?php echo wp_json_encode( $block_id ); ?>;
 	var attempts          = 0;
 	var MAX_ATTEMPTS      = 50;
 	var isProgrammaticMove = false;
@@ -202,6 +204,9 @@ function bflm_preview_map(): void {
 	 * '*' is used as the target origin for postMessage. Both this iframe and
 	 * the editor run on the same WordPress origin (admin-ajax.php / wp-admin),
 	 * so this is safe. Restrict to a specific origin for stricter isolation.
+	 *
+	 * blockId scopes every message to this specific block instance so that
+	 * multiple map blocks on the same page do not interfere with each other.
 	 */
 	function init() {
 		var plugin = window.WPLeafletMapPlugin;
@@ -222,7 +227,7 @@ function bflm_preview_map(): void {
 			}
 			var center = map.getCenter();
 			window.top.postMessage(
-				{ type: 'bflm_map_update', lat: center.lat, lng: center.lng, zoom: map.getZoom() },
+				{ type: 'bflm_map_update', blockId: blockId, lat: center.lat, lng: center.lng, zoom: map.getZoom() },
 				'*'
 			);
 		} );
@@ -235,15 +240,16 @@ function bflm_preview_map(): void {
 			marker.on( 'dragend', function ( e ) {
 				var pos = e.target.getLatLng();
 				window.top.postMessage(
-					{ type: 'bflm_marker_update', index: i, lat: pos.lat, lng: pos.lng },
+					{ type: 'bflm_marker_update', blockId: blockId, index: i, lat: pos.lat, lng: pos.lng },
 					'*'
 				);
 			} );
 		} );
 
 		// Receive setView commands sent by the editor.
+		// Guard with blockId so only the matching block's message is acted on.
 		window.addEventListener( 'message', function ( e ) {
-			if ( ! e.data || e.data.type !== 'bflm_set_view' ) {
+			if ( ! e.data || e.data.type !== 'bflm_set_view' || e.data.blockId !== blockId ) {
 				return;
 			}
 			// Clear the guard flag only after the (animated) move ends, not

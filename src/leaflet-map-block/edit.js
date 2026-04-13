@@ -62,9 +62,11 @@ import './editor.scss';
  * on every full reload (mount or structural change).
  *
  * @param {Object} attributes Block attributes.
+ * @param {string} clientId   Block client ID — passed to the iframe as blockId
+ *                            so the preview script can scope postMessages.
  * @return {string} URL string, or empty string if bflmEditor is unavailable.
  */
-function buildPreviewUrl( attributes ) {
+function buildPreviewUrl( attributes, clientId ) {
 	const { lat, lng, zoom, height, scrollWheelZoom, zoomControl, markers } =
 		attributes;
 
@@ -76,6 +78,7 @@ function buildPreviewUrl( attributes ) {
 	const params = new URLSearchParams( {
 		action:          'bflm_preview',
 		bflm_nonce:      previewNonce,
+		blockId:         clientId,
 		lat,
 		lng,
 		zoom,
@@ -96,7 +99,7 @@ function buildPreviewUrl( attributes ) {
  * @param {Function} props.setAttributes Attribute setter.
  * @return {Element} Element to render.
  */
-export default function Edit( { attributes, setAttributes, isSelected } ) {
+export default function Edit( { attributes, setAttributes, isSelected, clientId } ) {
 	const {
 		lat,
 		lng,
@@ -119,6 +122,14 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 	const attributesRef = useRef( attributes );
 
 	/**
+	 * Always-current copy of clientId. Used in the message handler to filter
+	 * out postMessages that belong to other block instances on the same page.
+	 *
+	 * @type {React.MutableRefObject<string>}
+	 */
+	const clientIdRef = useRef( clientId );
+
+	/**
 	 * Set true before setAttributes() calls triggered by incoming iframe
 	 * postMessages so the view-change effect does not echo back to the iframe.
 	 *
@@ -136,9 +147,10 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 		className: 'bflm-leaflet-map-block',
 	} );
 
-	// Keep attributesRef current after every render (no dep array = always).
+	// Keep attributesRef and clientIdRef current after every render.
 	useEffect( () => {
 		attributesRef.current = attributes;
+		clientIdRef.current   = clientId;
 	} );
 
 	// ── Mount: set initial iframe src immediately ─────────────────────────────
@@ -147,7 +159,7 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 		if ( ! iframe ) {
 			return;
 		}
-		const url = buildPreviewUrl( attributesRef.current );
+		const url = buildPreviewUrl( attributesRef.current, clientIdRef.current );
 		if ( url ) {
 			iframe.src = url;
 		}
@@ -165,7 +177,7 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 			if ( ! iframe ) {
 				return;
 			}
-			const url = buildPreviewUrl( attributesRef.current );
+			const url = buildPreviewUrl( attributesRef.current, clientIdRef.current );
 			// Guard against a spurious reload on first mount (mount effect
 			// already set the same URL synchronously).
 			if ( url && iframe.src !== url ) {
@@ -196,7 +208,7 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 			const { lat: currentLat, lng: currentLng, zoom: currentZoom } =
 				attributesRef.current;
 			iframe.contentWindow.postMessage(
-				{ type: 'bflm_set_view', lat: currentLat, lng: currentLng, zoom: currentZoom },
+				{ type: 'bflm_set_view', blockId: clientIdRef.current, lat: currentLat, lng: currentLng, zoom: currentZoom },
 				'*'
 			);
 		}, 100 );
@@ -214,6 +226,11 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 		function handleMessage( event ) {
 			const msg = event.data;
 			if ( ! msg || typeof msg.type !== 'string' ) {
+				return;
+			}
+
+			// Ignore messages that belong to a different block instance.
+			if ( msg.blockId !== clientIdRef.current ) {
 				return;
 			}
 
