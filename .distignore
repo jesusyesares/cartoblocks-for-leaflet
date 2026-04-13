@@ -1,0 +1,9 @@
+.claude
+.editorconfig
+.git
+.gitignore
+CLAUDE.md
+node_modules
+src
+package.json
+package-lock.json
