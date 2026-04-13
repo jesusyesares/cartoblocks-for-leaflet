@@ -2,6 +2,7 @@
 .editorconfig
 .git
 .gitignore
+CHANGELOG.md
 CLAUDE.md
 node_modules
 src
