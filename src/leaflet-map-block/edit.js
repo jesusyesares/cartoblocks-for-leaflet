@@ -42,7 +42,7 @@
  */
 
 import { __, sprintf } from '@wordpress/i18n';
-import { useEffect, useRef } from '@wordpress/element';
+import { useEffect, useRef, useState } from '@wordpress/element';
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
 import {
 	PanelBody,
@@ -96,7 +96,7 @@ function buildPreviewUrl( attributes ) {
  * @param {Function} props.setAttributes Attribute setter.
  * @return {Element} Element to render.
  */
-export default function Edit( { attributes, setAttributes } ) {
+export default function Edit( { attributes, setAttributes, isSelected } ) {
 	const {
 		lat,
 		lng,
@@ -449,14 +449,29 @@ export default function Edit( { attributes, setAttributes } ) {
 			</InspectorControls>
 
 			<div { ...blockProps }>
-				<iframe
-					ref={ iframeRef }
-					width="100%"
-					height={ height }
-					style={ { border: 'none', display: 'block' } }
-					sandbox="allow-scripts allow-same-origin"
-					title={ __( 'Map preview', 'blocks-for-leaflet-map' ) }
-				/>
+				<div style={ { position: 'relative' } }>
+					<iframe
+						ref={ iframeRef }
+						width="100%"
+						height={ height }
+						style={ { border: 'none', display: 'block' } }
+						sandbox="allow-scripts allow-same-origin"
+						title={ __( 'Map preview', 'blocks-for-leaflet-map' ) }
+					/>
+					{ ! isSelected && (
+						<div
+							style={ {
+								position: 'absolute',
+								top:      0,
+								left:     0,
+								width:    '100%',
+								height:   '100%',
+								zIndex:   1,
+								cursor:   'pointer',
+							} }
+						/>
+					) }
+				</div>
 			</div>
 		</>
 	);
