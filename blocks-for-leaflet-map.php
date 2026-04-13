@@ -3,7 +3,7 @@
  * Plugin Name:       Blocks for Leaflet Map
  * Plugin URI:        https://github.com/jesusyesares/blocks-for-leaflet-map
  * Description:       A dynamic Gutenberg block that wraps the Leaflet Map plugin shortcodes. Requires the "Leaflet Map" plugin to be installed and active.
- * Version:           0.2.1
+ * Version:           0.3.0-alpha
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Jesús Yesares García
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-define( 'BFLM_VERSION', '0.2.1' );
+define( 'BFLM_VERSION', '0.3.0-alpha' );
 define( 'BFLM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BFLM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BFLM_LEAFLET_MAP_PLUGIN', 'leaflet-map/leaflet-map.php' );
@@ -93,92 +93,197 @@ function bflm_register_blocks(): void {
 add_action( 'init', 'bflm_register_blocks' );
 
 // ---------------------------------------------------------------------------
-// Editor asset loading — make Leaflet JS/CSS available in the block editor
-// iframe (WP 6.3+).
-//
-// `enqueue_block_assets` fires inside the iframe as well as on the frontend.
-// On the frontend the Leaflet Map plugin's own shortcode enqueue handles
-// Leaflet automatically, so we guard with is_admin() to avoid double-loading.
-//
-// edit.js (editorScript) runs in the OUTER admin frame and accesses Leaflet
-// via `mapContainerRef.current.ownerDocument.defaultView.L`. It reads tile
-// configuration from `iframeWin.bflmConfig`, which we inject here via
-// wp_add_inline_script on the `leaflet_js` handle (iframe scope).
+// Preview endpoint — AJAX handler that outputs a complete HTML page rendering
+// the map via Leaflet Map shortcodes. The editor iframe loads this URL so the
+// map is rendered exactly as it appears on the frontend.
 // ---------------------------------------------------------------------------
 
 /**
- * Enqueue Leaflet core assets inside the block editor iframe and inject the
- * tile configuration object (bflmConfig) that edit.js reads at map init time.
+ * Output a minimal HTML page that renders the map via [leaflet-map] and
+ * [leaflet-marker] shortcodes. Called by the editor iframe's src attribute.
  *
- * Leaflet_Map::enqueue_and_register() is normally hooked to wp_enqueue_scripts
- * (frontend only). We call it explicitly here so the handles are registered
- * in the admin/iframe context before we enqueue them.
+ * Security: nonce verified, all inputs sanitised, output escaped via shortcode
+ * trusted output (same pattern as render.php).
  */
-function bflm_enqueue_block_assets(): void {
-	if ( ! is_admin() ) {
-		// On the frontend the parent plugin's shortcode handles Leaflet.
-		return;
+function bflm_preview_map(): void {
+	// Verify nonce.
+	$nonce = isset( $_GET['bflm_nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['bflm_nonce'] ) ) : '';
+	if ( ! wp_verify_nonce( $nonce, 'bflm_preview_nonce' ) ) {
+		wp_die( esc_html__( 'Invalid or expired preview token.', 'blocks-for-leaflet-map' ), 403 );
 	}
 
-	// Register handles in the current (iframe) context, then enqueue.
-	Leaflet_Map::enqueue_and_register();
+	// Sanitise map parameters.
+	$lat              = isset( $_GET['lat'] )    ? (float) $_GET['lat']    : 0.0;
+	$lng              = isset( $_GET['lng'] )    ? (float) $_GET['lng']    : 0.0;
+	$zoom             = isset( $_GET['zoom'] )   ? absint( $_GET['zoom'] ) : 12;
+	$height           = isset( $_GET['height'] ) ? absint( $_GET['height'] ) : 400;
+	$scroll_wheel     = ! empty( $_GET['scrollWheelZoom'] ) && 'true' === $_GET['scrollWheelZoom'] ? 'true' : 'false';
+	$zoom_ctrl        = ! isset( $_GET['zoomControl'] ) || 'false' !== $_GET['zoomControl'] ? 'true' : 'false';
+	$markers_raw      = isset( $_GET['markers'] ) ? wp_unslash( $_GET['markers'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON decoded and each field sanitised below.
+	$markers_decoded  = json_decode( $markers_raw, true );
+	$markers          = is_array( $markers_decoded ) ? $markers_decoded : array();
 
-	wp_enqueue_style( 'leaflet_stylesheet' );
-	wp_enqueue_script( 'leaflet_js' );
-
-	// ── Referrer policy (iframe) ─────────────────────────────────────────────
-	// The iframe's default referrer policy ("strict-origin-when-cross-origin")
-	// strips the URL path, causing tile servers (e.g. OpenStreetMap) to return
-	// 403 "Referer required" errors.
-	//
-	// We use document.head.prepend() so the meta becomes the absolute first
-	// element in <head>, guaranteeing it is parsed before any network request
-	// (including the Leaflet CSS from unpkg) that might otherwise fire under
-	// the stricter default policy.
-	wp_add_inline_script(
-		'leaflet_js',
-		"( function () { var m = document.createElement( 'meta' ); m.name = 'referrer'; m.content = 'no-referrer-when-downgrade'; document.head.prepend( m ); }() );",
-		'before'
+	// Build shortcodes (same logic as render.php).
+	$map_shortcode = sprintf(
+		'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$dpx" scrollwheel="%5$s" zoomcontrol="%6$s"]',
+		esc_attr( $lat ),
+		esc_attr( $lng ),
+		$zoom,
+		$height,
+		$scroll_wheel,
+		$zoom_ctrl
 	);
 
-	// ── Tile configuration for edit.js ───────────────────────────────────────
-	// edit.js reads window.bflmConfig from the iframe window to initialise the
-	// tile layer with the same URL/subdomains/attribution the admin has chosen
-	// in the parent Leaflet Map plugin settings.
-	$settings = Leaflet_Map::settings();
+	$marker_shortcodes = '';
+	foreach ( $markers as $marker ) {
+		if ( ! isset( $marker['lat'], $marker['lng'] ) ) {
+			continue;
+		}
+		$m_lat     = (float) $marker['lat'];
+		$m_lng     = (float) $marker['lng'];
+		$m_title   = isset( $marker['title'] )   ? sanitize_text_field( $marker['title'] )   : '';
+		$m_content = isset( $marker['content'] ) ? wp_kses_post( $marker['content'] )        : '';
 
-	$bflm_config = array(
-		'tileUrl'        => $settings->get( 'map_tile_url' ),
-		'tileSubdomains' => $settings->get( 'map_tile_url_subdomains' ),
-		'attribution'    => $settings->get( 'default_attribution' ),
-	);
+		if ( '' !== $m_content ) {
+			$marker_shortcodes .= sprintf(
+				'[leaflet-marker lat="%1$s" lng="%2$s" title="%3$s"]%4$s[/leaflet-marker]',
+				esc_attr( $m_lat ),
+				esc_attr( $m_lng ),
+				esc_attr( $m_title ),
+				$m_content
+			);
+		} else {
+			$marker_shortcodes .= sprintf(
+				'[leaflet-marker lat="%1$s" lng="%2$s" title="%3$s"]',
+				esc_attr( $m_lat ),
+				esc_attr( $m_lng ),
+				esc_attr( $m_title )
+			);
+		}
+	}
 
-	wp_add_inline_script(
-		'leaflet_js',
-		'window.bflmConfig = ' . wp_json_encode( $bflm_config ) . ';'
-	);
+	// Render a complete, self-contained HTML page.
+	// wp_head() / wp_footer() let the Leaflet Map plugin load its own assets.
+	?>
+<!DOCTYPE html>
+<html <?php language_attributes(); ?>>
+<head>
+<meta charset="<?php bloginfo( 'charset' ); ?>">
+<meta name="referrer" content="origin">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+	* { box-sizing: border-box; }
+	html, body { margin: 0; padding: 0; background: #fff; overflow: hidden; }
+	#map-wrap { width: 100%; }
+</style>
+<?php wp_head(); ?>
+</head>
+<body>
+<div id="map-wrap">
+	<?php
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted shortcode output, same rationale as render.php.
+	echo do_shortcode( $map_shortcode . $marker_shortcodes );
+	?>
+</div>
+<script>
+( function () {
+	var attempts          = 0;
+	var MAX_ATTEMPTS      = 50;
+	var isProgrammaticMove = false;
+
+	/**
+	 * Poll for the Leaflet Map plugin's map instance, then wire up
+	 * bidirectional postMessage communication with the editor frame.
+	 *
+	 * window.top is used (not window.parent) because this iframe is nested
+	 * two levels deep: outer admin frame → WP canvas iframe → this iframe.
+	 * window.top reaches the outer admin frame where edit.js listens.
+	 *
+	 * '*' is used as the target origin for postMessage. Both this iframe and
+	 * the editor run on the same WordPress origin (admin-ajax.php / wp-admin),
+	 * so this is safe. Restrict to a specific origin for stricter isolation.
+	 */
+	function init() {
+		var plugin = window.WPLeafletMapPlugin;
+		if ( ! plugin || ! plugin.maps || ! plugin.maps[ 0 ] ) {
+			if ( ++attempts < MAX_ATTEMPTS ) {
+				setTimeout( init, 200 );
+			}
+			return;
+		}
+
+		var map     = plugin.maps[ 0 ];
+		var markers = plugin.markers || [];
+
+		// User pans / zooms → notify the editor.
+		map.on( 'moveend zoomend', function () {
+			if ( isProgrammaticMove ) {
+				return;
+			}
+			var center = map.getCenter();
+			window.top.postMessage(
+				{ type: 'bflm_map_update', lat: center.lat, lng: center.lng, zoom: map.getZoom() },
+				'*'
+			);
+		} );
+
+		// Make each marker draggable and relay dragend to the editor.
+		markers.forEach( function ( marker, i ) {
+			if ( marker.dragging && ! marker.dragging.enabled() ) {
+				marker.dragging.enable();
+			}
+			marker.on( 'dragend', function ( e ) {
+				var pos = e.target.getLatLng();
+				window.top.postMessage(
+					{ type: 'bflm_marker_update', index: i, lat: pos.lat, lng: pos.lng },
+					'*'
+				);
+			} );
+		} );
+
+		// Receive setView commands sent by the editor.
+		window.addEventListener( 'message', function ( e ) {
+			if ( ! e.data || e.data.type !== 'bflm_set_view' ) {
+				return;
+			}
+			// Clear the guard flag only after the (animated) move ends, not
+			// immediately, so moveend does not echo during the transition.
+			isProgrammaticMove = true;
+			map.once( 'moveend', function () {
+				isProgrammaticMove = false;
+			} );
+			map.setView( [ e.data.lat, e.data.lng ], e.data.zoom, { animate: true } );
+		} );
+	}
+
+	init();
+}() );
+</script>
+<?php wp_footer(); ?>
+</body>
+</html>
+	<?php
+	die();
 }
-add_action( 'enqueue_block_assets', 'bflm_enqueue_block_assets' );
+add_action( 'wp_ajax_bflm_preview', 'bflm_preview_map' );
 
 // ---------------------------------------------------------------------------
-// Referrer policy (outer frame) — belt-and-suspenders companion to the inline
-// script injected into the iframe above.
-//
-// admin_head targets the outer admin document. WordPress propagates assets
-// collected via _wp_get_iframed_editor_assets() into the iframe, but an
-// explicit meta in the outer frame ensures the policy is active from the very
-// first navigation, before the iframe initialises.
+// Editor script localisation — expose the preview URL and a nonce so edit.js
+// can build the iframe src without hard-coding the admin-ajax URL.
 // ---------------------------------------------------------------------------
 
 /**
- * Print a Referrer-Policy meta tag in the outer admin frame for the block
- * editor so tile servers receive the full site URL as Referer.
+ * Localise bflmEditor data onto the block's editor script handle.
+ * Runs on enqueue_block_editor_assets (outer admin frame only).
  */
-function bflm_admin_referrer_policy(): void {
-	if ( ! get_current_screen()?->is_block_editor() ) {
-		return;
-	}
-
-	echo '<meta name="referrer" content="no-referrer-when-downgrade">' . "\n";
+function bflm_localise_editor_script(): void {
+	wp_localize_script(
+		'blocks-for-leaflet-map-leaflet-map-block-editor-script',
+		'bflmEditor',
+		array(
+			'previewUrl'   => admin_url( 'admin-ajax.php' ),
+			'previewNonce' => wp_create_nonce( 'bflm_preview_nonce' ),
+		)
+	);
 }
-add_action( 'admin_head', 'bflm_admin_referrer_policy' );
+add_action( 'enqueue_block_editor_assets', 'bflm_localise_editor_script' );
