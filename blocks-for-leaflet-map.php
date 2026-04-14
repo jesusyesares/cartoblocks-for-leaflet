@@ -122,11 +122,6 @@ function bflm_preview_map(): void {
 		$height = '400px';
 	}
 
-	$width_raw = isset( $_GET['width'] ) ? sanitize_text_field( wp_unslash( $_GET['width'] ) ) : '100%';
-	$width     = is_numeric( $width_raw ) ? $width_raw . 'px' : $width_raw;
-	if ( ! preg_match( '/^\d+(\.\d+)?(px|%|vh|vw|em|rem)$/', $width ) ) {
-		$width = '100%';
-	}
 	$scroll_wheel    = ! empty( $_GET['scrollWheelZoom'] ) && 'true' === $_GET['scrollWheelZoom'] ? 'true' : 'false';
 	$zoom_ctrl       = ! isset( $_GET['zoomControl'] ) || 'false' !== $_GET['zoomControl'] ? 'true' : 'false';
 	$block_id        = isset( $_GET['blockId'] ) ? sanitize_text_field( wp_unslash( $_GET['blockId'] ) ) : '';
@@ -136,13 +131,13 @@ function bflm_preview_map(): void {
 	$fit_markers     = ! empty( $_GET['fitMarkers'] ) && 'true' === $_GET['fitMarkers'] ? 'true' : 'false';
 
 	// Build shortcodes (same logic as render.php).
+	// Width is applied to the editor block container, not the shortcode.
 	$map_shortcode = sprintf(
-		'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" width="%5$s" scrollwheel="%6$s" zoomcontrol="%7$s" fitbounds="%8$s"]',
+		'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" scrollwheel="%5$s" zoomcontrol="%6$s" fitbounds="%7$s"]',
 		esc_attr( $lat ),
 		esc_attr( $lng ),
 		$zoom,
 		esc_attr( $height ),
-		esc_attr( $width ),
 		$scroll_wheel,
 		$zoom_ctrl,
 		$fit_markers
