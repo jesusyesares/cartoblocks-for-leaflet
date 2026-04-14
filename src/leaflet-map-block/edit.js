@@ -67,7 +67,7 @@ import './editor.scss';
  * @return {string} URL string, or empty string if bflmEditor is unavailable.
  */
 function buildPreviewUrl( attributes, clientId ) {
-	const { lat, lng, zoom, height, scrollWheelZoom, zoomControl, markers } =
+	const { lat, lng, zoom, height, scrollWheelZoom, zoomControl, fitMarkers, markers } =
 		attributes;
 
 	const { previewUrl, previewNonce } = window.bflmEditor || {};
@@ -85,6 +85,7 @@ function buildPreviewUrl( attributes, clientId ) {
 		height,
 		scrollWheelZoom: scrollWheelZoom ? 'true' : 'false',
 		zoomControl:     zoomControl     ? 'true' : 'false',
+		fitMarkers:      fitMarkers      ? 'true' : 'false',
 		markers:         JSON.stringify( markers ),
 	} );
 
@@ -107,6 +108,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		height,
 		scrollWheelZoom,
 		zoomControl,
+		fitMarkers,
 		markers,
 	} = attributes;
 
@@ -186,7 +188,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		}, 500 );
 
 		return () => clearTimeout( srcDebounceRef.current );
-	}, [ height, scrollWheelZoom, zoomControl, markers ] ); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [ height, scrollWheelZoom, zoomControl, fitMarkers, markers ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// ── View changes (sidebar) → postMessage to iframe (100 ms debounce) ──────
 	//
@@ -344,6 +346,18 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 						onChange={ ( value ) => setAttributes( { zoom: value } ) }
 						min={ 1 }
 						max={ 20 }
+						__nextHasNoMarginBottom
+					/>
+					<ToggleControl
+						label={ __( 'Fit to Markers', 'blocks-for-leaflet-map' ) }
+						help={ __(
+							'Automatically adjust the map view to contain all markers.',
+							'blocks-for-leaflet-map'
+						) }
+						checked={ fitMarkers }
+						onChange={ ( value ) =>
+							setAttributes( { fitMarkers: value } )
+						}
 						__nextHasNoMarginBottom
 					/>
 				</PanelBody>

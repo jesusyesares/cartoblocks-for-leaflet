@@ -123,16 +123,18 @@ function bflm_preview_map(): void {
 	$markers_raw      = isset( $_GET['markers'] ) ? wp_unslash( $_GET['markers'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON decoded and each field sanitised below.
 	$markers_decoded  = json_decode( $markers_raw, true );
 	$markers          = is_array( $markers_decoded ) ? $markers_decoded : array();
+	$fit_markers      = ! empty( $_GET['fitMarkers'] ) && 'true' === $_GET['fitMarkers'] ? 'true' : 'false';
 
 	// Build shortcodes (same logic as render.php).
 	$map_shortcode = sprintf(
-		'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$dpx" scrollwheel="%5$s" zoomcontrol="%6$s"]',
+		'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$dpx" scrollwheel="%5$s" zoomcontrol="%6$s" fitbounds="%7$s"]',
 		esc_attr( $lat ),
 		esc_attr( $lng ),
 		$zoom,
 		$height,
 		$scroll_wheel,
-		$zoom_ctrl
+		$zoom_ctrl,
+		$fit_markers
 	);
 
 	$marker_shortcodes = '';
@@ -245,6 +247,22 @@ function bflm_preview_map(): void {
 				);
 			} );
 		} );
+
+		// fitBounds: when enabled, adjust the map to contain all markers.
+		// Intentionally not guarded by isProgrammaticMove — the resulting moveend
+		// fires bflm_map_update so the editor lat/lng/zoom attributes reflect the
+		// computed view (the user delegated view control to the map contents).
+		var fitMarkersEnabled = <?php echo wp_json_encode( 'true' === $fit_markers ); ?>;
+		if ( fitMarkersEnabled && markers.length > 0 ) {
+			var bounds = [];
+			markers.forEach( function ( marker ) {
+				var ll = marker.getLatLng();
+				bounds.push( [ ll.lat, ll.lng ] );
+			} );
+			if ( bounds.length > 0 ) {
+				map.fitBounds( bounds, { padding: [ 30, 30 ] } );
+			}
+		}
 
 		// Receive setView commands sent by the editor.
 		// Guard with blockId so only the matching block's message is acted on.
