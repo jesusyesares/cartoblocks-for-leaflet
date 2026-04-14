@@ -20,13 +20,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Sanitize / cast all values coming from block attributes.
-$lat               = isset( $attributes['lat'] )             ? (float) $attributes['lat']             : 0.0;
-$lng               = isset( $attributes['lng'] )             ? (float) $attributes['lng']             : 0.0;
-$zoom              = isset( $attributes['zoom'] )            ? (int) $attributes['zoom']              : 12;
-$height            = isset( $attributes['height'] )          ? (int) $attributes['height']            : 400;
+$lat               = isset( $attributes['lat'] ) ? (float) $attributes['lat'] : 0.0;
+$lng               = isset( $attributes['lng'] ) ? (float) $attributes['lng'] : 0.0;
+$zoom              = isset( $attributes['zoom'] ) ? (int) $attributes['zoom'] : 12;
+$height            = isset( $attributes['height'] ) ? (int) $attributes['height'] : 400;
 $scroll_wheel_zoom = ! empty( $attributes['scrollWheelZoom'] ) ? 'true' : 'false';
 $zoom_control      = isset( $attributes['zoomControl'] ) && false === $attributes['zoomControl'] ? 'false' : 'true';
-$fit_markers       = ! empty( $attributes['fitMarkers'] )    ? 'true' : 'false';
+$fit_markers       = ! empty( $attributes['fitMarkers'] ) ? 'true' : 'false';
 $markers           = isset( $attributes['markers'] ) && is_array( $attributes['markers'] )
 	? $attributes['markers']
 	: array();
@@ -52,8 +52,8 @@ foreach ( $markers as $marker ) {
 
 	$m_lat     = (float) $marker['lat'];
 	$m_lng     = (float) $marker['lng'];
-	$m_title   = isset( $marker['title'] )   ? sanitize_text_field( $marker['title'] )   : '';
-	$m_content = isset( $marker['content'] ) ? wp_kses_post( $marker['content'] )        : '';
+	$m_title   = isset( $marker['title'] ) ? sanitize_text_field( $marker['title'] ) : '';
+	$m_content = isset( $marker['content'] ) ? wp_kses_post( $marker['content'] ) : '';
 
 	if ( '' !== $m_content ) {
 		$marker_shortcodes .= sprintf(
