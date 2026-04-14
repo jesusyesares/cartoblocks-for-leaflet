@@ -77,7 +77,7 @@ const DIMENSION_UNITS = [
  * @return {string} URL string, or empty string if bflmEditor is unavailable.
  */
 function buildPreviewUrl( attributes, clientId ) {
-	const { lat, lng, zoom, height, width, scrollWheelZoom, zoomControl, fitMarkers, markers } =
+	const { lat, lng, zoom, height, scrollWheelZoom, zoomControl, fitMarkers, markers } =
 		attributes;
 
 	const { previewUrl, previewNonce } = window.bflmEditor || {};
@@ -85,12 +85,11 @@ function buildPreviewUrl( attributes, clientId ) {
 		return '';
 	}
 
-	// Normalize dimensions for backwards compatibility with pre-0.4.0 blocks
+	// Normalize height for backwards compatibility with pre-0.4.0 blocks
 	// that stored height as a bare number.
 	const h = typeof height === 'number' || ( typeof height === 'string' && /^\d+$/.test( height ) )
 		? `${ height }px`
 		: height || '400px';
-	const w = width || '100%';
 
 	const params = new URLSearchParams( {
 		action:          'bflm_preview',
@@ -100,7 +99,6 @@ function buildPreviewUrl( attributes, clientId ) {
 		lng,
 		zoom,
 		height:          h,
-		width:           w,
 		scrollWheelZoom: scrollWheelZoom ? 'true' : 'false',
 		zoomControl:     zoomControl     ? 'true' : 'false',
 		fitMarkers:      fitMarkers      ? 'true' : 'false',
@@ -215,7 +213,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		}, 500 );
 
 		return () => clearTimeout( srcDebounceRef.current );
-	}, [ height, width, scrollWheelZoom, zoomControl, fitMarkers, markers ] ); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [ height, scrollWheelZoom, zoomControl, fitMarkers, markers ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// ── View changes (sidebar) → postMessage to iframe (100 ms debounce) ──────
 	//
@@ -398,6 +396,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 						label={ __( 'Height', 'blocks-for-leaflet-map' ) }
 						value={ normalizedHeight }
 						units={ DIMENSION_UNITS }
+						min={ 0 }
 						onChange={ ( value ) =>
 							setAttributes( { height: value } )
 						}
@@ -407,6 +406,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 						label={ __( 'Width', 'blocks-for-leaflet-map' ) }
 						value={ normalizedWidth }
 						units={ DIMENSION_UNITS }
+						min={ 0 }
 						onChange={ ( value ) =>
 							setAttributes( { width: value } )
 						}

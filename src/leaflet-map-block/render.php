@@ -45,13 +45,14 @@ $markers           = isset( $attributes['markers'] ) && is_array( $attributes['m
 	: array();
 
 // Build the [leaflet-map] shortcode.
+// Width is not passed to the shortcode — it is applied to the wrapper div instead
+// so the Leaflet Map shortcode always renders at 100% of its container.
 $map_shortcode = sprintf(
-	'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" width="%5$s" scrollwheel="%6$s" zoomcontrol="%7$s" fitbounds="%8$s"]',
+	'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" scrollwheel="%5$s" zoomcontrol="%6$s" fitbounds="%7$s"]',
 	esc_attr( $lat ),
 	esc_attr( $lng ),
 	$zoom,
 	esc_attr( $height ),
-	esc_attr( $width ),
 	$scroll_wheel_zoom,
 	$zoom_control,
 	$fit_markers
@@ -88,7 +89,10 @@ foreach ( $markers as $marker ) {
 }
 
 $wrapper_attributes = get_block_wrapper_attributes(
-	array( 'class' => 'bflm-leaflet-map-block' )
+	array(
+		'class' => 'bflm-leaflet-map-block',
+		'style' => sprintf( 'width:%s;', esc_attr( $width ) ),
+	)
 );
 
 // Render: wrapper div → shortcode output (Leaflet Map plugin handles the rest).
