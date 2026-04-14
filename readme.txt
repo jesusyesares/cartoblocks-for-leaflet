@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.0
 Tested up to:      6.9
-Stable tag:        0.3.3
+Stable tag:        0.3.4
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -61,6 +61,9 @@ Whatever you have configured in the Leaflet Map plugin settings. By default, Ope
 3. Frontend rendering with Leaflet Map shortcodes.
 
 == Changelog ==
+
+= 0.3.4 =
+* Added: Ten map interaction control attributes (dragging, keyboard, double-click zoom, box zoom, touch zoom, close popup on click, track resize, tap, inertia, bounce at zoom limits) with three-state model: Default (inherit Leaflet Map global settings), Enabled, or Disabled.
 
 = 0.3.3 =
 * Added: Show Scale toggle in Map Controls panel.

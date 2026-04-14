@@ -50,6 +50,7 @@ import {
 	__experimentalNumberControl as NumberControl,
 	__experimentalUnitControl as UnitControl,
 	RangeControl,
+	SelectControl,
 	ToggleControl,
 	TextControl,
 	TextareaControl,
@@ -67,6 +68,16 @@ const DIMENSION_UNITS = [
 ];
 
 /**
+ * Options for three-state interaction controls.
+ * Empty string = "Default" (omit from shortcode, use Leaflet Map global settings).
+ */
+const THREE_STATE_OPTIONS = [
+	{ value: '',      label: 'Default' },
+	{ value: 'true',  label: 'Enabled' },
+	{ value: 'false', label: 'Disabled' },
+];
+
+/**
  * Build the full preview iframe src URL from block attributes.
  * All attributes are included so the map initialises at the correct position
  * on every full reload (mount or structural change).
@@ -77,8 +88,13 @@ const DIMENSION_UNITS = [
  * @return {string} URL string, or empty string if bflmEditor is unavailable.
  */
 function buildPreviewUrl( attributes, clientId ) {
-	const { lat, lng, zoom, height, scrollWheelZoom, zoomControl, fitMarkers, attribution, showScale, markers } =
-		attributes;
+	const {
+		lat, lng, zoom, height, scrollWheelZoom, zoomControl, fitMarkers,
+		attribution, showScale,
+		dragging, keyboard, doubleClickZoom, boxZoom, touchZoom,
+		closePopupOnClick, trackResize, tap, inertia, bounceAtZoomLimits,
+		markers,
+	} = attributes;
 
 	const { previewUrl, previewNonce } = window.bflmEditor || {};
 	if ( ! previewUrl || ! previewNonce ) {
@@ -107,6 +123,18 @@ function buildPreviewUrl( attributes, clientId ) {
 		markers:         JSON.stringify( markers ),
 	} );
 
+	// Only include interaction params when explicitly set (not "Default").
+	if ( dragging )           params.set( 'dragging', dragging );
+	if ( keyboard )           params.set( 'keyboard', keyboard );
+	if ( doubleClickZoom )    params.set( 'doubleClickZoom', doubleClickZoom );
+	if ( boxZoom )            params.set( 'boxZoom', boxZoom );
+	if ( touchZoom )          params.set( 'touchZoom', touchZoom );
+	if ( closePopupOnClick )  params.set( 'closePopupOnClick', closePopupOnClick );
+	if ( trackResize )        params.set( 'trackResize', trackResize );
+	if ( tap )                params.set( 'tap', tap );
+	if ( inertia )            params.set( 'inertia', inertia );
+	if ( bounceAtZoomLimits ) params.set( 'bounceAtZoomLimits', bounceAtZoomLimits );
+
 	return previewUrl + '?' + params.toString();
 }
 
@@ -130,6 +158,16 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		fitMarkers,
 		attribution,
 		showScale,
+		dragging,
+		keyboard,
+		doubleClickZoom,
+		boxZoom,
+		touchZoom,
+		closePopupOnClick,
+		trackResize,
+		tap,
+		inertia,
+		bounceAtZoomLimits,
 		markers,
 	} = attributes;
 
@@ -217,7 +255,10 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		}, 500 );
 
 		return () => clearTimeout( srcDebounceRef.current );
-	}, [ height, scrollWheelZoom, zoomControl, fitMarkers, attribution, showScale, markers ] ); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [ height, scrollWheelZoom, zoomControl, fitMarkers, attribution, showScale,
+		dragging, keyboard, doubleClickZoom, boxZoom, touchZoom,
+		closePopupOnClick, trackResize, tap, inertia, bounceAtZoomLimits,
+		markers ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// ── View changes (sidebar) → postMessage to iframe (100 ms debounce) ──────
 	//
@@ -432,6 +473,110 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 						onChange={ ( value ) =>
 							setAttributes( { scrollWheelZoom: value } )
 						}
+						__nextHasNoMarginBottom
+					/>
+					<SelectControl
+						label={ __( 'Dragging', 'blocks-for-leaflet-map' ) }
+						value={ dragging }
+						options={ THREE_STATE_OPTIONS }
+						onChange={ ( value ) =>
+							setAttributes( { dragging: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<SelectControl
+						label={ __( 'Keyboard Navigation', 'blocks-for-leaflet-map' ) }
+						value={ keyboard }
+						options={ THREE_STATE_OPTIONS }
+						onChange={ ( value ) =>
+							setAttributes( { keyboard: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<SelectControl
+						label={ __( 'Double Click Zoom', 'blocks-for-leaflet-map' ) }
+						value={ doubleClickZoom }
+						options={ THREE_STATE_OPTIONS }
+						onChange={ ( value ) =>
+							setAttributes( { doubleClickZoom: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<SelectControl
+						label={ __( 'Box Zoom', 'blocks-for-leaflet-map' ) }
+						help={ __( 'Shift + drag to zoom to area.', 'blocks-for-leaflet-map' ) }
+						value={ boxZoom }
+						options={ THREE_STATE_OPTIONS }
+						onChange={ ( value ) =>
+							setAttributes( { boxZoom: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<SelectControl
+						label={ __( 'Touch Zoom', 'blocks-for-leaflet-map' ) }
+						value={ touchZoom }
+						options={ THREE_STATE_OPTIONS }
+						onChange={ ( value ) =>
+							setAttributes( { touchZoom: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<SelectControl
+						label={ __( 'Close Popup on Click', 'blocks-for-leaflet-map' ) }
+						value={ closePopupOnClick }
+						options={ THREE_STATE_OPTIONS }
+						onChange={ ( value ) =>
+							setAttributes( { closePopupOnClick: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<SelectControl
+						label={ __( 'Track Resize', 'blocks-for-leaflet-map' ) }
+						help={ __( 'Automatically resize map when window resizes.', 'blocks-for-leaflet-map' ) }
+						value={ trackResize }
+						options={ THREE_STATE_OPTIONS }
+						onChange={ ( value ) =>
+							setAttributes( { trackResize: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<SelectControl
+						label={ __( 'Tap', 'blocks-for-leaflet-map' ) }
+						help={ __( 'Mobile tap interaction.', 'blocks-for-leaflet-map' ) }
+						value={ tap }
+						options={ THREE_STATE_OPTIONS }
+						onChange={ ( value ) =>
+							setAttributes( { tap: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<SelectControl
+						label={ __( 'Inertia', 'blocks-for-leaflet-map' ) }
+						help={ __( 'Pan inertia after dragging.', 'blocks-for-leaflet-map' ) }
+						value={ inertia }
+						options={ THREE_STATE_OPTIONS }
+						onChange={ ( value ) =>
+							setAttributes( { inertia: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<SelectControl
+						label={ __( 'Bounce at Zoom Limits', 'blocks-for-leaflet-map' ) }
+						value={ bounceAtZoomLimits }
+						options={ THREE_STATE_OPTIONS }
+						onChange={ ( value ) =>
+							setAttributes( { bounceAtZoomLimits: value } )
+						}
+						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
 				</PanelBody>
