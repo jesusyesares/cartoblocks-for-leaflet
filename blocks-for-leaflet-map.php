@@ -3,7 +3,7 @@
  * Plugin Name:       Blocks for Leaflet Map
  * Plugin URI:        https://github.com/jesusyesares/blocks-for-leaflet-map
  * Description:       A dynamic Gutenberg block that wraps the Leaflet Map plugin shortcodes. Requires the "Leaflet Map" plugin to be installed and active.
- * Version:           0.3.2
+ * Version:           0.3.3
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Jesús Yesares García
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-define( 'BFLM_VERSION', '0.3.2' );
+define( 'BFLM_VERSION', '0.3.3' );
 define( 'BFLM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BFLM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BFLM_LEAFLET_MAP_PLUGIN', 'leaflet-map/leaflet-map.php' );
@@ -129,18 +129,22 @@ function bflm_preview_map(): void {
 	$markers_decoded = json_decode( $markers_raw, true );
 	$markers         = is_array( $markers_decoded ) ? $markers_decoded : array();
 	$fit_markers     = ! empty( $_GET['fitMarkers'] ) && 'true' === $_GET['fitMarkers'] ? 'true' : 'false';
+	$show_scale      = ! empty( $_GET['showScale'] ) && 'true' === $_GET['showScale'] ? '1' : '0';
+	$attribution     = isset( $_GET['attribution'] ) ? sanitize_text_field( wp_unslash( $_GET['attribution'] ) ) : '';
 
 	// Build shortcodes (same logic as render.php).
 	// Width is applied to the editor block container, not the shortcode.
 	$map_shortcode = sprintf(
-		'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" scrollwheel="%5$s" zoomcontrol="%6$s" fitbounds="%7$s"]',
+		'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" scrollwheel="%5$s" zoomcontrol="%6$s" fitbounds="%7$s" show_scale="%8$s"%9$s]',
 		esc_attr( $lat ),
 		esc_attr( $lng ),
 		$zoom,
 		esc_attr( $height ),
 		$scroll_wheel,
 		$zoom_ctrl,
-		$fit_markers
+		$fit_markers,
+		$show_scale,
+		'' !== $attribution ? sprintf( ' attribution="%s"', esc_attr( $attribution ) ) : ''
 	);
 
 	$marker_shortcodes = '';

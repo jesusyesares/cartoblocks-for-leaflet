@@ -2,7 +2,7 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "blocks-for-leaflet-map/leaflet-map-block",
-	"version": "0.3.2",
+	"version": "0.3.3",
 	"title": "Leaflet Map Block",
 	"category": "embed",
 	"icon": "location-alt",
@@ -50,6 +50,14 @@
 			"default": true
 		},
 		"fitMarkers": {
+			"type": "boolean",
+			"default": false
+		},
+		"attribution": {
+			"type": "string",
+			"default": ""
+		},
+		"showScale": {
 			"type": "boolean",
 			"default": false
 		},
