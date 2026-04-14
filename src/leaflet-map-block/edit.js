@@ -77,7 +77,7 @@ const DIMENSION_UNITS = [
  * @return {string} URL string, or empty string if bflmEditor is unavailable.
  */
 function buildPreviewUrl( attributes, clientId ) {
-	const { lat, lng, zoom, height, scrollWheelZoom, zoomControl, fitMarkers, markers } =
+	const { lat, lng, zoom, height, scrollWheelZoom, zoomControl, fitMarkers, attribution, showScale, markers } =
 		attributes;
 
 	const { previewUrl, previewNonce } = window.bflmEditor || {};
@@ -102,6 +102,8 @@ function buildPreviewUrl( attributes, clientId ) {
 		scrollWheelZoom: scrollWheelZoom ? 'true' : 'false',
 		zoomControl:     zoomControl     ? 'true' : 'false',
 		fitMarkers:      fitMarkers      ? 'true' : 'false',
+		attribution:     attribution,
+		showScale:       showScale       ? 'true' : 'false',
 		markers:         JSON.stringify( markers ),
 	} );
 
@@ -126,6 +128,8 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		scrollWheelZoom,
 		zoomControl,
 		fitMarkers,
+		attribution,
+		showScale,
 		markers,
 	} = attributes;
 
@@ -213,7 +217,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		}, 500 );
 
 		return () => clearTimeout( srcDebounceRef.current );
-	}, [ height, scrollWheelZoom, zoomControl, fitMarkers, markers ] ); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [ height, scrollWheelZoom, zoomControl, fitMarkers, attribution, showScale, markers ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// ── View changes (sidebar) → postMessage to iframe (100 ms debounce) ──────
 	//
@@ -444,6 +448,30 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 							setAttributes( { zoomControl: value } )
 						}
 						__nextHasNoMarginBottom
+					/>
+					<ToggleControl
+						label={ __( 'Show Scale', 'blocks-for-leaflet-map' ) }
+						help={ __(
+							'Display a scale indicator on the map.',
+							'blocks-for-leaflet-map'
+						) }
+						checked={ showScale }
+						onChange={ ( value ) =>
+							setAttributes( { showScale: value } )
+						}
+						__nextHasNoMarginBottom
+					/>
+					<TextareaControl
+						label={ __( 'Attribution', 'blocks-for-leaflet-map' ) }
+						help={ __(
+							'Custom attribution HTML. Leave empty to use the default from Leaflet Map settings.',
+							'blocks-for-leaflet-map'
+						) }
+						value={ attribution }
+						onChange={ ( value ) =>
+							setAttributes( { attribution: value } )
+						}
+						rows={ 2 }
 					/>
 				</PanelBody>
 

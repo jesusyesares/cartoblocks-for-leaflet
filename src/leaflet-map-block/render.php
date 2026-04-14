@@ -40,6 +40,8 @@ if ( ! preg_match( '/^\d+(\.\d+)?(px|%|vh|vw|em|rem)$/', $width ) ) {
 $scroll_wheel_zoom = ! empty( $attributes['scrollWheelZoom'] ) ? 'true' : 'false';
 $zoom_control      = isset( $attributes['zoomControl'] ) && false === $attributes['zoomControl'] ? 'false' : 'true';
 $fit_markers       = ! empty( $attributes['fitMarkers'] ) ? 'true' : 'false';
+$show_scale        = ! empty( $attributes['showScale'] ) ? '1' : '0';
+$attribution       = isset( $attributes['attribution'] ) ? $attributes['attribution'] : '';
 $markers           = isset( $attributes['markers'] ) && is_array( $attributes['markers'] )
 	? $attributes['markers']
 	: array();
@@ -48,14 +50,16 @@ $markers           = isset( $attributes['markers'] ) && is_array( $attributes['m
 // Width is not passed to the shortcode — it is applied to the wrapper div instead
 // so the Leaflet Map shortcode always renders at 100% of its container.
 $map_shortcode = sprintf(
-	'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" scrollwheel="%5$s" zoomcontrol="%6$s" fitbounds="%7$s"]',
+	'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" scrollwheel="%5$s" zoomcontrol="%6$s" fitbounds="%7$s" show_scale="%8$s"%9$s]',
 	esc_attr( $lat ),
 	esc_attr( $lng ),
 	$zoom,
 	esc_attr( $height ),
 	$scroll_wheel_zoom,
 	$zoom_control,
-	$fit_markers
+	$fit_markers,
+	$show_scale,
+	'' !== $attribution ? sprintf( ' attribution="%s"', esc_attr( wp_kses_post( $attribution ) ) ) : ''
 );
 
 // Build [leaflet-marker] shortcodes for each marker.
