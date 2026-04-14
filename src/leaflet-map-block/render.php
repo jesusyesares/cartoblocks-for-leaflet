@@ -50,7 +50,7 @@ $markers           = isset( $attributes['markers'] ) && is_array( $attributes['m
 // Width is not passed to the shortcode — it is applied to the wrapper div instead
 // so the Leaflet Map shortcode always renders at 100% of its container.
 $map_shortcode = sprintf(
-	'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" scrollwheel="%5$s" zoomcontrol="%6$s" fitbounds="%7$s" show_scale="%8$s"%9$s]',
+	'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" scrollwheel="%5$s" zoomcontrol="%6$s" fitbounds="%7$s" show_scale="%8$s"',
 	esc_attr( $lat ),
 	esc_attr( $lng ),
 	$zoom,
@@ -58,9 +58,16 @@ $map_shortcode = sprintf(
 	$scroll_wheel_zoom,
 	$zoom_control,
 	$fit_markers,
-	$show_scale,
-	'' !== $attribution ? sprintf( ' attribution="%s"', esc_attr( wp_kses_post( $attribution ) ) ) : ''
+	$show_scale
 );
+
+// Attribution: use wp_kses_post (allows safe HTML like links) and single quotes
+// so inner double quotes (e.g., href="...") don't break the shortcode parser.
+if ( '' !== $attribution ) {
+	$map_shortcode .= sprintf( " attribution='%s'", wp_kses_post( $attribution ) );
+}
+
+$map_shortcode .= ']';
 
 // Build [leaflet-marker] shortcodes for each marker.
 $marker_shortcodes = '';
