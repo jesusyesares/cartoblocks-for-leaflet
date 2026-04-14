@@ -315,9 +315,9 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		<>
 			<InspectorControls>
 
-				{ /* ── Map Settings panel ─────────────────────────────────── */ }
+				{ /* ── Location panel ────────────────────────────────────── */ }
 				<PanelBody
-					title={ __( 'Map Settings', 'blocks-for-leaflet-map' ) }
+					title={ __( 'Location', 'blocks-for-leaflet-map' ) }
 					initialOpen={ true }
 				>
 					<NumberControl
@@ -346,6 +346,13 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 						max={ 20 }
 						__nextHasNoMarginBottom
 					/>
+				</PanelBody>
+
+				{ /* ── Dimensions panel ───────────────────────────────────── */ }
+				<PanelBody
+					title={ __( 'Dimensions', 'blocks-for-leaflet-map' ) }
+					initialOpen={ false }
+				>
 					<NumberControl
 						label={ __( 'Height (px)', 'blocks-for-leaflet-map' ) }
 						value={ height }
@@ -358,6 +365,13 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 						step={ 10 }
 						__next40pxDefaultSize
 					/>
+				</PanelBody>
+
+				{ /* ── Interaction panel ───────────────────────────────────── */ }
+				<PanelBody
+					title={ __( 'Interaction', 'blocks-for-leaflet-map' ) }
+					initialOpen={ false }
+				>
 					<ToggleControl
 						label={ __(
 							'Scroll Wheel Zoom',
@@ -369,6 +383,13 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 						}
 						__nextHasNoMarginBottom
 					/>
+				</PanelBody>
+
+				{ /* ── Map Controls panel ──────────────────────────────────── */ }
+				<PanelBody
+					title={ __( 'Map Controls', 'blocks-for-leaflet-map' ) }
+					initialOpen={ false }
+				>
 					<ToggleControl
 						label={ __( 'Zoom Control', 'blocks-for-leaflet-map' ) }
 						checked={ zoomControl }
