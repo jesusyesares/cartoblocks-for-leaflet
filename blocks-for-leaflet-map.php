@@ -113,25 +113,36 @@ function bflm_preview_map(): void {
 	}
 
 	// Sanitise map parameters.
-	$lat              = isset( $_GET['lat'] )    ? (float) $_GET['lat']    : 0.0;
-	$lng              = isset( $_GET['lng'] )    ? (float) $_GET['lng']    : 0.0;
-	$zoom             = isset( $_GET['zoom'] )   ? absint( $_GET['zoom'] ) : 12;
-	$height           = isset( $_GET['height'] ) ? absint( $_GET['height'] ) : 400;
-	$scroll_wheel     = ! empty( $_GET['scrollWheelZoom'] ) && 'true' === $_GET['scrollWheelZoom'] ? 'true' : 'false';
-	$zoom_ctrl        = ! isset( $_GET['zoomControl'] ) || 'false' !== $_GET['zoomControl'] ? 'true' : 'false';
-	$block_id         = isset( $_GET['blockId'] ) ? sanitize_text_field( wp_unslash( $_GET['blockId'] ) ) : '';
-	$markers_raw      = isset( $_GET['markers'] ) ? wp_unslash( $_GET['markers'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON decoded and each field sanitised below.
-	$markers_decoded  = json_decode( $markers_raw, true );
-	$markers          = is_array( $markers_decoded ) ? $markers_decoded : array();
-	$fit_markers      = ! empty( $_GET['fitMarkers'] ) && 'true' === $_GET['fitMarkers'] ? 'true' : 'false';
+	$lat        = isset( $_GET['lat'] ) ? (float) $_GET['lat'] : 0.0;
+	$lng        = isset( $_GET['lng'] ) ? (float) $_GET['lng'] : 0.0;
+	$zoom       = isset( $_GET['zoom'] ) ? absint( $_GET['zoom'] ) : 12;
+	$height_raw = isset( $_GET['height'] ) ? sanitize_text_field( wp_unslash( $_GET['height'] ) ) : '400px';
+	$height     = is_numeric( $height_raw ) ? $height_raw . 'px' : $height_raw;
+	if ( ! preg_match( '/^\d+(\.\d+)?(px|%|vh|vw|em|rem)$/', $height ) ) {
+		$height = '400px';
+	}
+
+	$width_raw = isset( $_GET['width'] ) ? sanitize_text_field( wp_unslash( $_GET['width'] ) ) : '100%';
+	$width     = is_numeric( $width_raw ) ? $width_raw . 'px' : $width_raw;
+	if ( ! preg_match( '/^\d+(\.\d+)?(px|%|vh|vw|em|rem)$/', $width ) ) {
+		$width = '100%';
+	}
+	$scroll_wheel    = ! empty( $_GET['scrollWheelZoom'] ) && 'true' === $_GET['scrollWheelZoom'] ? 'true' : 'false';
+	$zoom_ctrl       = ! isset( $_GET['zoomControl'] ) || 'false' !== $_GET['zoomControl'] ? 'true' : 'false';
+	$block_id        = isset( $_GET['blockId'] ) ? sanitize_text_field( wp_unslash( $_GET['blockId'] ) ) : '';
+	$markers_raw     = isset( $_GET['markers'] ) ? wp_unslash( $_GET['markers'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON decoded and each field sanitised below.
+	$markers_decoded = json_decode( $markers_raw, true );
+	$markers         = is_array( $markers_decoded ) ? $markers_decoded : array();
+	$fit_markers     = ! empty( $_GET['fitMarkers'] ) && 'true' === $_GET['fitMarkers'] ? 'true' : 'false';
 
 	// Build shortcodes (same logic as render.php).
 	$map_shortcode = sprintf(
-		'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$dpx" scrollwheel="%5$s" zoomcontrol="%6$s" fitbounds="%7$s"]',
+		'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" width="%5$s" scrollwheel="%6$s" zoomcontrol="%7$s" fitbounds="%8$s"]',
 		esc_attr( $lat ),
 		esc_attr( $lng ),
 		$zoom,
-		$height,
+		esc_attr( $height ),
+		esc_attr( $width ),
 		$scroll_wheel,
 		$zoom_ctrl,
 		$fit_markers
@@ -144,8 +155,8 @@ function bflm_preview_map(): void {
 		}
 		$m_lat     = (float) $marker['lat'];
 		$m_lng     = (float) $marker['lng'];
-		$m_title   = isset( $marker['title'] )   ? sanitize_text_field( $marker['title'] )   : '';
-		$m_content = isset( $marker['content'] ) ? wp_kses_post( $marker['content'] )        : '';
+		$m_title   = isset( $marker['title'] ) ? sanitize_text_field( $marker['title'] ) : '';
+		$m_content = isset( $marker['content'] ) ? wp_kses_post( $marker['content'] ) : '';
 
 		if ( '' !== $m_content ) {
 			$marker_shortcodes .= sprintf(
@@ -179,7 +190,7 @@ function bflm_preview_map(): void {
 	html, body { margin: 0; padding: 0; background: #fff; overflow: hidden; }
 	#map-wrap { width: 100%; }
 </style>
-<?php wp_head(); ?>
+	<?php wp_head(); ?>
 </head>
 <body>
 <div id="map-wrap">
@@ -283,7 +294,7 @@ function bflm_preview_map(): void {
 	init();
 }() );
 </script>
-<?php wp_footer(); ?>
+	<?php wp_footer(); ?>
 </body>
 </html>
 	<?php

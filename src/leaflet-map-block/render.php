@@ -20,10 +20,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Sanitize / cast all values coming from block attributes.
-$lat               = isset( $attributes['lat'] ) ? (float) $attributes['lat'] : 0.0;
-$lng               = isset( $attributes['lng'] ) ? (float) $attributes['lng'] : 0.0;
-$zoom              = isset( $attributes['zoom'] ) ? (int) $attributes['zoom'] : 12;
-$height            = isset( $attributes['height'] ) ? (int) $attributes['height'] : 400;
+$lat  = isset( $attributes['lat'] ) ? (float) $attributes['lat'] : 0.0;
+$lng  = isset( $attributes['lng'] ) ? (float) $attributes['lng'] : 0.0;
+$zoom = isset( $attributes['zoom'] ) ? (int) $attributes['zoom'] : 12;
+
+// Height: accept string with unit (e.g., "400px", "50vh") or bare number for backwards compat.
+$height_raw = isset( $attributes['height'] ) ? $attributes['height'] : '400px';
+$height     = is_numeric( $height_raw ) ? $height_raw . 'px' : sanitize_text_field( $height_raw );
+if ( ! preg_match( '/^\d+(\.\d+)?(px|%|vh|vw|em|rem)$/', $height ) ) {
+	$height = '400px';
+}
+
+// Width: accept string with unit, default 100%.
+$width_raw = isset( $attributes['width'] ) ? $attributes['width'] : '100%';
+$width     = is_numeric( $width_raw ) ? $width_raw . 'px' : sanitize_text_field( $width_raw );
+if ( ! preg_match( '/^\d+(\.\d+)?(px|%|vh|vw|em|rem)$/', $width ) ) {
+	$width = '100%';
+}
 $scroll_wheel_zoom = ! empty( $attributes['scrollWheelZoom'] ) ? 'true' : 'false';
 $zoom_control      = isset( $attributes['zoomControl'] ) && false === $attributes['zoomControl'] ? 'false' : 'true';
 $fit_markers       = ! empty( $attributes['fitMarkers'] ) ? 'true' : 'false';
@@ -33,11 +46,12 @@ $markers           = isset( $attributes['markers'] ) && is_array( $attributes['m
 
 // Build the [leaflet-map] shortcode.
 $map_shortcode = sprintf(
-	'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$dpx" scrollwheel="%5$s" zoomcontrol="%6$s" fitbounds="%7$s"]',
+	'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" width="%5$s" scrollwheel="%6$s" zoomcontrol="%7$s" fitbounds="%8$s"]',
 	esc_attr( $lat ),
 	esc_attr( $lng ),
 	$zoom,
-	$height,
+	esc_attr( $height ),
+	esc_attr( $width ),
 	$scroll_wheel_zoom,
 	$zoom_control,
 	$fit_markers
