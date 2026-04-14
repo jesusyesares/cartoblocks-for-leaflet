@@ -533,7 +533,13 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 
 			</InspectorControls>
 
-			<div { ...blockProps }>
+			<div
+				{ ...blockProps }
+				style={ {
+					...( blockProps.style || {} ),
+					width: normalizedWidth,
+				} }
+			>
 				<div style={ { position: 'relative' } }>
 					<iframe
 						ref={ iframeRef }
