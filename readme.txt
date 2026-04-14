@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.0
 Tested up to:      6.9
-Stable tag:        0.3.1
+Stable tag:        0.3.2
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -61,6 +61,17 @@ Whatever you have configured in the Leaflet Map plugin settings. By default, Ope
 3. Frontend rendering with Leaflet Map shortcodes.
 
 == Changelog ==
+
+= 0.3.2 =
+* Changed: Reorganized sidebar into collapsible panels: Location, Dimensions, Interaction, Map Controls, Markers.
+* Added: "Fit to Markers" toggle in Location panel with live editor preview.
+* Changed: Converted height to UnitControl with px, %, vh unit selector.
+* Added: Width attribute with UnitControl (applied to block wrapper, not shortcode).
+* Fixed: Prevented negative dimension values in height and width controls.
+* Fixed: Backwards compatible with blocks created in earlier versions.
+
+= 0.3.1 =
+* Fixed: PHPCS ternary operator spacing warnings in render.php.
 
 = 0.3.0 =
 * Changed: Editor architecture — iframe-based preview using Leaflet Map shortcodes, identical to frontend.
