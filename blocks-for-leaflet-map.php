@@ -130,12 +130,12 @@ function bflm_preview_map(): void {
 	$markers         = is_array( $markers_decoded ) ? $markers_decoded : array();
 	$fit_markers     = ! empty( $_GET['fitMarkers'] ) && 'true' === $_GET['fitMarkers'] ? 'true' : 'false';
 	$show_scale      = ! empty( $_GET['showScale'] ) && 'true' === $_GET['showScale'] ? '1' : '0';
-	$attribution     = isset( $_GET['attribution'] ) ? sanitize_text_field( wp_unslash( $_GET['attribution'] ) ) : '';
+	$attribution     = isset( $_GET['attribution'] ) ? wp_kses_post( wp_unslash( $_GET['attribution'] ) ) : '';
 
 	// Build shortcodes (same logic as render.php).
 	// Width is applied to the editor block container, not the shortcode.
 	$map_shortcode = sprintf(
-		'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" scrollwheel="%5$s" zoomcontrol="%6$s" fitbounds="%7$s" show_scale="%8$s"%9$s]',
+		'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" scrollwheel="%5$s" zoomcontrol="%6$s" fitbounds="%7$s" show_scale="%8$s"',
 		esc_attr( $lat ),
 		esc_attr( $lng ),
 		$zoom,
@@ -143,9 +143,14 @@ function bflm_preview_map(): void {
 		$scroll_wheel,
 		$zoom_ctrl,
 		$fit_markers,
-		$show_scale,
-		'' !== $attribution ? sprintf( ' attribution="%s"', esc_attr( $attribution ) ) : ''
+		$show_scale
 	);
+
+	if ( '' !== $attribution ) {
+		$map_shortcode .= sprintf( " attribution='%s'", wp_kses_post( $attribution ) );
+	}
+
+	$map_shortcode .= ']';
 
 	$marker_shortcodes = '';
 	foreach ( $markers as $marker ) {
