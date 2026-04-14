@@ -13,7 +13,7 @@
 			"lat": 37.1773,
 			"lng": -3.5986,
 			"zoom": 13,
-			"height": 400
+			"height": "400px"
 		}
 	},
 	"supports": {
@@ -34,8 +34,12 @@
 			"default": 13
 		},
 		"height": {
-			"type": "number",
-			"default": 400
+			"type": "string",
+			"default": "400px"
+		},
+		"width": {
+			"type": "string",
+			"default": "100%"
 		},
 		"scrollWheelZoom": {
 			"type": "boolean",

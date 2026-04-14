@@ -48,6 +48,7 @@ import {
 	PanelBody,
 	Button,
 	__experimentalNumberControl as NumberControl,
+	__experimentalUnitControl as UnitControl,
 	RangeControl,
 	ToggleControl,
 	TextControl,
@@ -55,6 +56,15 @@ import {
 } from '@wordpress/components';
 
 import './editor.scss';
+
+/**
+ * Allowed CSS units for map dimension controls.
+ */
+const DIMENSION_UNITS = [
+	{ value: 'px', label: 'px', default: 400 },
+	{ value: '%',  label: '%',  default: 100 },
+	{ value: 'vh', label: 'vh', default: 50 },
+];
 
 /**
  * Build the full preview iframe src URL from block attributes.
@@ -67,13 +77,20 @@ import './editor.scss';
  * @return {string} URL string, or empty string if bflmEditor is unavailable.
  */
 function buildPreviewUrl( attributes, clientId ) {
-	const { lat, lng, zoom, height, scrollWheelZoom, zoomControl, fitMarkers, markers } =
+	const { lat, lng, zoom, height, width, scrollWheelZoom, zoomControl, fitMarkers, markers } =
 		attributes;
 
 	const { previewUrl, previewNonce } = window.bflmEditor || {};
 	if ( ! previewUrl || ! previewNonce ) {
 		return '';
 	}
+
+	// Normalize dimensions for backwards compatibility with pre-0.4.0 blocks
+	// that stored height as a bare number.
+	const h = typeof height === 'number' || ( typeof height === 'string' && /^\d+$/.test( height ) )
+		? `${ height }px`
+		: height || '400px';
+	const w = width || '100%';
 
 	const params = new URLSearchParams( {
 		action:          'bflm_preview',
@@ -82,7 +99,8 @@ function buildPreviewUrl( attributes, clientId ) {
 		lat,
 		lng,
 		zoom,
-		height,
+		height:          h,
+		width:           w,
 		scrollWheelZoom: scrollWheelZoom ? 'true' : 'false',
 		zoomControl:     zoomControl     ? 'true' : 'false',
 		fitMarkers:      fitMarkers      ? 'true' : 'false',
@@ -106,11 +124,20 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		lng,
 		zoom,
 		height,
+		width,
 		scrollWheelZoom,
 		zoomControl,
 		fitMarkers,
 		markers,
 	} = attributes;
+
+	// Backwards compatibility: if height is a bare number (from pre-0.4.0 blocks),
+	// convert it to a string with 'px' unit.
+	const normalizedHeight = typeof height === 'number' || ( typeof height === 'string' && /^\d+$/.test( height ) )
+		? `${ height }px`
+		: height || '400px';
+
+	const normalizedWidth = width || '100%';
 
 	/** Reference to the <iframe> DOM element. */
 	const iframeRef = useRef( null );
@@ -188,7 +215,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		}, 500 );
 
 		return () => clearTimeout( srcDebounceRef.current );
-	}, [ height, scrollWheelZoom, zoomControl, fitMarkers, markers ] ); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [ height, width, scrollWheelZoom, zoomControl, fitMarkers, markers ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// ── View changes (sidebar) → postMessage to iframe (100 ms debounce) ──────
 	//
@@ -367,16 +394,22 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 					title={ __( 'Dimensions', 'blocks-for-leaflet-map' ) }
 					initialOpen={ false }
 				>
-					<NumberControl
-						label={ __( 'Height (px)', 'blocks-for-leaflet-map' ) }
-						value={ height }
+					<UnitControl
+						label={ __( 'Height', 'blocks-for-leaflet-map' ) }
+						value={ normalizedHeight }
+						units={ DIMENSION_UNITS }
 						onChange={ ( value ) =>
-							setAttributes( {
-								height: parseInt( value, 10 ) || 400,
-							} )
+							setAttributes( { height: value } )
 						}
-						min={ 100 }
-						step={ 10 }
+						__next40pxDefaultSize
+					/>
+					<UnitControl
+						label={ __( 'Width', 'blocks-for-leaflet-map' ) }
+						value={ normalizedWidth }
+						units={ DIMENSION_UNITS }
+						onChange={ ( value ) =>
+							setAttributes( { width: value } )
+						}
 						__next40pxDefaultSize
 					/>
 				</PanelBody>
@@ -505,7 +538,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 					<iframe
 						ref={ iframeRef }
 						width="100%"
-						height={ height }
+						height={ normalizedHeight }
 						style={ { border: 'none', display: 'block' } }
 						sandbox="allow-scripts allow-same-origin"
 						title={ __( 'Map preview', 'blocks-for-leaflet-map' ) }
