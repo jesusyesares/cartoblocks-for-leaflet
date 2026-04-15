@@ -151,6 +151,22 @@ function bflm_preview_map(): void {
 		}
 	}
 
+	// Zoom & bounds attributes: only include when explicitly set.
+	$min_zoom   = isset( $_GET['minZoom'] ) ? sanitize_text_field( wp_unslash( $_GET['minZoom'] ) ) : '';
+	$max_zoom   = isset( $_GET['maxZoom'] ) ? sanitize_text_field( wp_unslash( $_GET['maxZoom'] ) ) : '';
+	$max_bounds = isset( $_GET['maxBounds'] ) ? sanitize_text_field( wp_unslash( $_GET['maxBounds'] ) ) : '';
+
+	$zoom_bounds_shortcode = '';
+	if ( '' !== $min_zoom && is_numeric( $min_zoom ) ) {
+		$zoom_bounds_shortcode .= sprintf( ' min_zoom="%s"', esc_attr( $min_zoom ) );
+	}
+	if ( '' !== $max_zoom && is_numeric( $max_zoom ) ) {
+		$zoom_bounds_shortcode .= sprintf( ' max_zoom="%s"', esc_attr( $max_zoom ) );
+	}
+	if ( '' !== $max_bounds ) {
+		$zoom_bounds_shortcode .= sprintf( ' maxbounds="%s"', esc_attr( $max_bounds ) );
+	}
+
 	// Build shortcodes (same logic as render.php).
 	// Width is applied to the editor block container, not the shortcode.
 	$map_shortcode = sprintf(
@@ -167,6 +183,9 @@ function bflm_preview_map(): void {
 
 	// Append interaction attributes (only those explicitly set).
 	$map_shortcode .= $interaction_shortcode;
+
+	// Append zoom & bounds attributes (only those explicitly set).
+	$map_shortcode .= $zoom_bounds_shortcode;
 
 	if ( '' !== $attribution ) {
 		$map_shortcode .= sprintf( " attribution='%s'", wp_kses_post( $attribution ) );
@@ -227,9 +246,12 @@ function bflm_preview_map(): void {
 </div>
 <script>
 ( function () {
-	var blockId           = <?php echo wp_json_encode( $block_id ); ?>;
-	var attempts          = 0;
-	var MAX_ATTEMPTS      = 50;
+	var blockId            = <?php echo wp_json_encode( $block_id ); ?>;
+	var minZoom            = <?php echo wp_json_encode( '' !== $min_zoom && is_numeric( $min_zoom ) ? (float) $min_zoom : null ); ?>;
+	var maxZoom            = <?php echo wp_json_encode( '' !== $max_zoom && is_numeric( $max_zoom ) ? (float) $max_zoom : null ); ?>;
+	var maxBoundsRaw       = <?php echo wp_json_encode( $max_bounds ); ?>;
+	var attempts           = 0;
+	var MAX_ATTEMPTS       = 50;
 	var isProgrammaticMove = false;
 
 	/**
@@ -258,6 +280,27 @@ function bflm_preview_map(): void {
 
 		var map     = plugin.maps[ 0 ];
 		var markers = plugin.markers || [];
+
+		// Apply zoom & bounds constraints if set.
+		if ( minZoom !== null ) {
+			map.setMinZoom( minZoom );
+		}
+		if ( maxZoom !== null ) {
+			map.setMaxZoom( maxZoom );
+		}
+		if ( maxBoundsRaw ) {
+			try {
+				var parts  = maxBoundsRaw.split( ';' );
+				var sw     = parts[ 0 ].split( ',' );
+				var ne     = parts[ 1 ].split( ',' );
+				var bounds = [ [ parseFloat( sw[ 0 ] ), parseFloat( sw[ 1 ] ) ], [ parseFloat( ne[ 0 ] ), parseFloat( ne[ 1 ] ) ] ];
+				if ( bounds.every( function ( p ) { return ! isNaN( p[ 0 ] ) && ! isNaN( p[ 1 ] ); } ) ) {
+					map.setMaxBounds( bounds );
+				}
+			} catch ( e ) { /* ignore malformed input */ }
+		} else {
+			map.setMaxBounds( null );
+		}
 
 		// User pans / zooms → notify the editor.
 		map.on( 'moveend zoomend', function () {

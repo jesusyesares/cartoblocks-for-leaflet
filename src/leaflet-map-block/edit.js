@@ -93,6 +93,7 @@ function buildPreviewUrl( attributes, clientId ) {
 		attribution, showScale,
 		dragging, keyboard, doubleClickZoom, boxZoom,
 		closePopupOnClick, tap, inertia,
+		minZoom, maxZoom, maxBounds,
 		markers,
 	} = attributes;
 
@@ -131,6 +132,9 @@ function buildPreviewUrl( attributes, clientId ) {
 	if ( closePopupOnClick ) params.set( 'closePopupOnClick', closePopupOnClick );
 	if ( tap )               params.set( 'tap', tap );
 	if ( inertia )           params.set( 'inertia', inertia );
+	if ( minZoom )           params.set( 'minZoom', minZoom );
+	if ( maxZoom )           params.set( 'maxZoom', maxZoom );
+	if ( maxBounds )         params.set( 'maxBounds', maxBounds );
 
 	return previewUrl + '?' + params.toString();
 }
@@ -162,6 +166,9 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		closePopupOnClick,
 		tap,
 		inertia,
+		minZoom,
+		maxZoom,
+		maxBounds,
 		markers,
 	} = attributes;
 
@@ -252,6 +259,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 	}, [ height, scrollWheelZoom, zoomControl, fitMarkers, attribution, showScale,
 		dragging, keyboard, doubleClickZoom, boxZoom,
 		closePopupOnClick, tap, inertia,
+		minZoom, maxZoom, maxBounds,
 		markers ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// ── View changes (sidebar) → postMessage to iframe (100 ms debounce) ──────
@@ -538,6 +546,60 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 						options={ THREE_STATE_OPTIONS }
 						onChange={ ( value ) =>
 							setAttributes( { inertia: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+				</PanelBody>
+
+				{ /* ── Zoom & Bounds panel ────────────────────────────────── */ }
+				<PanelBody
+					title={ __( 'Zoom & Bounds', 'blocks-for-leaflet-map' ) }
+					initialOpen={ false }
+				>
+					<TextControl
+						label={ __( 'Min Zoom', 'blocks-for-leaflet-map' ) }
+						help={ __(
+							'Minimum zoom level allowed. Leave empty for global default.',
+							'blocks-for-leaflet-map'
+						) }
+						type="number"
+						min={ 0 }
+						max={ 25 }
+						step={ 1 }
+						value={ minZoom }
+						onChange={ ( value ) =>
+							setAttributes( { minZoom: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<TextControl
+						label={ __( 'Max Zoom', 'blocks-for-leaflet-map' ) }
+						help={ __(
+							'Maximum zoom level allowed. Leave empty for global default.',
+							'blocks-for-leaflet-map'
+						) }
+						type="number"
+						min={ 0 }
+						max={ 25 }
+						step={ 1 }
+						value={ maxZoom }
+						onChange={ ( value ) =>
+							setAttributes( { maxZoom: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<TextControl
+						label={ __( 'Max Bounds', 'blocks-for-leaflet-map' ) }
+						help={ __(
+							'Restrict the map view to a bounding box. Format: lat,lng;lat,lng (southwest;northeast). Example: 40.0,-4.0;38.0,-3.0',
+							'blocks-for-leaflet-map'
+						) }
+						value={ maxBounds }
+						onChange={ ( value ) =>
+							setAttributes( { maxBounds: value } )
 						}
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom

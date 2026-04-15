@@ -89,6 +89,18 @@
 			"type": "string",
 			"default": ""
 		},
+		"minZoom": {
+			"type": "string",
+			"default": ""
+		},
+		"maxZoom": {
+			"type": "string",
+			"default": ""
+		},
+		"maxBounds": {
+			"type": "string",
+			"default": ""
+		},
 		"markers": {
 			"type": "array",
 			"default": [],
