@@ -134,16 +134,13 @@ function bflm_preview_map(): void {
 
 	// Interaction attributes: only include when explicitly set.
 	$interaction_keys = array(
-		'dragging'           => 'dragging',
-		'keyboard'           => 'keyboard',
-		'doubleClickZoom'    => 'doubleclickzoom',
-		'boxZoom'            => 'boxzoom',
-		'touchZoom'          => 'touchzoom',
-		'closePopupOnClick'  => 'closepopuponclick',
-		'trackResize'        => 'trackresize',
-		'tap'                => 'tap',
-		'inertia'            => 'inertia',
-		'bounceAtZoomLimits' => 'bounceatzoomlimits',
+		'dragging'          => 'dragging',
+		'keyboard'          => 'keyboard',
+		'doubleClickZoom'   => 'doubleclickzoom',
+		'boxZoom'           => 'boxzoom',
+		'closePopupOnClick' => 'closepopuponclick',
+		'tap'               => 'tap',
+		'inertia'           => 'inertia',
 	);
 
 	$interaction_shortcode = '';
