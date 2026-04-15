@@ -77,10 +77,6 @@
 			"type": "string",
 			"default": ""
 		},
-		"touchZoom": {
-			"type": "string",
-			"default": ""
-		},
 		"closePopupOnClick": {
 			"type": "string",
 			"default": ""
@@ -90,10 +86,6 @@
 			"default": ""
 		},
 		"inertia": {
-			"type": "string",
-			"default": ""
-		},
-		"bounceAtZoomLimits": {
 			"type": "string",
 			"default": ""
 		},

@@ -91,8 +91,8 @@ function buildPreviewUrl( attributes, clientId ) {
 	const {
 		lat, lng, zoom, height, scrollWheelZoom, zoomControl, fitMarkers,
 		attribution, showScale,
-		dragging, keyboard, doubleClickZoom, boxZoom, touchZoom,
-		closePopupOnClick, tap, inertia, bounceAtZoomLimits,
+		dragging, keyboard, doubleClickZoom, boxZoom,
+		closePopupOnClick, tap, inertia,
 		markers,
 	} = attributes;
 
@@ -124,15 +124,13 @@ function buildPreviewUrl( attributes, clientId ) {
 	} );
 
 	// Only include interaction params when explicitly set (not "Default").
-	if ( dragging )           params.set( 'dragging', dragging );
-	if ( keyboard )           params.set( 'keyboard', keyboard );
-	if ( doubleClickZoom )    params.set( 'doubleClickZoom', doubleClickZoom );
-	if ( boxZoom )            params.set( 'boxZoom', boxZoom );
-	if ( touchZoom )          params.set( 'touchZoom', touchZoom );
-	if ( closePopupOnClick )  params.set( 'closePopupOnClick', closePopupOnClick );
-	if ( tap )                params.set( 'tap', tap );
-	if ( inertia )            params.set( 'inertia', inertia );
-	if ( bounceAtZoomLimits ) params.set( 'bounceAtZoomLimits', bounceAtZoomLimits );
+	if ( dragging )          params.set( 'dragging', dragging );
+	if ( keyboard )          params.set( 'keyboard', keyboard );
+	if ( doubleClickZoom )   params.set( 'doubleClickZoom', doubleClickZoom );
+	if ( boxZoom )           params.set( 'boxZoom', boxZoom );
+	if ( closePopupOnClick ) params.set( 'closePopupOnClick', closePopupOnClick );
+	if ( tap )               params.set( 'tap', tap );
+	if ( inertia )           params.set( 'inertia', inertia );
 
 	return previewUrl + '?' + params.toString();
 }
@@ -161,11 +159,9 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		keyboard,
 		doubleClickZoom,
 		boxZoom,
-		touchZoom,
 		closePopupOnClick,
 		tap,
 		inertia,
-		bounceAtZoomLimits,
 		markers,
 	} = attributes;
 
@@ -254,8 +250,8 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 
 		return () => clearTimeout( srcDebounceRef.current );
 	}, [ height, scrollWheelZoom, zoomControl, fitMarkers, attribution, showScale,
-		dragging, keyboard, doubleClickZoom, boxZoom, touchZoom,
-		closePopupOnClick, tap, inertia, bounceAtZoomLimits,
+		dragging, keyboard, doubleClickZoom, boxZoom,
+		closePopupOnClick, tap, inertia,
 		markers ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// ── View changes (sidebar) → postMessage to iframe (100 ms debounce) ──────
@@ -515,16 +511,6 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 						__nextHasNoMarginBottom
 					/>
 					<SelectControl
-						label={ __( 'Touch Zoom', 'blocks-for-leaflet-map' ) }
-						value={ touchZoom }
-						options={ THREE_STATE_OPTIONS }
-						onChange={ ( value ) =>
-							setAttributes( { touchZoom: value } )
-						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-					<SelectControl
 						label={ __( 'Close Popup on Click', 'blocks-for-leaflet-map' ) }
 						value={ closePopupOnClick }
 						options={ THREE_STATE_OPTIONS }
@@ -552,16 +538,6 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 						options={ THREE_STATE_OPTIONS }
 						onChange={ ( value ) =>
 							setAttributes( { inertia: value } )
-						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-					<SelectControl
-						label={ __( 'Bounce at Zoom Limits', 'blocks-for-leaflet-map' ) }
-						value={ bounceAtZoomLimits }
-						options={ THREE_STATE_OPTIONS }
-						onChange={ ( value ) =>
-							setAttributes( { bounceAtZoomLimits: value } )
 						}
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom

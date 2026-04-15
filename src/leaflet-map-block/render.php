@@ -45,15 +45,13 @@ $attribution       = isset( $attributes['attribution'] ) ? $attributes['attribut
 
 // Interaction attributes: only include in shortcode when explicitly set (not empty = "Default").
 $interaction_atts = array(
-	'dragging'           => isset( $attributes['dragging'] ) ? $attributes['dragging'] : '',
-	'keyboard'           => isset( $attributes['keyboard'] ) ? $attributes['keyboard'] : '',
-	'doubleclickzoom'    => isset( $attributes['doubleClickZoom'] ) ? $attributes['doubleClickZoom'] : '',
-	'boxzoom'            => isset( $attributes['boxZoom'] ) ? $attributes['boxZoom'] : '',
-	'touchzoom'          => isset( $attributes['touchZoom'] ) ? $attributes['touchZoom'] : '',
-	'closepopuponclick'  => isset( $attributes['closePopupOnClick'] ) ? $attributes['closePopupOnClick'] : '',
-	'tap'                => isset( $attributes['tap'] ) ? $attributes['tap'] : '',
-	'inertia'            => isset( $attributes['inertia'] ) ? $attributes['inertia'] : '',
-	'bounceatzoomlimits' => isset( $attributes['bounceAtZoomLimits'] ) ? $attributes['bounceAtZoomLimits'] : '',
+	'dragging'          => isset( $attributes['dragging'] ) ? $attributes['dragging'] : '',
+	'keyboard'          => isset( $attributes['keyboard'] ) ? $attributes['keyboard'] : '',
+	'doubleclickzoom'   => isset( $attributes['doubleClickZoom'] ) ? $attributes['doubleClickZoom'] : '',
+	'boxzoom'           => isset( $attributes['boxZoom'] ) ? $attributes['boxZoom'] : '',
+	'closepopuponclick' => isset( $attributes['closePopupOnClick'] ) ? $attributes['closePopupOnClick'] : '',
+	'tap'               => isset( $attributes['tap'] ) ? $attributes['tap'] : '',
+	'inertia'           => isset( $attributes['inertia'] ) ? $attributes['inertia'] : '',
 );
 
 $interaction_shortcode = '';
