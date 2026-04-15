@@ -61,6 +61,20 @@ foreach ( $interaction_atts as $key => $value ) {
 	}
 }
 
+// Zoom & bounds attributes: only include when explicitly set.
+$zoom_bounds_atts = array(
+	'min_zoom'  => isset( $attributes['minZoom'] ) && '' !== $attributes['minZoom'] ? $attributes['minZoom'] : '',
+	'max_zoom'  => isset( $attributes['maxZoom'] ) && '' !== $attributes['maxZoom'] ? $attributes['maxZoom'] : '',
+	'maxbounds' => isset( $attributes['maxBounds'] ) && '' !== $attributes['maxBounds'] ? $attributes['maxBounds'] : '',
+);
+
+$zoom_bounds_shortcode = '';
+foreach ( $zoom_bounds_atts as $key => $value ) {
+	if ( '' !== $value ) {
+		$zoom_bounds_shortcode .= sprintf( ' %s="%s"', $key, esc_attr( $value ) );
+	}
+}
+
 $markers = isset( $attributes['markers'] ) && is_array( $attributes['markers'] )
 	? $attributes['markers']
 	: array();
@@ -82,6 +96,9 @@ $map_shortcode = sprintf(
 
 // Append interaction attributes (only those explicitly set).
 $map_shortcode .= $interaction_shortcode;
+
+// Append zoom & bounds attributes (only those explicitly set).
+$map_shortcode .= $zoom_bounds_shortcode;
 
 // Attribution: use wp_kses_post (allows safe HTML like links) and single quotes
 // so inner double quotes (e.g., href="...") don't break the shortcode parser.
