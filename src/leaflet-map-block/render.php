@@ -42,7 +42,28 @@ $zoom_control      = isset( $attributes['zoomControl'] ) && false === $attribute
 $fit_markers       = ! empty( $attributes['fitMarkers'] ) ? 'true' : 'false';
 $show_scale        = ! empty( $attributes['showScale'] ) ? '1' : '0';
 $attribution       = isset( $attributes['attribution'] ) ? $attributes['attribution'] : '';
-$markers           = isset( $attributes['markers'] ) && is_array( $attributes['markers'] )
+
+// Interaction attributes: only include in shortcode when explicitly set (not empty = "Default").
+$interaction_atts = array(
+	'dragging'           => isset( $attributes['dragging'] ) ? $attributes['dragging'] : '',
+	'keyboard'           => isset( $attributes['keyboard'] ) ? $attributes['keyboard'] : '',
+	'doubleclickzoom'    => isset( $attributes['doubleClickZoom'] ) ? $attributes['doubleClickZoom'] : '',
+	'boxzoom'            => isset( $attributes['boxZoom'] ) ? $attributes['boxZoom'] : '',
+	'touchzoom'          => isset( $attributes['touchZoom'] ) ? $attributes['touchZoom'] : '',
+	'closepopuponclick'  => isset( $attributes['closePopupOnClick'] ) ? $attributes['closePopupOnClick'] : '',
+	'tap'                => isset( $attributes['tap'] ) ? $attributes['tap'] : '',
+	'inertia'            => isset( $attributes['inertia'] ) ? $attributes['inertia'] : '',
+	'bounceatzoomlimits' => isset( $attributes['bounceAtZoomLimits'] ) ? $attributes['bounceAtZoomLimits'] : '',
+);
+
+$interaction_shortcode = '';
+foreach ( $interaction_atts as $key => $value ) {
+	if ( '' !== $value ) {
+		$interaction_shortcode .= sprintf( ' %s="%s"', $key, esc_attr( $value ) );
+	}
+}
+
+$markers = isset( $attributes['markers'] ) && is_array( $attributes['markers'] )
 	? $attributes['markers']
 	: array();
 
@@ -60,6 +81,9 @@ $map_shortcode = sprintf(
 	$fit_markers,
 	$show_scale
 );
+
+// Append interaction attributes (only those explicitly set).
+$map_shortcode .= $interaction_shortcode;
 
 // Attribution: use wp_kses_post (allows safe HTML like links) and single quotes
 // so inner double quotes (e.g., href="...") don't break the shortcode parser.

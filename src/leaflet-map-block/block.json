@@ -2,7 +2,7 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "blocks-for-leaflet-map/leaflet-map-block",
-	"version": "0.3.3",
+	"version": "0.3.4",
 	"title": "Leaflet Map Block",
 	"category": "embed",
 	"icon": "location-alt",
@@ -60,6 +60,42 @@
 		"showScale": {
 			"type": "boolean",
 			"default": false
+		},
+		"dragging": {
+			"type": "string",
+			"default": ""
+		},
+		"keyboard": {
+			"type": "string",
+			"default": ""
+		},
+		"doubleClickZoom": {
+			"type": "string",
+			"default": ""
+		},
+		"boxZoom": {
+			"type": "string",
+			"default": ""
+		},
+		"touchZoom": {
+			"type": "string",
+			"default": ""
+		},
+		"closePopupOnClick": {
+			"type": "string",
+			"default": ""
+		},
+		"tap": {
+			"type": "string",
+			"default": ""
+		},
+		"inertia": {
+			"type": "string",
+			"default": ""
+		},
+		"bounceAtZoomLimits": {
+			"type": "string",
+			"default": ""
 		},
 		"markers": {
 			"type": "array",

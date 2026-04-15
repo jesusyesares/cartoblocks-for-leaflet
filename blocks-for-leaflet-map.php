@@ -3,7 +3,7 @@
  * Plugin Name:       Blocks for Leaflet Map
  * Plugin URI:        https://github.com/jesusyesares/blocks-for-leaflet-map
  * Description:       A dynamic Gutenberg block that wraps the Leaflet Map plugin shortcodes. Requires the "Leaflet Map" plugin to be installed and active.
- * Version:           0.3.3
+ * Version:           0.3.4
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Jesús Yesares García
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-define( 'BFLM_VERSION', '0.3.3' );
+define( 'BFLM_VERSION', '0.3.4' );
 define( 'BFLM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BFLM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BFLM_LEAFLET_MAP_PLUGIN', 'leaflet-map/leaflet-map.php' );
@@ -132,6 +132,28 @@ function bflm_preview_map(): void {
 	$show_scale      = ! empty( $_GET['showScale'] ) && 'true' === $_GET['showScale'] ? '1' : '0';
 	$attribution     = isset( $_GET['attribution'] ) ? wp_kses_post( wp_unslash( $_GET['attribution'] ) ) : '';
 
+	// Interaction attributes: only include when explicitly set.
+	$interaction_keys = array(
+		'dragging'           => 'dragging',
+		'keyboard'           => 'keyboard',
+		'doubleClickZoom'    => 'doubleclickzoom',
+		'boxZoom'            => 'boxzoom',
+		'touchZoom'          => 'touchzoom',
+		'closePopupOnClick'  => 'closepopuponclick',
+		'trackResize'        => 'trackresize',
+		'tap'                => 'tap',
+		'inertia'            => 'inertia',
+		'bounceAtZoomLimits' => 'bounceatzoomlimits',
+	);
+
+	$interaction_shortcode = '';
+	foreach ( $interaction_keys as $get_key => $shortcode_key ) {
+		$value = isset( $_GET[ $get_key ] ) ? sanitize_text_field( wp_unslash( $_GET[ $get_key ] ) ) : '';
+		if ( '' !== $value && in_array( $value, array( 'true', 'false' ), true ) ) {
+			$interaction_shortcode .= sprintf( ' %s="%s"', $shortcode_key, esc_attr( $value ) );
+		}
+	}
+
 	// Build shortcodes (same logic as render.php).
 	// Width is applied to the editor block container, not the shortcode.
 	$map_shortcode = sprintf(
@@ -145,6 +167,9 @@ function bflm_preview_map(): void {
 		$fit_markers,
 		$show_scale
 	);
+
+	// Append interaction attributes (only those explicitly set).
+	$map_shortcode .= $interaction_shortcode;
 
 	if ( '' !== $attribution ) {
 		$map_shortcode .= sprintf( " attribution='%s'", wp_kses_post( $attribution ) );
