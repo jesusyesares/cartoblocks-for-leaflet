@@ -63,7 +63,7 @@ Whatever you have configured in the Leaflet Map plugin settings. By default, Ope
 == Changelog ==
 
 = 0.3.4 =
-* Added: Ten map interaction control attributes (dragging, keyboard, double-click zoom, box zoom, touch zoom, close popup on click, track resize, tap, inertia, bounce at zoom limits) with three-state model: Default (inherit Leaflet Map global settings), Enabled, or Disabled.
+* Added: Nine map interaction control attributes (dragging, keyboard, double-click zoom, box zoom, touch zoom, close popup on click, tap, inertia, bounce at zoom limits) with three-state model: Default (inherit Leaflet Map global settings), Enabled, or Disabled.
 
 = 0.3.3 =
 * Added: Show Scale toggle in Map Controls panel.
