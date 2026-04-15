@@ -92,7 +92,7 @@ function buildPreviewUrl( attributes, clientId ) {
 		lat, lng, zoom, height, scrollWheelZoom, zoomControl, fitMarkers,
 		attribution, showScale,
 		dragging, keyboard, doubleClickZoom, boxZoom, touchZoom,
-		closePopupOnClick, trackResize, tap, inertia, bounceAtZoomLimits,
+		closePopupOnClick, tap, inertia, bounceAtZoomLimits,
 		markers,
 	} = attributes;
 
@@ -130,7 +130,6 @@ function buildPreviewUrl( attributes, clientId ) {
 	if ( boxZoom )            params.set( 'boxZoom', boxZoom );
 	if ( touchZoom )          params.set( 'touchZoom', touchZoom );
 	if ( closePopupOnClick )  params.set( 'closePopupOnClick', closePopupOnClick );
-	if ( trackResize )        params.set( 'trackResize', trackResize );
 	if ( tap )                params.set( 'tap', tap );
 	if ( inertia )            params.set( 'inertia', inertia );
 	if ( bounceAtZoomLimits ) params.set( 'bounceAtZoomLimits', bounceAtZoomLimits );
@@ -164,7 +163,6 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		boxZoom,
 		touchZoom,
 		closePopupOnClick,
-		trackResize,
 		tap,
 		inertia,
 		bounceAtZoomLimits,
@@ -257,7 +255,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		return () => clearTimeout( srcDebounceRef.current );
 	}, [ height, scrollWheelZoom, zoomControl, fitMarkers, attribution, showScale,
 		dragging, keyboard, doubleClickZoom, boxZoom, touchZoom,
-		closePopupOnClick, trackResize, tap, inertia, bounceAtZoomLimits,
+		closePopupOnClick, tap, inertia, bounceAtZoomLimits,
 		markers ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// ── View changes (sidebar) → postMessage to iframe (100 ms debounce) ──────
@@ -532,17 +530,6 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 						options={ THREE_STATE_OPTIONS }
 						onChange={ ( value ) =>
 							setAttributes( { closePopupOnClick: value } )
-						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-					<SelectControl
-						label={ __( 'Track Resize', 'blocks-for-leaflet-map' ) }
-						help={ __( 'Automatically resize map when window resizes.', 'blocks-for-leaflet-map' ) }
-						value={ trackResize }
-						options={ THREE_STATE_OPTIONS }
-						onChange={ ( value ) =>
-							setAttributes( { trackResize: value } )
 						}
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom

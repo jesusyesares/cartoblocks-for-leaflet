@@ -51,7 +51,6 @@ $interaction_atts = array(
 	'boxzoom'            => isset( $attributes['boxZoom'] ) ? $attributes['boxZoom'] : '',
 	'touchzoom'          => isset( $attributes['touchZoom'] ) ? $attributes['touchZoom'] : '',
 	'closepopuponclick'  => isset( $attributes['closePopupOnClick'] ) ? $attributes['closePopupOnClick'] : '',
-	'trackresize'        => isset( $attributes['trackResize'] ) ? $attributes['trackResize'] : '',
 	'tap'                => isset( $attributes['tap'] ) ? $attributes['tap'] : '',
 	'inertia'            => isset( $attributes['inertia'] ) ? $attributes['inertia'] : '',
 	'bounceatzoomlimits' => isset( $attributes['bounceAtZoomLimits'] ) ? $attributes['bounceAtZoomLimits'] : '',

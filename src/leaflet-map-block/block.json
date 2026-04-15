@@ -85,10 +85,6 @@
 			"type": "string",
 			"default": ""
 		},
-		"trackResize": {
-			"type": "string",
-			"default": ""
-		},
 		"tap": {
 			"type": "string",
 			"default": ""
