@@ -187,6 +187,53 @@ function bflm_preview_map(): void {
 	// Append zoom & bounds attributes (only those explicitly set).
 	$map_shortcode .= $zoom_bounds_shortcode;
 
+	// Tile layer attributes: only include when explicitly set.
+	// Note: esc_url_raw() strips {s}/{z}/{x}/{y} placeholders; esc_attr() used instead.
+	$tile_preview_shortcode = '';
+
+	$tileurl_preview = isset( $_GET['tileurl'] ) ? sanitize_text_field( wp_unslash( $_GET['tileurl'] ) ) : '';
+	if ( '' !== $tileurl_preview ) {
+		$tile_preview_shortcode .= sprintf( ' tileurl="%s"', esc_attr( $tileurl_preview ) );
+	}
+
+	$tilesize_preview = isset( $_GET['tilesize'] ) ? sanitize_text_field( wp_unslash( $_GET['tilesize'] ) ) : '';
+	if ( '' !== $tilesize_preview && is_numeric( $tilesize_preview ) && (int) $tilesize_preview >= 1 ) {
+		$tile_preview_shortcode .= sprintf( ' tilesize="%d"', (int) $tilesize_preview );
+	}
+
+	$subdomains_preview = isset( $_GET['subdomains'] ) ? sanitize_text_field( wp_unslash( $_GET['subdomains'] ) ) : '';
+	if ( '' !== $subdomains_preview ) {
+		$tile_preview_shortcode .= sprintf( ' subdomains="%s"', esc_attr( $subdomains_preview ) );
+	}
+
+	$mapid_preview = isset( $_GET['mapid'] ) ? sanitize_text_field( wp_unslash( $_GET['mapid'] ) ) : '';
+	if ( '' !== $mapid_preview ) {
+		$tile_preview_shortcode .= sprintf( ' mapid="%s"', esc_attr( $mapid_preview ) );
+	}
+
+	$accesstoken_preview = isset( $_GET['accesstoken'] ) ? sanitize_text_field( wp_unslash( $_GET['accesstoken'] ) ) : '';
+	if ( '' !== $accesstoken_preview ) {
+		$tile_preview_shortcode .= sprintf( ' accesstoken="%s"', esc_attr( $accesstoken_preview ) );
+	}
+
+	$zoomoffset_preview = isset( $_GET['zoomoffset'] ) ? sanitize_text_field( wp_unslash( $_GET['zoomoffset'] ) ) : '';
+	if ( '' !== $zoomoffset_preview && is_numeric( $zoomoffset_preview ) ) {
+		$tile_preview_shortcode .= sprintf( ' zoomoffset="%d"', (int) $zoomoffset_preview );
+	}
+
+	$nowrap_preview = isset( $_GET['nowrap'] ) ? sanitize_text_field( wp_unslash( $_GET['nowrap'] ) ) : '';
+	if ( in_array( $nowrap_preview, array( 'true', 'false' ), true ) ) {
+		$tile_preview_shortcode .= sprintf( ' nowrap="%s"', esc_attr( $nowrap_preview ) );
+	}
+
+	$detectretina_preview = isset( $_GET['detectretina'] ) ? sanitize_text_field( wp_unslash( $_GET['detectretina'] ) ) : '';
+	if ( in_array( $detectretina_preview, array( 'true', 'false' ), true ) ) {
+		// Shortcode attribute is detect_retina (with underscore) — confirmed in class.map-shortcode.php.
+		$tile_preview_shortcode .= sprintf( ' detect_retina="%s"', esc_attr( $detectretina_preview ) );
+	}
+
+	$map_shortcode .= $tile_preview_shortcode;
+
 	if ( '' !== $attribution ) {
 		$map_shortcode .= sprintf( " attribution='%s'", wp_kses_post( $attribution ) );
 	}

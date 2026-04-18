@@ -101,6 +101,38 @@
 			"type": "string",
 			"default": ""
 		},
+		"tileurl": {
+			"type": "string",
+			"default": ""
+		},
+		"tilesize": {
+			"type": "string",
+			"default": ""
+		},
+		"subdomains": {
+			"type": "string",
+			"default": ""
+		},
+		"mapid": {
+			"type": "string",
+			"default": ""
+		},
+		"accesstoken": {
+			"type": "string",
+			"default": ""
+		},
+		"zoomoffset": {
+			"type": "string",
+			"default": ""
+		},
+		"nowrap": {
+			"type": "string",
+			"default": ""
+		},
+		"detectretina": {
+			"type": "string",
+			"default": ""
+		},
 		"markers": {
 			"type": "array",
 			"default": [],
