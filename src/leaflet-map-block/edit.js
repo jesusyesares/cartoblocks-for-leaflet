@@ -632,7 +632,38 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 					<p>{ __( 'Override the global Leaflet Map tile settings for this specific map.', 'blocks-for-leaflet-map' ) }</p>
 					<TextControl
 						label={ __( 'Tile URL', 'blocks-for-leaflet-map' ) }
-						help={ __( 'Example: https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', 'blocks-for-leaflet-map' ) }
+						placeholder="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+						help={
+							<>
+								{ __( 'Browse providers: ', 'blocks-for-leaflet-map' ) }
+								<a
+									href="https://alexurquhart.github.io/free-tiles/"
+									target="_blank"
+									rel="noopener noreferrer"
+									aria-label={ sprintf( __( '%s (opens in new tab)', 'blocks-for-leaflet-map' ), __( 'Free Tile Services', 'blocks-for-leaflet-map' ) ) }
+								>
+									{ __( 'Free Tile Services', 'blocks-for-leaflet-map' ) }↗
+								</a>
+								{ ' · ' }
+								<a
+									href="https://leaflet-extras.github.io/leaflet-providers/preview/"
+									target="_blank"
+									rel="noopener noreferrer"
+									aria-label={ sprintf( __( '%s (opens in new tab)', 'blocks-for-leaflet-map' ), __( 'Leaflet Providers Preview', 'blocks-for-leaflet-map' ) ) }
+								>
+									{ __( 'Leaflet Providers Preview', 'blocks-for-leaflet-map' ) }↗
+								</a>
+								{ ' · ' }
+								<a
+									href="https://wiki.openstreetmap.org/wiki/Raster_tile_providers"
+									target="_blank"
+									rel="noopener noreferrer"
+									aria-label={ sprintf( __( '%s (opens in new tab)', 'blocks-for-leaflet-map' ), __( 'OSM Wiki', 'blocks-for-leaflet-map' ) ) }
+								>
+									{ __( 'OSM Wiki', 'blocks-for-leaflet-map' ) }↗
+								</a>
+							</>
+						}
 						value={ tileurl }
 						onChange={ ( value ) =>
 							setAttributes( { tileurl: value } )
