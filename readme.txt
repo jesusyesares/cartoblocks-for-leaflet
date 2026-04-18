@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.0
 Tested up to:      6.9
-Stable tag:        0.3.5
+Stable tag:        0.3.6
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -61,6 +61,12 @@ Whatever you have configured in the Leaflet Map plugin settings. By default, Ope
 3. Frontend rendering with Leaflet Map shortcodes.
 
 == Changelog ==
+
+= 0.3.6 =
+* Added: New "Tile Layer" panel in the block inspector with per-map tile layer override controls: Tile URL (with provider catalog links), Tile Size, Subdomains, Map ID, Access Token, Zoom Offset, No Wrap, and Detect Retina.
+* Changed: Moved the existing Attribution control into the new Tile Layer panel for better grouping.
+* Changed: Tile Size and Zoom Offset NumberControls now commit on blur to prevent intermediate iframe rebuilds.
+* Changed: Tile Size minimum value raised to 64 to prevent runaway tile requests.
 
 = 0.3.5 =
 * Added: Zoom & Bounds panel with Min Zoom, Max Zoom, and Max Bounds attributes.

@@ -5,6 +5,20 @@ All notable changes to the Blocks for Leaflet Map plugin will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.6] - 2026-04-18
+
+### Added
+- New "Tile Layer" panel in the block inspector with per-map tile layer override controls (closes #5):
+  - Tile URL with provider catalog links (Free Tile Services, Leaflet Providers Preview, OSM Wiki) and format placeholder
+  - Tile Size, Subdomains, Map ID, Access Token, Zoom Offset
+  - No Wrap and Detect Retina (three-state: Default / Enabled / Disabled)
+- Each control includes a `help` text explaining its purpose and when to use it.
+
+### Changed
+- Moved the existing Attribution control into the new Tile Layer panel for better grouping.
+- Tile Size and Zoom Offset NumberControls now commit on blur (instead of on every keystroke) to prevent intermediate iframe rebuilds.
+- Tile Size minimum value raised from 1 to 64 to prevent runaway tile requests when the value is set too low.
+
 ## [0.3.0] - 2026-04-13
 
 ### Changed
