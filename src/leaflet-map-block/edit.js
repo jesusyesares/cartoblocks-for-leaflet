@@ -42,7 +42,7 @@
  */
 
 import { __, sprintf } from '@wordpress/i18n';
-import { useEffect, useRef } from '@wordpress/element';
+import { useEffect, useRef, useState } from '@wordpress/element';
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
 import {
 	PanelBody,
@@ -188,6 +188,15 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		detectretina,
 		markers,
 	} = attributes;
+
+	// Local state for NumberControls that commit only on blur (Tile Size, Zoom Offset).
+	// This prevents iframe rebuilds on every keystroke/arrow-click with intermediate values.
+	const [ localTilesize, setLocalTilesize ] = useState( tilesize );
+	const [ localZoomoffset, setLocalZoomoffset ] = useState( zoomoffset );
+
+	// Sync local state when the block attribute changes externally (undo/redo, block switch).
+	useEffect( () => { setLocalTilesize( tilesize ); }, [ tilesize ] );
+	useEffect( () => { setLocalZoomoffset( zoomoffset ); }, [ zoomoffset ] );
 
 	// Backwards compatibility: if height is a bare number (from pre-0.4.0 blocks),
 	// convert it to a string with 'px' unit.
@@ -673,17 +682,17 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 					/>
 					<NumberControl
 						label={ __( 'Tile Size', 'blocks-for-leaflet-map' ) }
-						value={ tilesize }
-						min={ 1 }
-						onChange={ ( value ) =>
-							setAttributes( { tilesize: value ?? '' } )
-						}
+						help={ __( 'Default: 256. Only change if the provider\'s documentation specifies otherwise (e.g., Mapbox uses 512).', 'blocks-for-leaflet-map' ) }
+						value={ localTilesize }
+						min={ 64 }
+						onChange={ ( value ) => setLocalTilesize( value ?? '' ) }
+						onBlur={ () => setAttributes( { tilesize: localTilesize } ) }
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
 					<TextControl
 						label={ __( 'Subdomains', 'blocks-for-leaflet-map' ) }
-						help={ __( 'Comma-separated list, e.g. a,b,c', 'blocks-for-leaflet-map' ) }
+						help={ __( 'Comma-separated list (e.g., a,b,c) matching the {s} placeholder in the Tile URL. Leave empty if not used.', 'blocks-for-leaflet-map' ) }
 						value={ subdomains }
 						onChange={ ( value ) =>
 							setAttributes( { subdomains: value } )
@@ -693,7 +702,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 					/>
 					<TextControl
 						label={ __( 'Map ID', 'blocks-for-leaflet-map' ) }
-						help={ __( 'For Mapbox tile IDs', 'blocks-for-leaflet-map' ) }
+						help={ __( 'Required only for Mapbox tiles. Leave empty for other providers.', 'blocks-for-leaflet-map' ) }
 						value={ mapid }
 						onChange={ ( value ) =>
 							setAttributes( { mapid: value } )
@@ -703,7 +712,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 					/>
 					<TextControl
 						label={ __( 'Access Token', 'blocks-for-leaflet-map' ) }
-						help={ __( 'For Mapbox access tokens', 'blocks-for-leaflet-map' ) }
+						help={ __( 'Required only for providers that need authentication (e.g., Mapbox, Stadia, Thunderforest). This token will be visible in the page\'s HTML source — restrict it to your domain in the provider\'s dashboard.', 'blocks-for-leaflet-map' ) }
 						value={ accesstoken }
 						onChange={ ( value ) =>
 							setAttributes( { accesstoken: value } )
@@ -713,15 +722,16 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 					/>
 					<NumberControl
 						label={ __( 'Zoom Offset', 'blocks-for-leaflet-map' ) }
-						value={ zoomoffset }
-						onChange={ ( value ) =>
-							setAttributes( { zoomoffset: value ?? '' } )
-						}
+						help={ __( 'Default: 0. Only change for specific providers (Mapbox typically requires -1 when Tile Size is 512).', 'blocks-for-leaflet-map' ) }
+						value={ localZoomoffset }
+						onChange={ ( value ) => setLocalZoomoffset( value ?? '' ) }
+						onBlur={ () => setAttributes( { zoomoffset: localZoomoffset } ) }
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
 					<SelectControl
 						label={ __( 'No Wrap', 'blocks-for-leaflet-map' ) }
+						help={ __( 'Prevents the map from repeating horizontally when scrolled past the edges. Default: off.', 'blocks-for-leaflet-map' ) }
 						value={ nowrap }
 						options={ THREE_STATE_OPTIONS }
 						onChange={ ( value ) =>
@@ -732,6 +742,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 					/>
 					<SelectControl
 						label={ __( 'Detect Retina', 'blocks-for-leaflet-map' ) }
+						help={ __( 'Loads higher-resolution tiles on Retina/HiDPI screens. Only enable if the provider serves @2x tiles, otherwise the map will fail on those screens.', 'blocks-for-leaflet-map' ) }
 						value={ detectretina }
 						options={ THREE_STATE_OPTIONS }
 						onChange={ ( value ) =>
