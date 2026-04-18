@@ -19,6 +19,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tile Size and Zoom Offset NumberControls now commit on blur (instead of on every keystroke) to prevent intermediate iframe rebuilds.
 - Tile Size minimum value raised from 1 to 64 to prevent runaway tile requests when the value is set too low.
 
+## [0.3.5] - 2026-04-15
+
+### Added
+- Zoom & Bounds panel in the block inspector with Min Zoom, Max Zoom, and Max Bounds attributes.
+
+### Removed
+- touchZoom and bounceAtZoomLimits interaction controls — Leaflet Map ignores these via shortcode due to a case-sensitivity bug in the plugin.
+
+## [0.3.4] - 2026-04-15
+
+### Added
+- Seven map interaction control attributes (dragging, keyboard, double-click zoom, box zoom, close popup on click, tap, inertia) with a three-state model: Default (inherit Leaflet Map global settings), Enabled, or Disabled.
+
+## [0.3.3] - 2026-04-14
+
+### Added
+- Show Scale toggle in the Map Controls panel.
+- Custom Attribution field in the Map Controls panel.
+
+### Fixed
+- Attribution HTML was being mangled by double-escaping; switched to wp_kses_post and wrapped the value in single quotes in the shortcode string to preserve href="..." attributes.
+
+## [0.3.2] - 2026-04-14
+
+### Added
+- "Fit to Markers" toggle in the Location panel with live editor preview.
+- Width attribute with UnitControl (applied to block wrapper, not shortcode).
+
+### Changed
+- Reorganized sidebar into collapsible panels: Location, Dimensions, Interaction, Map Controls, Markers.
+- Converted height to UnitControl with px, %, vh unit selector.
+
+### Fixed
+- Prevented negative dimension values in height and width controls.
+- Backwards compatible with blocks created in earlier versions.
+
+## [0.3.1] - 2026-04-14
+
+### Fixed
+- PHPCS ternary operator spacing warnings in render.php.
+
 ## [0.3.0] - 2026-04-13
 
 ### Changed
