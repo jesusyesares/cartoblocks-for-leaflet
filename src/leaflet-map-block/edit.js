@@ -682,7 +682,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 					/>
 					<NumberControl
 						label={ __( 'Tile Size', 'blocks-for-leaflet-map' ) }
-						help={ __( 'Default: 256. Only change if the provider\'s documentation specifies otherwise (e.g., Mapbox uses 512).', 'blocks-for-leaflet-map' ) }
+						help={ __( 'Default: 256. Most providers (OpenStreetMap, ArcGIS, CartoDB) use 256 — leave empty unless your provider\'s documentation explicitly requires a different value (e.g., Mapbox: 512). Changing this incorrectly will distort the map.', 'blocks-for-leaflet-map' ) }
 						value={ localTilesize }
 						min={ 64 }
 						onChange={ ( value ) => setLocalTilesize( value ?? '' ) }
