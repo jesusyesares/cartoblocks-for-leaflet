@@ -100,6 +100,50 @@ $map_shortcode .= $interaction_shortcode;
 // Append zoom & bounds attributes (only those explicitly set).
 $map_shortcode .= $zoom_bounds_shortcode;
 
+// Tile layer attributes: only include when explicitly set.
+// Note: esc_url_raw() would strip {s}, {z}, {x}, {y} placeholders in tileurl because
+// curly braces fall outside RFC 3986's allowed character set. esc_attr() is used instead,
+// which only escapes HTML special characters and preserves template placeholders intact.
+$tile_layer_atts = array();
+
+if ( isset( $attributes['tileurl'] ) && '' !== $attributes['tileurl'] ) {
+	$tile_layer_atts['tileurl'] = esc_attr( $attributes['tileurl'] );
+}
+if ( isset( $attributes['tilesize'] ) && '' !== $attributes['tilesize'] ) {
+	$tile_layer_atts['tilesize'] = (int) $attributes['tilesize'];
+}
+if ( isset( $attributes['subdomains'] ) && '' !== $attributes['subdomains'] ) {
+	$tile_layer_atts['subdomains'] = esc_attr( $attributes['subdomains'] );
+}
+if ( isset( $attributes['mapid'] ) && '' !== $attributes['mapid'] ) {
+	$tile_layer_atts['mapid'] = esc_attr( $attributes['mapid'] );
+}
+if ( isset( $attributes['accesstoken'] ) && '' !== $attributes['accesstoken'] ) {
+	$tile_layer_atts['accesstoken'] = esc_attr( $attributes['accesstoken'] );
+}
+if ( isset( $attributes['zoomoffset'] ) && '' !== $attributes['zoomoffset'] ) {
+	$tile_layer_atts['zoomoffset'] = (int) $attributes['zoomoffset'];
+}
+if ( isset( $attributes['nowrap'] ) && '' !== $attributes['nowrap'] ) {
+	$tile_layer_atts['nowrap'] = 'true' === $attributes['nowrap'] ? 'true' : 'false';
+}
+if ( isset( $attributes['detectretina'] ) && '' !== $attributes['detectretina'] ) {
+	// Shortcode attribute is detect_retina (with underscore) — confirmed in
+	// class.map-shortcode.php line 290 of bozdoz/wp-plugin-leaflet-map.
+	$tile_layer_atts['detect_retina'] = 'true' === $attributes['detectretina'] ? 'true' : 'false';
+}
+
+$tile_layer_shortcode = '';
+foreach ( $tile_layer_atts as $key => $value ) {
+	if ( is_int( $value ) ) {
+		$tile_layer_shortcode .= sprintf( ' %s="%d"', $key, $value );
+	} else {
+		$tile_layer_shortcode .= sprintf( ' %s="%s"', $key, $value );
+	}
+}
+
+$map_shortcode .= $tile_layer_shortcode;
+
 // Attribution: use wp_kses_post (allows safe HTML like links) and single quotes
 // so inner double quotes (e.g., href="...") don't break the shortcode parser.
 if ( '' !== $attribution ) {

@@ -94,6 +94,7 @@ function buildPreviewUrl( attributes, clientId ) {
 		dragging, keyboard, doubleClickZoom, boxZoom,
 		closePopupOnClick, tap, inertia,
 		minZoom, maxZoom, maxBounds,
+		tileurl, tilesize, subdomains, mapid, accesstoken, zoomoffset, nowrap, detectretina,
 		markers,
 	} = attributes;
 
@@ -135,6 +136,14 @@ function buildPreviewUrl( attributes, clientId ) {
 	if ( minZoom )           params.set( 'minZoom', minZoom );
 	if ( maxZoom )           params.set( 'maxZoom', maxZoom );
 	if ( maxBounds )         params.set( 'maxBounds', maxBounds );
+	if ( tileurl )           params.set( 'tileurl', tileurl );
+	if ( tilesize )          params.set( 'tilesize', tilesize );
+	if ( subdomains )        params.set( 'subdomains', subdomains );
+	if ( mapid )             params.set( 'mapid', mapid );
+	if ( accesstoken )       params.set( 'accesstoken', accesstoken );
+	if ( zoomoffset )        params.set( 'zoomoffset', zoomoffset );
+	if ( nowrap )            params.set( 'nowrap', nowrap );
+	if ( detectretina )      params.set( 'detectretina', detectretina );
 
 	return previewUrl + '?' + params.toString();
 }
@@ -169,6 +178,14 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		minZoom,
 		maxZoom,
 		maxBounds,
+		tileurl,
+		tilesize,
+		subdomains,
+		mapid,
+		accesstoken,
+		zoomoffset,
+		nowrap,
+		detectretina,
 		markers,
 	} = attributes;
 
@@ -260,6 +277,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		dragging, keyboard, doubleClickZoom, boxZoom,
 		closePopupOnClick, tap, inertia,
 		minZoom, maxZoom, maxBounds,
+		tileurl, tilesize, subdomains, mapid, accesstoken, zoomoffset, nowrap, detectretina,
 		markers ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// ── View changes (sidebar) → postMessage to iframe (100 ms debounce) ──────
@@ -606,6 +624,105 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 					/>
 				</PanelBody>
 
+				{ /* ── Tile Layer panel ──────────────────────────────────── */ }
+				<PanelBody
+					title={ __( 'Tile Layer', 'blocks-for-leaflet-map' ) }
+					initialOpen={ false }
+				>
+					<p>{ __( 'Override the global Leaflet Map tile settings for this specific map.', 'blocks-for-leaflet-map' ) }</p>
+					<TextControl
+						label={ __( 'Tile URL', 'blocks-for-leaflet-map' ) }
+						help={ __( 'Example: https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', 'blocks-for-leaflet-map' ) }
+						value={ tileurl }
+						onChange={ ( value ) =>
+							setAttributes( { tileurl: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<NumberControl
+						label={ __( 'Tile Size', 'blocks-for-leaflet-map' ) }
+						value={ tilesize }
+						min={ 1 }
+						onChange={ ( value ) =>
+							setAttributes( { tilesize: value ?? '' } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<TextControl
+						label={ __( 'Subdomains', 'blocks-for-leaflet-map' ) }
+						help={ __( 'Comma-separated list, e.g. a,b,c', 'blocks-for-leaflet-map' ) }
+						value={ subdomains }
+						onChange={ ( value ) =>
+							setAttributes( { subdomains: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<TextControl
+						label={ __( 'Map ID', 'blocks-for-leaflet-map' ) }
+						help={ __( 'For Mapbox tile IDs', 'blocks-for-leaflet-map' ) }
+						value={ mapid }
+						onChange={ ( value ) =>
+							setAttributes( { mapid: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<TextControl
+						label={ __( 'Access Token', 'blocks-for-leaflet-map' ) }
+						help={ __( 'For Mapbox access tokens', 'blocks-for-leaflet-map' ) }
+						value={ accesstoken }
+						onChange={ ( value ) =>
+							setAttributes( { accesstoken: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<NumberControl
+						label={ __( 'Zoom Offset', 'blocks-for-leaflet-map' ) }
+						value={ zoomoffset }
+						onChange={ ( value ) =>
+							setAttributes( { zoomoffset: value ?? '' } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<SelectControl
+						label={ __( 'No Wrap', 'blocks-for-leaflet-map' ) }
+						value={ nowrap }
+						options={ THREE_STATE_OPTIONS }
+						onChange={ ( value ) =>
+							setAttributes( { nowrap: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<SelectControl
+						label={ __( 'Detect Retina', 'blocks-for-leaflet-map' ) }
+						value={ detectretina }
+						options={ THREE_STATE_OPTIONS }
+						onChange={ ( value ) =>
+							setAttributes( { detectretina: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<TextareaControl
+						label={ __( 'Attribution', 'blocks-for-leaflet-map' ) }
+						help={ __(
+							'Custom attribution HTML. Leave empty to use the default from Leaflet Map settings.',
+							'blocks-for-leaflet-map'
+						) }
+						value={ attribution }
+						onChange={ ( value ) =>
+							setAttributes( { attribution: value } )
+						}
+						rows={ 2 }
+					/>
+				</PanelBody>
+
 				{ /* ── Map Controls panel ──────────────────────────────────── */ }
 				<PanelBody
 					title={ __( 'Map Controls', 'blocks-for-leaflet-map' ) }
@@ -630,18 +747,6 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 							setAttributes( { showScale: value } )
 						}
 						__nextHasNoMarginBottom
-					/>
-					<TextareaControl
-						label={ __( 'Attribution', 'blocks-for-leaflet-map' ) }
-						help={ __(
-							'Custom attribution HTML. Leave empty to use the default from Leaflet Map settings.',
-							'blocks-for-leaflet-map'
-						) }
-						value={ attribution }
-						onChange={ ( value ) =>
-							setAttributes( { attribution: value } )
-						}
-						rows={ 2 }
 					/>
 				</PanelBody>
 
