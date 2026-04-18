@@ -42,7 +42,7 @@
  */
 
 import { __, sprintf } from '@wordpress/i18n';
-import { useEffect, useRef } from '@wordpress/element';
+import { useEffect, useRef, useState } from '@wordpress/element';
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
 import {
 	PanelBody,
@@ -94,6 +94,7 @@ function buildPreviewUrl( attributes, clientId ) {
 		dragging, keyboard, doubleClickZoom, boxZoom,
 		closePopupOnClick, tap, inertia,
 		minZoom, maxZoom, maxBounds,
+		tileurl, tilesize, subdomains, mapid, accesstoken, zoomoffset, nowrap, detectretina,
 		markers,
 	} = attributes;
 
@@ -135,6 +136,14 @@ function buildPreviewUrl( attributes, clientId ) {
 	if ( minZoom )           params.set( 'minZoom', minZoom );
 	if ( maxZoom )           params.set( 'maxZoom', maxZoom );
 	if ( maxBounds )         params.set( 'maxBounds', maxBounds );
+	if ( tileurl )           params.set( 'tileurl', tileurl );
+	if ( tilesize )          params.set( 'tilesize', tilesize );
+	if ( subdomains )        params.set( 'subdomains', subdomains );
+	if ( mapid )             params.set( 'mapid', mapid );
+	if ( accesstoken )       params.set( 'accesstoken', accesstoken );
+	if ( zoomoffset )        params.set( 'zoomoffset', zoomoffset );
+	if ( nowrap )            params.set( 'nowrap', nowrap );
+	if ( detectretina )      params.set( 'detectretina', detectretina );
 
 	return previewUrl + '?' + params.toString();
 }
@@ -169,8 +178,25 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		minZoom,
 		maxZoom,
 		maxBounds,
+		tileurl,
+		tilesize,
+		subdomains,
+		mapid,
+		accesstoken,
+		zoomoffset,
+		nowrap,
+		detectretina,
 		markers,
 	} = attributes;
+
+	// Local state for NumberControls that commit only on blur (Tile Size, Zoom Offset).
+	// This prevents iframe rebuilds on every keystroke/arrow-click with intermediate values.
+	const [ localTilesize, setLocalTilesize ] = useState( tilesize );
+	const [ localZoomoffset, setLocalZoomoffset ] = useState( zoomoffset );
+
+	// Sync local state when the block attribute changes externally (undo/redo, block switch).
+	useEffect( () => { setLocalTilesize( tilesize ); }, [ tilesize ] );
+	useEffect( () => { setLocalZoomoffset( zoomoffset ); }, [ zoomoffset ] );
 
 	// Backwards compatibility: if height is a bare number (from pre-0.4.0 blocks),
 	// convert it to a string with 'px' unit.
@@ -260,6 +286,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		dragging, keyboard, doubleClickZoom, boxZoom,
 		closePopupOnClick, tap, inertia,
 		minZoom, maxZoom, maxBounds,
+		tileurl, tilesize, subdomains, mapid, accesstoken, zoomoffset, nowrap, detectretina,
 		markers ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// ── View changes (sidebar) → postMessage to iframe (100 ms debounce) ──────
@@ -606,6 +633,138 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 					/>
 				</PanelBody>
 
+				{ /* ── Tile Layer panel ──────────────────────────────────── */ }
+				<PanelBody
+					title={ __( 'Tile Layer', 'blocks-for-leaflet-map' ) }
+					initialOpen={ false }
+				>
+					<p>{ __( 'Override the global Leaflet Map tile settings for this specific map.', 'blocks-for-leaflet-map' ) }</p>
+					<TextControl
+						label={ __( 'Tile URL', 'blocks-for-leaflet-map' ) }
+						placeholder="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+						help={
+							<>
+								{ __( 'Browse providers: ', 'blocks-for-leaflet-map' ) }
+								<a
+									href="https://alexurquhart.github.io/free-tiles/"
+									target="_blank"
+									rel="noopener noreferrer"
+									aria-label={ sprintf( __( '%s (opens in new tab)', 'blocks-for-leaflet-map' ), __( 'Free Tile Services', 'blocks-for-leaflet-map' ) ) }
+								>
+									{ __( 'Free Tile Services', 'blocks-for-leaflet-map' ) }↗
+								</a>
+								{ ' · ' }
+								<a
+									href="https://leaflet-extras.github.io/leaflet-providers/preview/"
+									target="_blank"
+									rel="noopener noreferrer"
+									aria-label={ sprintf( __( '%s (opens in new tab)', 'blocks-for-leaflet-map' ), __( 'Leaflet Providers Preview', 'blocks-for-leaflet-map' ) ) }
+								>
+									{ __( 'Leaflet Providers Preview', 'blocks-for-leaflet-map' ) }↗
+								</a>
+								{ ' · ' }
+								<a
+									href="https://wiki.openstreetmap.org/wiki/Raster_tile_providers"
+									target="_blank"
+									rel="noopener noreferrer"
+									aria-label={ sprintf( __( '%s (opens in new tab)', 'blocks-for-leaflet-map' ), __( 'OSM Wiki', 'blocks-for-leaflet-map' ) ) }
+								>
+									{ __( 'OSM Wiki', 'blocks-for-leaflet-map' ) }↗
+								</a>
+							</>
+						}
+						value={ tileurl }
+						onChange={ ( value ) =>
+							setAttributes( { tileurl: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<NumberControl
+						label={ __( 'Tile Size', 'blocks-for-leaflet-map' ) }
+						help={ __( 'Default: 256. Most providers (OpenStreetMap, ArcGIS, CartoDB) use 256 — leave empty unless your provider\'s documentation explicitly requires a different value (e.g., Mapbox: 512). Changing this incorrectly will distort the map.', 'blocks-for-leaflet-map' ) }
+						value={ localTilesize }
+						min={ 64 }
+						onChange={ ( value ) => setLocalTilesize( value ?? '' ) }
+						onBlur={ () => setAttributes( { tilesize: localTilesize } ) }
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<TextControl
+						label={ __( 'Subdomains', 'blocks-for-leaflet-map' ) }
+						help={ __( 'Comma-separated list (e.g., a,b,c) matching the {s} placeholder in the Tile URL. Leave empty if not used.', 'blocks-for-leaflet-map' ) }
+						value={ subdomains }
+						onChange={ ( value ) =>
+							setAttributes( { subdomains: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<TextControl
+						label={ __( 'Map ID', 'blocks-for-leaflet-map' ) }
+						help={ __( 'Required only for Mapbox tiles. Leave empty for other providers.', 'blocks-for-leaflet-map' ) }
+						value={ mapid }
+						onChange={ ( value ) =>
+							setAttributes( { mapid: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<TextControl
+						label={ __( 'Access Token', 'blocks-for-leaflet-map' ) }
+						help={ __( 'Required only for providers that need authentication (e.g., Mapbox, Stadia, Thunderforest). This token will be visible in the page\'s HTML source — restrict it to your domain in the provider\'s dashboard.', 'blocks-for-leaflet-map' ) }
+						value={ accesstoken }
+						onChange={ ( value ) =>
+							setAttributes( { accesstoken: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<NumberControl
+						label={ __( 'Zoom Offset', 'blocks-for-leaflet-map' ) }
+						help={ __( 'Default: 0. Only change for specific providers (Mapbox typically requires -1 when Tile Size is 512).', 'blocks-for-leaflet-map' ) }
+						value={ localZoomoffset }
+						onChange={ ( value ) => setLocalZoomoffset( value ?? '' ) }
+						onBlur={ () => setAttributes( { zoomoffset: localZoomoffset } ) }
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<SelectControl
+						label={ __( 'No Wrap', 'blocks-for-leaflet-map' ) }
+						help={ __( 'Prevents the map from repeating horizontally when scrolled past the edges. Default: off.', 'blocks-for-leaflet-map' ) }
+						value={ nowrap }
+						options={ THREE_STATE_OPTIONS }
+						onChange={ ( value ) =>
+							setAttributes( { nowrap: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<SelectControl
+						label={ __( 'Detect Retina', 'blocks-for-leaflet-map' ) }
+						help={ __( 'Loads higher-resolution tiles on Retina/HiDPI screens. Only enable if the provider serves @2x tiles, otherwise the map will fail on those screens.', 'blocks-for-leaflet-map' ) }
+						value={ detectretina }
+						options={ THREE_STATE_OPTIONS }
+						onChange={ ( value ) =>
+							setAttributes( { detectretina: value } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+					<TextareaControl
+						label={ __( 'Attribution', 'blocks-for-leaflet-map' ) }
+						help={ __(
+							'Custom attribution HTML. Leave empty to use the default from Leaflet Map settings.',
+							'blocks-for-leaflet-map'
+						) }
+						value={ attribution }
+						onChange={ ( value ) =>
+							setAttributes( { attribution: value } )
+						}
+						rows={ 2 }
+					/>
+				</PanelBody>
+
 				{ /* ── Map Controls panel ──────────────────────────────────── */ }
 				<PanelBody
 					title={ __( 'Map Controls', 'blocks-for-leaflet-map' ) }
@@ -630,18 +789,6 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 							setAttributes( { showScale: value } )
 						}
 						__nextHasNoMarginBottom
-					/>
-					<TextareaControl
-						label={ __( 'Attribution', 'blocks-for-leaflet-map' ) }
-						help={ __(
-							'Custom attribution HTML. Leave empty to use the default from Leaflet Map settings.',
-							'blocks-for-leaflet-map'
-						) }
-						value={ attribution }
-						onChange={ ( value ) =>
-							setAttributes( { attribution: value } )
-						}
-						rows={ 2 }
 					/>
 				</PanelBody>
 
