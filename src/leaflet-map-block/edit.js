@@ -43,13 +43,15 @@
 
 import { __, sprintf } from '@wordpress/i18n';
 import { useEffect, useRef, useState } from '@wordpress/element';
-import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
+import { useBlockProps, BlockControls, InspectorControls } from '@wordpress/block-editor';
 import {
 	PanelBody,
 	Button,
 	Notice,
 	RadioControl,
 	Spinner,
+	ToolbarGroup,
+	ToolbarButton,
 	__experimentalNumberControl as NumberControl,
 	__experimentalUnitControl as UnitControl,
 	RangeControl,
@@ -58,6 +60,8 @@ import {
 	TextControl,
 	TextareaControl,
 } from '@wordpress/components';
+import { useCopyToClipboard } from '@wordpress/compose';
+import { code as codeIcon } from '@wordpress/icons';
 
 import './editor.scss';
 
@@ -79,6 +83,121 @@ const THREE_STATE_OPTIONS = [
 	{ value: 'true',  label: 'Enabled' },
 	{ value: 'false', label: 'Disabled' },
 ];
+
+// ── Shortcode builder ─────────────────────────────────────────────────────────
+//
+// Keep in sync with render.php → "Build the [leaflet-map] shortcode" section.
+// Any attribute change there must be mirrored here (and vice versa) or the
+// editor shortcode strip will drift from the frontend output.
+//
+// Uses a declarative descriptor table so that adding a new attribute requires
+// a single new entry — no new control flow in the builder function itself.
+
+/**
+ * Normalise a raw height attribute value to a CSS string with unit.
+ * Mirrors the height-normalisation logic in render.php.
+ *
+ * @param {*} h Raw height value from block attributes.
+ * @return {string} Validated CSS string, e.g. "400px".
+ */
+function normalizeHeight( h ) {
+	if ( typeof h === 'number' || ( typeof h === 'string' && /^\d+$/.test( h ) ) ) {
+		return `${ h }px`;
+	}
+	if ( h && /^\d+(\.\d+)?(px|%|vh|vw|em|rem)$/.test( h ) ) {
+		return h;
+	}
+	return '400px';
+}
+
+/**
+ * Descriptor table for [leaflet-map] shortcode attributes.
+ *
+ * Each entry maps one block attribute to one shortcode attribute:
+ *   key   — shortcode attribute name (e.g. 'scrollwheel')
+ *   attr  — block attribute name    (e.g. 'scrollWheelZoom')
+ *   quote — quote character around the value (default: '"'; attribution uses "'")
+ *   serialize( value ) → string | null
+ *       Return the string to emit, or null to omit the attribute entirely.
+ *
+ * Order matches render.php for readability when comparing the two.
+ */
+const LEAFLET_MAP_DESCRIPTORS = [
+	// ── Base attributes (always emitted) ─────────────────────────────────
+	{ key: 'lat',         attr: 'lat',            serialize: ( v ) => String( v ) },
+	{ key: 'lng',         attr: 'lng',            serialize: ( v ) => String( v ) },
+	{ key: 'zoom',        attr: 'zoom',           serialize: ( v ) => String( parseInt( v, 10 ) ) },
+	{ key: 'height',      attr: 'height',         serialize: ( v ) => normalizeHeight( v ) },
+	{ key: 'scrollwheel', attr: 'scrollWheelZoom', serialize: ( v ) => ( v ? 'true' : 'false' ) },
+	{ key: 'zoomcontrol', attr: 'zoomControl',    serialize: ( v ) => ( v === false ? 'false' : 'true' ) },
+	{ key: 'fitbounds',   attr: 'fitMarkers',     serialize: ( v ) => ( v ? 'true' : 'false' ) },
+	{ key: 'show_scale',  attr: 'showScale',      serialize: ( v ) => ( v ? '1' : '0' ) },
+	// ── Interaction attributes (omit when empty = "Default") ──────────────
+	{ key: 'dragging',          attr: 'dragging',          serialize: ( v ) => v || null },
+	{ key: 'keyboard',          attr: 'keyboard',          serialize: ( v ) => v || null },
+	{ key: 'doubleclickzoom',   attr: 'doubleClickZoom',   serialize: ( v ) => v || null },
+	{ key: 'boxzoom',           attr: 'boxZoom',           serialize: ( v ) => v || null },
+	{ key: 'closepopuponclick', attr: 'closePopupOnClick', serialize: ( v ) => v || null },
+	{ key: 'tap',               attr: 'tap',               serialize: ( v ) => v || null },
+	{ key: 'inertia',           attr: 'inertia',           serialize: ( v ) => v || null },
+	// ── Zoom & bounds attributes (omit when empty or non-numeric) ─────────
+	{ key: 'min_zoom',  attr: 'minZoom',   serialize: ( v ) => ( v !== '' && ! isNaN( v ) ) ? v : null },
+	{ key: 'max_zoom',  attr: 'maxZoom',   serialize: ( v ) => ( v !== '' && ! isNaN( v ) ) ? v : null },
+	{ key: 'maxbounds', attr: 'maxBounds', serialize: ( v ) => v || null },
+	// ── Tile layer attributes (omit when empty) ───────────────────────────
+	{ key: 'tileurl',       attr: 'tileurl',      serialize: ( v ) => v || null },
+	{ key: 'tilesize',      attr: 'tilesize',     serialize: ( v ) => ( v !== '' && ! isNaN( v ) && parseInt( v, 10 ) >= 1 ) ? String( parseInt( v, 10 ) ) : null },
+	{ key: 'subdomains',    attr: 'subdomains',   serialize: ( v ) => v || null },
+	{ key: 'mapid',         attr: 'mapid',        serialize: ( v ) => v || null },
+	{ key: 'accesstoken',   attr: 'accesstoken',  serialize: ( v ) => v || null },
+	{ key: 'zoomoffset',    attr: 'zoomoffset',   serialize: ( v ) => ( v !== '' && ! isNaN( v ) ) ? String( parseInt( v, 10 ) ) : null },
+	{ key: 'nowrap',        attr: 'nowrap',       serialize: ( v ) => ( v === 'true' || v === 'false' ) ? v : null },
+	// Note: block attribute 'detectretina' maps to shortcode key 'detect_retina' (underscore).
+	{ key: 'detect_retina', attr: 'detectretina', serialize: ( v ) => ( v === 'true' || v === 'false' ) ? v : null },
+	// ── Attribution (single-quoted so inner href="…" double quotes are safe) ──
+	{ key: 'attribution', attr: 'attribution', quote: "'", serialize: ( v ) => v || null },
+];
+
+/**
+ * Build the [leaflet-map] and [leaflet-marker] shortcode string from block
+ * attributes, exactly mirroring what render.php emits on the frontend.
+ *
+ * Keep in sync with render.php → "Build the [leaflet-map] shortcode" section.
+ *
+ * @param {Object} attributes Block attributes.
+ * @return {string} Full shortcode string (map + zero or more markers).
+ */
+function buildShortcode( attributes ) {
+	const parts = [];
+
+	for ( const { key, attr, quote = '"', serialize } of LEAFLET_MAP_DESCRIPTORS ) {
+		const serialized = serialize( attributes[ attr ] );
+		if ( serialized !== null ) {
+			parts.push( `${ key }=${ quote }${ serialized }${ quote }` );
+		}
+	}
+
+	let shortcode = '[leaflet-map ' + parts.join( ' ' ) + ']';
+
+	const markers = attributes.markers || [];
+	for ( const marker of markers ) {
+		if ( marker.lat == null || marker.lng == null ) {
+			continue;
+		}
+		const mLat     = marker.lat;
+		const mLng     = marker.lng;
+		const mTitle   = marker.title   || '';
+		const mContent = marker.content || '';
+
+		if ( mContent ) {
+			shortcode += `\n[leaflet-marker lat="${ mLat }" lng="${ mLng }" title="${ mTitle }"]${ mContent }[/leaflet-marker]`;
+		} else {
+			shortcode += `\n[leaflet-marker lat="${ mLat }" lng="${ mLng }" title="${ mTitle }"]`;
+		}
+	}
+
+	return shortcode;
+}
 
 /**
  * Build the full preview iframe src URL from block attributes.
@@ -230,6 +349,29 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 
 	// Sync addressInput if the address attribute changes externally (undo/redo).
 	useEffect( () => { setAddressInput( address ); }, [ address ] );
+
+	// ── Shortcode strip state ─────────────────────────────────────────────────
+
+	/**
+	 * Whether the shortcode strip is currently visible below the block preview.
+	 * Local UI state only — not persisted; strip always starts hidden on load.
+	 */
+	const [ showShortcode, setShowShortcode ] = useState( false );
+
+	/** True for ~2 s after the user copies the shortcode, to show "Copied!" feedback. */
+	const [ isCopied, setIsCopied ] = useState( false );
+
+	/**
+	 * Ref attached to the Copy button. useCopyToClipboard wires up the click
+	 * handler and manages cross-browser clipboard access.
+	 * The shortcode string is recomputed on every render so the ref always
+	 * copies the current value when clicked.
+	 */
+	const shortcode = buildShortcode( attributes );
+	const copyRef   = useCopyToClipboard( shortcode, () => {
+		setIsCopied( true );
+		setTimeout( () => setIsCopied( false ), 2000 );
+	} );
 
 	// Backwards compatibility: if height is a bare number (from pre-0.4.0 blocks),
 	// convert it to a string with 'px' unit.
@@ -545,6 +687,18 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 
 	return (
 		<>
+			{ /* ── Block toolbar: shortcode toggle ─────────────────────────────── */ }
+			<BlockControls>
+				<ToolbarGroup>
+					<ToolbarButton
+						icon={ codeIcon }
+						label={ __( 'View shortcode', 'blocks-for-leaflet-map' ) }
+						onClick={ () => setShowShortcode( ( prev ) => ! prev ) }
+						isPressed={ showShortcode }
+					/>
+				</ToolbarGroup>
+			</BlockControls>
+
 			<InspectorControls>
 
 				{ /* ── Location panel ────────────────────────────────────── */ }
@@ -1138,6 +1292,29 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 						/>
 					) }
 				</div>
+
+				{ /* ── Shortcode strip ────────────────────────────────────────────── */ }
+				{ showShortcode && (
+					<div className="bflm-shortcode-strip">
+						<div className="bflm-shortcode-strip__header">
+							<span className="bflm-shortcode-strip__label">
+								{ __( 'Shortcode', 'blocks-for-leaflet-map' ) }
+							</span>
+							<Button
+								ref={ copyRef }
+								variant="secondary"
+								size="small"
+								className="bflm-shortcode-strip__copy"
+							>
+								{ isCopied
+									? __( 'Copied!', 'blocks-for-leaflet-map' )
+									: __( 'Copy', 'blocks-for-leaflet-map' )
+								}
+							</Button>
+						</div>
+						<pre className="bflm-shortcode-strip__code">{ shortcode }</pre>
+					</div>
+				) }
 			</div>
 		</>
 	);
