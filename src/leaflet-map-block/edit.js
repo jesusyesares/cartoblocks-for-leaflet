@@ -388,6 +388,41 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 	/** True for ~2 s after the user copies the shortcode, to show "Copied!" feedback. */
 	const [ isCopied, setIsCopied ] = useState( false );
 
+	// ── Capture-phase mousedown / dragstart blocker for the shortcode strip ──
+	//
+	// Gutenberg attaches its block-drag listener in the capture phase at the
+	// document or block-wrapper level, so React bubble-phase onMouseDown handlers
+	// never fire in time to stop it. We use a native addEventListener with
+	// capture = true, which runs before any bubble-phase listener (including
+	// Gutenberg's), and call stopImmediatePropagation to prevent any further
+	// capture-phase listeners from also seeing the event.
+	//
+	// This does NOT cancel the subsequent `click` event — onClick on the Copy
+	// button still fires normally because stopPropagation on mousedown does not
+	// suppress click.
+	useEffect( () => {
+		if ( ! showShortcode ) {
+			return;
+		}
+		const node = stripRef.current;
+		if ( ! node ) {
+			return;
+		}
+
+		const block = ( e ) => {
+			e.stopPropagation();
+			e.stopImmediatePropagation();
+		};
+
+		node.addEventListener( 'mousedown', block, true );
+		node.addEventListener( 'dragstart', block, true );
+
+		return () => {
+			node.removeEventListener( 'mousedown', block, true );
+			node.removeEventListener( 'dragstart', block, true );
+		};
+	}, [ showShortcode ] );
+
 	/**
 	 * The shortcode string shown in the strip, recomputed on every render so
 	 * it always reflects the current block attributes.
@@ -464,6 +499,9 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 
 	/** setTimeout handle for the 100 ms view postMessage debounce. */
 	const viewDebounceRef = useRef( null );
+
+	/** Ref attached to the shortcode strip container for capture-phase event blocking. */
+	const stripRef = useRef( null );
 
 	const blockProps = useBlockProps( {
 		className: 'bflm-leaflet-map-block',
@@ -1346,7 +1384,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 
 				{ /* ── Shortcode strip ────────────────────────────────────────────── */ }
 				{ showShortcode && (
-					<div className="bflm-shortcode-strip">
+					<div className="bflm-shortcode-strip" ref={ stripRef }>
 						<div className="bflm-shortcode-strip__header">
 							<span className="bflm-shortcode-strip__label">
 								{ __( 'Shortcode', 'blocks-for-leaflet-map' ) }
@@ -1355,7 +1393,6 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 								type="button"
 								className="bflm-shortcode-strip__copy"
 								onClick={ handleCopy }
-								onMouseDown={ ( e ) => e.stopPropagation() }
 							>
 								{ isCopied
 									? __( 'Copied!', 'blocks-for-leaflet-map' )
@@ -1363,10 +1400,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 								}
 							</button>
 						</div>
-						<pre
-							className="bflm-shortcode-strip__code"
-							onMouseDown={ ( e ) => e.stopPropagation() }
-						>{ shortcode }</pre>
+						<pre className="bflm-shortcode-strip__code">{ shortcode }</pre>
 					</div>
 				) }
 			</div>

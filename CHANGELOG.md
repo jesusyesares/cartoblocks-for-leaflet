@@ -5,6 +5,14 @@ All notable changes to the Blocks for Leaflet Map plugin will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.12] - 2026-04-19
+
+### Fixed
+- Drag-selecting shortcode text in the editor now works. React bubble-phase `onMouseDown` stopPropagation (added in v0.3.11) had no effect because Gutenberg attaches its block drag listener in the capture phase at the document or block-wrapper level, so our handler never ran first. The fix attaches a native `addEventListener('mousedown', block, true)` with `capture = true` directly on the shortcode strip container, calling both `stopPropagation` and `stopImmediatePropagation` — this runs before any bubble-phase listener and before any other capture-phase listener deeper in the tree. The old React-level `onMouseDown` props have been removed from the `<button>` and `<pre>` as they are superseded by this approach.
+
+### Changed
+- Copy button hover and active states updated: hover uses a soft blue-gray background (`#e7eef5`) with Gutenberg's primary blue border and text (`#2271b1`); active darkens to `#d5e2ee` / `#135e96` and adds a 1 px downward translate for a pressed effect. A 120 ms ease transition makes the state changes feel responsive.
+
 ## [0.3.11] - 2026-04-19
 
 ### Fixed

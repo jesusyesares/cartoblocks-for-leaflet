@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.0
 Tested up to:      6.9
-Stable tag:        0.3.11
+Stable tag:        0.3.12
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -61,6 +61,10 @@ Whatever you have configured in the Leaflet Map plugin settings. By default, Ope
 3. Frontend rendering with Leaflet Map shortcodes.
 
 == Changelog ==
+
+= 0.3.12 =
+* Fixed: Drag-selecting shortcode text in the editor now works. Previous attempts with React-level `onMouseDown` stopPropagation had no effect because Gutenberg attaches its block drag listener in the capture phase at a higher level. The fix attaches a native `mousedown` listener in the capture phase directly on the shortcode strip container, calling `stopImmediatePropagation` so no further listeners (Gutenberg's included) see the event.
+* Changed: Copy button hover and active states are now visually distinct — hover uses a soft blue-gray palette matching Gutenberg's primary blue, active darkens the background and adds a subtle press effect.
 
 = 0.3.11 =
 * Fixed: Copy button in the shortcode viewer now works in insecure contexts (plain HTTP). The previous implementation relied on `navigator.clipboard.writeText`, which browsers only expose on HTTPS, localhost, or 127.0.0.1 — custom development domains such as `.test` silently got no clipboard object. A `document.execCommand('copy')` fallback via a temporary textarea has been added.
