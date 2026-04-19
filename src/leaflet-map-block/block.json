@@ -133,6 +133,10 @@
 			"type": "string",
 			"default": ""
 		},
+		"address": {
+			"type": "string",
+			"default": ""
+		},
 		"markers": {
 			"type": "array",
 			"default": [],
