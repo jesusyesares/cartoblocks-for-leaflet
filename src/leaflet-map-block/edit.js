@@ -47,6 +47,9 @@ import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
 import {
 	PanelBody,
 	Button,
+	Notice,
+	RadioControl,
+	Spinner,
 	__experimentalNumberControl as NumberControl,
 	__experimentalUnitControl as UnitControl,
 	RangeControl,
@@ -186,6 +189,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		zoomoffset,
 		nowrap,
 		detectretina,
+		address,
 		markers,
 	} = attributes;
 
@@ -197,6 +201,35 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 	// Sync local state when the block attribute changes externally (undo/redo, block switch).
 	useEffect( () => { setLocalTilesize( tilesize ); }, [ tilesize ] );
 	useEffect( () => { setLocalZoomoffset( zoomoffset ); }, [ zoomoffset ] );
+
+	// ── Geocoding local state ─────────────────────────────────────────────────
+
+	/**
+	 * Location input mode: 'coordinates' shows lat/lng fields; 'address' shows
+	 * the address search input. Defaults to 'address' when a saved address exists.
+	 */
+	const [ locationMode, setLocationMode ] = useState( address ? 'address' : 'coordinates' );
+
+	/** The text currently in the address input field. Initialised from the saved attribute. */
+	const [ addressInput, setAddressInput ] = useState( address );
+
+	/**
+	 * Geocode operation status:
+	 *   'idle'       — no pending operation.
+	 *   'loading'    — Nominatim request in flight.
+	 *   'candidates' — multiple results returned, waiting for user to pick one.
+	 *   'error'      — request failed or returned no results.
+	 */
+	const [ geocodeStatus, setGeocodeStatus ] = useState( 'idle' );
+
+	/** Candidate list returned by the last successful geocode search. */
+	const [ candidates, setCandidates ] = useState( [] );
+
+	/** Human-readable error message shown when geocodeStatus === 'error'. */
+	const [ geocodeError, setGeocodeError ] = useState( '' );
+
+	// Sync addressInput if the address attribute changes externally (undo/redo).
+	useEffect( () => { setAddressInput( address ); }, [ address ] );
 
 	// Backwards compatibility: if height is a bare number (from pre-0.4.0 blocks),
 	// convert it to a string with 'px' unit.
@@ -366,6 +399,104 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		return () => window.removeEventListener( 'message', handleMessage );
 	}, [ setAttributes ] );
 
+	// ── Geocoding helpers ─────────────────────────────────────────────────────
+
+	/**
+	 * Apply a geocode candidate: update lat, lng, and address attributes and
+	 * rebuild the iframe src so the preview jumps to the new location immediately.
+	 *
+	 * isIframeUpdateRef is set true to suppress the view postMessage that would
+	 * otherwise fire from the lat/lng change effect — a full src rebuild is done
+	 * instead, making the postMessage redundant.
+	 *
+	 * @param {{ display_name: string, lat: number, lng: number }} candidate
+	 */
+	function applyCandidate( candidate ) {
+		const newLat = parseFloat( candidate.lat.toFixed( 6 ) );
+		const newLng = parseFloat( candidate.lng.toFixed( 6 ) );
+
+		// Suppress the view postMessage echo — we're doing a full iframe src rebuild.
+		isIframeUpdateRef.current = true;
+
+		setAttributes( {
+			lat:     newLat,
+			lng:     newLng,
+			address: addressInput,
+		} );
+
+		// Rebuild iframe src immediately with the resolved coordinates.
+		// setAttributes is asynchronous, so we merge manually rather than waiting.
+		const iframe = iframeRef.current;
+		if ( iframe ) {
+			const url = buildPreviewUrl(
+				{ ...attributesRef.current, lat: newLat, lng: newLng },
+				clientIdRef.current
+			);
+			if ( url ) {
+				iframe.src = url;
+			}
+		}
+
+		setGeocodeStatus( 'idle' );
+		setCandidates( [] );
+	}
+
+	/**
+	 * Send the address in the input field to the wp_ajax_bflm_geocode endpoint.
+	 * Applies the result directly when only one candidate is returned; otherwise
+	 * populates the candidates list for the user to choose from.
+	 */
+	async function handleGeocode() {
+		if ( ! addressInput.trim() ) {
+			return;
+		}
+
+		setGeocodeStatus( 'loading' );
+		setCandidates( [] );
+		setGeocodeError( '' );
+
+		const { previewUrl, geocodeNonce } = window.bflmEditor || {};
+		if ( ! previewUrl || ! geocodeNonce ) {
+			setGeocodeStatus( 'error' );
+			setGeocodeError( __( 'Geocoding is not available. Please reload the editor.', 'blocks-for-leaflet-map' ) );
+			return;
+		}
+
+		try {
+			const response = await fetch( previewUrl, {
+				method: 'POST',
+				body: new URLSearchParams( {
+					action:             'bflm_geocode',
+					bflm_geocode_nonce: geocodeNonce,
+					address:            addressInput,
+				} ),
+			} );
+
+			const data = await response.json();
+
+			if ( ! data.success ) {
+				setGeocodeStatus( 'error' );
+				setGeocodeError(
+					data.data?.message ||
+					__( 'An unexpected error occurred. Please try again.', 'blocks-for-leaflet-map' )
+				);
+				return;
+			}
+
+			const results = data.data.candidates;
+
+			if ( results.length === 1 ) {
+				applyCandidate( results[ 0 ] );
+			} else {
+				setCandidates( results );
+				setGeocodeStatus( 'candidates' );
+			}
+		} catch ( e ) {
+			setGeocodeStatus( 'error' );
+			setGeocodeError( __( 'Geocoding request failed. Please check your connection and try again.', 'blocks-for-leaflet-map' ) );
+		}
+	}
+
 	// ── Marker attribute helpers ──────────────────────────────────────────────
 
 	/**
@@ -421,24 +552,123 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 					title={ __( 'Location', 'blocks-for-leaflet-map' ) }
 					initialOpen={ true }
 				>
-					<NumberControl
-						label={ __( 'Latitude', 'blocks-for-leaflet-map' ) }
-						value={ lat }
-						onChange={ ( value ) =>
-							setAttributes( { lat: parseFloat( value ) || 0 } )
-						}
-						step={ 0.0001 }
-						__next40pxDefaultSize
+					<RadioControl
+						label={ __( 'Input mode', 'blocks-for-leaflet-map' ) }
+						selected={ locationMode }
+						options={ [
+							{ label: __( 'Coordinates', 'blocks-for-leaflet-map' ), value: 'coordinates' },
+							{ label: __( 'Address', 'blocks-for-leaflet-map' ),     value: 'address' },
+						] }
+						onChange={ ( value ) => {
+							setLocationMode( value );
+							setGeocodeStatus( 'idle' );
+							setCandidates( [] );
+							setGeocodeError( '' );
+						} }
 					/>
-					<NumberControl
-						label={ __( 'Longitude', 'blocks-for-leaflet-map' ) }
-						value={ lng }
-						onChange={ ( value ) =>
-							setAttributes( { lng: parseFloat( value ) || 0 } )
-						}
-						step={ 0.0001 }
-						__next40pxDefaultSize
-					/>
+
+					{ locationMode === 'coordinates' && (
+						<>
+							<NumberControl
+								label={ __( 'Latitude', 'blocks-for-leaflet-map' ) }
+								value={ lat }
+								onChange={ ( value ) =>
+									setAttributes( { lat: parseFloat( value ) || 0 } )
+								}
+								step={ 0.0001 }
+								__next40pxDefaultSize
+							/>
+							<NumberControl
+								label={ __( 'Longitude', 'blocks-for-leaflet-map' ) }
+								value={ lng }
+								onChange={ ( value ) =>
+									setAttributes( { lng: parseFloat( value ) || 0 } )
+								}
+								step={ 0.0001 }
+								__next40pxDefaultSize
+							/>
+						</>
+					) }
+
+					{ locationMode === 'address' && (
+						<>
+							<TextControl
+								label={ __( 'Address', 'blocks-for-leaflet-map' ) }
+								value={ addressInput }
+								placeholder={ __( 'Enter an address…', 'blocks-for-leaflet-map' ) }
+								onChange={ ( value ) => {
+									setAddressInput( value );
+									// Clear stale results when the user edits the query.
+									if ( geocodeStatus !== 'idle' ) {
+										setGeocodeStatus( 'idle' );
+										setCandidates( [] );
+										setGeocodeError( '' );
+									}
+								} }
+								onKeyDown={ ( e ) => {
+									if ( e.key === 'Enter' ) {
+										e.preventDefault();
+										handleGeocode();
+									}
+								} }
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+							<Button
+								variant="secondary"
+								onClick={ handleGeocode }
+								isBusy={ geocodeStatus === 'loading' }
+								disabled={ geocodeStatus === 'loading' || ! addressInput.trim() }
+								style={ { width: '100%', justifyContent: 'center', marginTop: '8px' } }
+							>
+								{ __( 'Search', 'blocks-for-leaflet-map' ) }
+							</Button>
+
+							{ geocodeStatus === 'loading' && (
+								<div style={ { display: 'flex', justifyContent: 'center', marginTop: '8px' } }>
+									<Spinner />
+								</div>
+							) }
+
+							{ geocodeStatus === 'error' && (
+								<Notice
+									status="error"
+									isDismissible={ false }
+									style={ { marginTop: '8px' } }
+								>
+									{ geocodeError }
+								</Notice>
+							) }
+
+							{ geocodeStatus === 'candidates' && candidates.length > 0 && (
+								<div style={ { marginTop: '8px' } }>
+									<p style={ { margin: '0 0 4px', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', color: '#1e1e1e' } }>
+										{ __( 'Select a location:', 'blocks-for-leaflet-map' ) }
+									</p>
+									{ candidates.map( ( candidate, index ) => (
+										<Button
+											key={ index }
+											variant="tertiary"
+											onClick={ () => applyCandidate( candidate ) }
+											style={ {
+												display:       'block',
+												width:         '100%',
+												textAlign:     'left',
+												marginBottom:  '4px',
+												whiteSpace:    'normal',
+												height:        'auto',
+												padding:       '6px 8px',
+												wordBreak:     'break-word',
+											} }
+										>
+											{ candidate.display_name }
+										</Button>
+									) ) }
+								</div>
+							) }
+						</>
+					) }
+
 					<RangeControl
 						label={ __( 'Zoom Level', 'blocks-for-leaflet-map' ) }
 						value={ zoom }
