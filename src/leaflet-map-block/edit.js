@@ -388,45 +388,6 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 	/** True for ~2 s after the user copies the shortcode, to show "Copied!" feedback. */
 	const [ isCopied, setIsCopied ] = useState( false );
 
-	// ── Cancel native HTML5 drag so text selection works in the shortcode strip ──
-	//
-	// The block wrapper has draggable="true" (native HTML5 DnD, set by Gutenberg
-	// for block reordering). When the user mousedowns+moves inside our strip,
-	// the browser initiates a native drag on the block wrapper — NOT on the strip,
-	// because the wrapper is not an ancestor of the strip in the rendered DOM
-	// (Gutenberg decouples them). The dragstart event therefore never reaches a
-	// listener attached to the strip itself.
-	//
-	// Fix: listen at the strip's ownerDocument and filter by whether the event
-	// originates inside the strip subtree. preventDefault() cancels the native
-	// drag before it starts, leaving normal text selection in place. Using
-	// ownerDocument (rather than the top-level window.document) also handles the
-	// case where the editor canvas is rendered inside an iframe.
-	useEffect( () => {
-		if ( ! showShortcode ) {
-			return;
-		}
-		const node = stripRef.current;
-		if ( ! node ) {
-			return;
-		}
-
-		const doc = node.ownerDocument;
-
-		const maybeCancelDrag = ( e ) => {
-			if ( e.target && e.target.closest && e.target.closest( '.bflm-shortcode-strip' ) ) {
-				e.preventDefault();
-				e.stopPropagation();
-			}
-		};
-
-		doc.addEventListener( 'dragstart', maybeCancelDrag, true );
-
-		return () => {
-			doc.removeEventListener( 'dragstart', maybeCancelDrag, true );
-		};
-	}, [ showShortcode ] );
-
 	/**
 	 * The shortcode string shown in the strip, recomputed on every render so
 	 * it always reflects the current block attributes.
@@ -1388,7 +1349,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 
 				{ /* ── Shortcode strip ────────────────────────────────────────────── */ }
 				{ showShortcode && (
-					<div className="bflm-shortcode-strip" ref={ stripRef }>
+					<div className="bflm-shortcode-strip" ref={ stripRef } draggable="false">
 						<div className="bflm-shortcode-strip__header">
 							<span className="bflm-shortcode-strip__label">
 								{ __( 'Shortcode', 'blocks-for-leaflet-map' ) }
@@ -1404,7 +1365,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 								}
 							</button>
 						</div>
-						<pre className="bflm-shortcode-strip__code">{ shortcode }</pre>
+						<pre className="bflm-shortcode-strip__code" draggable="false">{ shortcode }</pre>
 					</div>
 				) }
 			</div>
