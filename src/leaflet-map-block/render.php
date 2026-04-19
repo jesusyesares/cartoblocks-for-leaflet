@@ -80,6 +80,10 @@ $markers = isset( $attributes['markers'] ) && is_array( $attributes['markers'] )
 	: array();
 
 // Build the [leaflet-map] shortcode.
+// Keep in sync with buildShortcode() in src/leaflet-map-block/edit.js
+// (LEAFLET_MAP_DESCRIPTORS table + buildShortcode function). Any attribute
+// change here must be mirrored there (and vice versa) or the editor shortcode
+// strip will drift from the frontend output.
 // Width is not passed to the shortcode — it is applied to the wrapper div instead
 // so the Leaflet Map shortcode always renders at 100% of its container.
 $map_shortcode = sprintf(
