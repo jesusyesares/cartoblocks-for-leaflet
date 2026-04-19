@@ -772,6 +772,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 								type="button"
 								className="bflm-shortcode-popover__copy"
 								onClick={ handleCopy }
+								onMouseDown={ ( e ) => e.stopPropagation() }
 							>
 								{ isCopied
 									? __( 'Copied!', 'blocks-for-leaflet-map' )

@@ -5,6 +5,15 @@ All notable changes to the Blocks for Leaflet Map plugin will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.17] - 2026-04-19
+
+### Changed
+- Shortcode popover width increased: `min-width` raised from 320px to 480px, `max-width` from 520px to 720px, to reduce wrapping on long shortcodes with many attributes.
+- Code block inside the popover now uses a VS Code Dark+ inspired color scheme: `#1e1e1e` background, `#d4d4d4` text, `#3c3c3c` border. No syntax highlighting is applied — the shortcode is plain monospace text. Padding adjusted to `10px 12px` for visual comfort.
+
+### Fixed
+- Clicking the Copy button no longer dismisses the popover. `@wordpress/components`'s `<Popover>` uses `mousedown` (not `click`) for its click-outside detection. The Copy button's `mousedown` event was bubbling up to the Popover's dismiss handler before `onClick` fired, closing the popover and making the "Copied!" feedback invisible. Adding `onMouseDown={ e => e.stopPropagation() }` to the Copy button prevents the dismiss while leaving `onClick` and the clipboard copy intact.
+
 ## [0.3.16] - 2026-04-19
 
 ### Changed
