@@ -3,7 +3,7 @@
  * Plugin Name:       Blocks for Leaflet Map
  * Plugin URI:        https://github.com/jesusyesares/blocks-for-leaflet-map
  * Description:       A dynamic Gutenberg block that wraps the Leaflet Map plugin shortcodes. Requires the "Leaflet Map" plugin to be installed and active.
- * Version:           0.3.6
+ * Version:           0.3.7
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Jesús Yesares García
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-define( 'BFLM_VERSION', '0.3.6' );
+define( 'BFLM_VERSION', '0.3.7' );
 define( 'BFLM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BFLM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BFLM_LEAFLET_MAP_PLUGIN', 'leaflet-map/leaflet-map.php' );
@@ -457,7 +457,7 @@ add_action( 'enqueue_block_editor_assets', 'bflm_localise_editor_script' );
  * current_user_can(), input sanitised with sanitize_text_field().
  */
 function bflm_geocode_address(): void {
-	check_ajax_referer( 'bflm_geocode_nonce', 'bflm_geocode_nonce' );
+	check_ajax_referer( 'bflm_geocode_nonce', '_ajax_nonce' );
 
 	if ( ! current_user_can( 'edit_posts' ) ) {
 		wp_send_json_error(

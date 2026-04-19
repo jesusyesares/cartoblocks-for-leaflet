@@ -466,9 +466,9 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 			const response = await fetch( previewUrl, {
 				method: 'POST',
 				body: new URLSearchParams( {
-					action:             'bflm_geocode',
-					bflm_geocode_nonce: geocodeNonce,
-					address:            addressInput,
+					action:       'bflm_geocode',
+					_ajax_nonce:  geocodeNonce,
+					address:      addressInput,
 				} ),
 			} );
 
