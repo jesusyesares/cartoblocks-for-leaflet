@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.0
 Tested up to:      6.9
-Stable tag:        0.3.16
+Stable tag:        0.3.17
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -61,6 +61,11 @@ Whatever you have configured in the Leaflet Map plugin settings. By default, Ope
 3. Frontend rendering with Leaflet Map shortcodes.
 
 == Changelog ==
+
+= 0.3.17 =
+* Changed: Shortcode popover is now wider (min 480px, max 720px) for better readability of long shortcodes.
+* Changed: Code block inside the popover now uses a VS Code Dark+ inspired color scheme — `#1e1e1e` background, `#d4d4d4` text, `#3c3c3c` border — so it visually reads as a code editor.
+* Fixed: Clicking the Copy button no longer closes the popover. The Popover component treats mousedown as "outside click" for dismissal; adding `onMouseDown` stop-propagation on the Copy button prevents the dismiss while preserving both the copy action and the "Copied!" feedback.
 
 = 0.3.16 =
 * Changed: Shortcode viewer relocated from an in-block strip to a toolbar popover. The previous strip rendered inside the block's DOM subtree, where Gutenberg's `draggable="true"` attribute on the block wrapper made text selection impossible — six iterations (v0.3.10 through v0.3.15) attempted different JavaScript and HTML workarounds without success. The popover renders via a React portal outside the block subtree, which resolves the selection issue and also improves discoverability: clicking outside the popover or pressing Escape closes it naturally, matching the standard Gutenberg pattern used by links, colors, and other controls. Toolbar button, Copy action, and "Copied!" feedback all remain identical.

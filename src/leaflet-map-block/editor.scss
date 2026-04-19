@@ -21,8 +21,8 @@
 .bflm-shortcode-popover {
 	&__inner {
 		padding: 12px;
-		min-width: 320px;
-		max-width: 520px;
+		min-width: 480px;
+		max-width: 720px;
 	}
 
 	&__header {
@@ -71,16 +71,16 @@
 
 	&__code {
 		margin: 0;
-		padding: 8px;
-		background: #f0f0f1;
-		border: 1px solid #ddd;
+		padding: 10px 12px;
+		background: #1e1e1e;
+		border: 1px solid #3c3c3c;
 		border-radius: 2px;
 		font-family: monospace;
 		font-size: 12px;
 		line-height: 1.6;
 		white-space: pre-wrap;
 		word-break: break-all;
-		color: #1e1e1e;
+		color: #d4d4d4;
 		max-height: 320px;
 		overflow: auto;
 	}
