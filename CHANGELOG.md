@@ -5,6 +5,11 @@ All notable changes to the Blocks for Leaflet Map plugin will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.15] - 2026-04-19
+
+### Fixed
+- Drag-selecting shortcode text still failed at v0.3.14 (sixth iteration). All five previous JS-based approaches (React `onMouseDown`, capture-phase `mousedown` + `stopImmediatePropagation`, `dragstart` + `preventDefault` on the strip node, `dragstart` + `preventDefault` on `ownerDocument` with closest-guard) either targeted the wrong event or the wrong node. The HTML5 spec provides a simpler, declarative mechanism: `draggable="false"` on a descendant overrides `draggable="true"` on any ancestor. Added `draggable="false"` as a JSX attribute directly on the `.bflm-shortcode-strip` `<div>` and the `<pre>` inside it. The `dragstart` `useEffect` introduced in v0.3.13 and revised in v0.3.14 has been removed entirely — no JS is needed.
+
 ## [0.3.14] - 2026-04-19
 
 ### Fixed
