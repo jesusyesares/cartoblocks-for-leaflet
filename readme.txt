@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.0
 Tested up to:      6.9
-Stable tag:        0.3.13
+Stable tag:        0.3.14
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -61,6 +61,9 @@ Whatever you have configured in the Leaflet Map plugin settings. By default, Ope
 3. Frontend rendering with Leaflet Map shortcodes.
 
 == Changelog ==
+
+= 0.3.14 =
+* Fixed: Drag-selecting shortcode text still failed at v0.3.13. Root cause: Gutenberg renders the block wrapper (the element with `draggable="true"`) as a sibling of the shortcode strip rather than as its ancestor, so `dragstart` events fired on the wrapper never propagated to a listener attached to the strip. The listener is now installed on `strip.ownerDocument` (which also handles the editor canvas being iframed) and filters by whether the event originates inside the strip subtree. Block reordering drags that start outside the strip remain unaffected.
 
 = 0.3.13 =
 * Fixed: Drag-selecting shortcode text in the editor now works correctly. The previous fix (capture-phase mousedown + stopImmediatePropagation) targeted the wrong event — the browser's native HTML5 drag system is triggered by the block wrapper's `draggable="true"` attribute and cannot be vetoed via mousedown. The fix attaches a `dragstart` listener with `preventDefault()` on the shortcode strip container, which cancels the native drag before it can suppress text selection.

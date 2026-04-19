@@ -5,6 +5,11 @@ All notable changes to the Blocks for Leaflet Map plugin will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.14] - 2026-04-19
+
+### Fixed
+- Drag-selecting shortcode text still failed at v0.3.13 (fifth iteration on this issue). Root cause: Gutenberg does not render the block wrapper — the element that carries `draggable="true"` for native HTML5 DnD — as an ancestor of the shortcode strip. The two elements are siblings in the rendered DOM, so `dragstart` events dispatched on the block wrapper never propagate into the strip's subtree. A listener attached to the strip itself therefore never fires. The fix attaches the `dragstart` listener to `strip.ownerDocument` instead — which receives all `dragstart` events regardless of where they originate — and guards with `e.target.closest('.bflm-shortcode-strip')` so that only drags starting inside the strip are cancelled via `preventDefault()`. Drags starting on the block wrapper (for Gutenberg block reordering) do not match the guard and proceed normally. Using `ownerDocument` (rather than the top-level `window.document`) also correctly handles the case where the Gutenberg canvas is rendered inside an iframe.
+
 ## [0.3.13] - 2026-04-19
 
 ### Fixed
