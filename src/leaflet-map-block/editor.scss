@@ -36,6 +36,25 @@
 		color: #1e1e1e;
 	}
 
+	&__copy {
+		background: #fff;
+		border: 1px solid #1e1e1e;
+		border-radius: 2px;
+		color: #1e1e1e;
+		cursor: pointer;
+		font-size: 11px;
+		padding: 2px 8px;
+
+		&:hover {
+			background: #f0f0f1;
+		}
+
+		&:focus-visible {
+			outline: 2px solid var(--wp-admin-theme-color, #007cba);
+			outline-offset: 2px;
+		}
+	}
+
 	&__code {
 		// Override the parent block wrapper's user-select: none so the shortcode
 		// text is drag-selectable for manual copying.

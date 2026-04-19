@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.0
 Tested up to:      6.9
-Stable tag:        0.3.8
+Stable tag:        0.3.9
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -61,6 +61,9 @@ Whatever you have configured in the Leaflet Map plugin settings. By default, Ope
 3. Frontend rendering with Leaflet Map shortcodes.
 
 == Changelog ==
+
+= 0.3.9 =
+* Fixed: Shortcode viewer crashed the block with "TypeError: First argument must be a String, HTMLElement, HTMLCollection, or NodeList" when the toolbar toggle was clicked. The Copy button now uses a native HTML button element so the clipboard ref attaches correctly.
 
 = 0.3.8 =
 * Added: Shortcode viewer — a code icon button in the block toolbar toggles a strip below the map preview that shows the exact [leaflet-map] and [leaflet-marker] shortcodes the block will emit on the frontend. The strip includes a Copy button for one-click clipboard access and a 2-second "Copied!" confirmation. The strip is editor-only local UI state and never appears on the frontend.

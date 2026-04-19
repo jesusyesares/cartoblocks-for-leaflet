@@ -1300,17 +1300,16 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 							<span className="bflm-shortcode-strip__label">
 								{ __( 'Shortcode', 'blocks-for-leaflet-map' ) }
 							</span>
-							<Button
+							<button
 								ref={ copyRef }
-								variant="secondary"
-								size="small"
+								type="button"
 								className="bflm-shortcode-strip__copy"
 							>
 								{ isCopied
 									? __( 'Copied!', 'blocks-for-leaflet-map' )
 									: __( 'Copy', 'blocks-for-leaflet-map' )
 								}
-							</Button>
+							</button>
 						</div>
 						<pre className="bflm-shortcode-strip__code">{ shortcode }</pre>
 					</div>
