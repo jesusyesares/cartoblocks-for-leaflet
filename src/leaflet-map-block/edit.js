@@ -199,6 +199,34 @@ function buildShortcode( attributes ) {
 }
 
 /**
+ * Clipboard fallback for insecure contexts (plain HTTP, custom .test domains).
+ *
+ * `navigator.clipboard.writeText` requires a secure context (HTTPS / localhost).
+ * This fallback uses the deprecated but universally supported `document.execCommand('copy')`
+ * via a temporary off-screen textarea, which works in any browsing context.
+ *
+ * @param {string}   text      Text to copy.
+ * @param {Function} onSuccess Called if the copy succeeds.
+ */
+function fallbackCopy( text, onSuccess ) {
+	const ta = document.createElement( 'textarea' );
+	ta.value = text;
+	ta.setAttribute( 'readonly', '' );
+	ta.style.position = 'absolute';
+	ta.style.left = '-9999px';
+	document.body.appendChild( ta );
+	ta.select();
+	try {
+		if ( document.execCommand( 'copy' ) ) {
+			onSuccess();
+		}
+	} catch ( e ) {
+		// Swallow — user can still select the shortcode text manually.
+	}
+	document.body.removeChild( ta );
+}
+
+/**
  * Build the full preview iframe src URL from block attributes.
  * All attributes are included so the map initialises at the correct position
  * on every full reload (mount or structural change).
@@ -367,28 +395,33 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 	const shortcode = buildShortcode( attributes );
 
 	/**
-	 * Copy the shortcode to the clipboard using the native Clipboard API.
+	 * Copy the shortcode to the clipboard.
 	 *
-	 * navigator.clipboard is only available in secure contexts (HTTPS /
-	 * localhost). In insecure contexts or very old browsers the function
-	 * returns early — the user can still select the <pre> text manually.
+	 * Primary path: navigator.clipboard.writeText (requires secure context —
+	 * HTTPS or localhost). Fallback: document.execCommand('copy') via a hidden
+	 * textarea, which works in non-secure contexts such as plain-HTTP .test
+	 * development domains.
 	 *
-	 * Note: useCopyToClipboard from @wordpress/compose was removed because
-	 * the runtime version bundled with WordPress uses an older clipboard.js-
-	 * backed API that throws during first render when its ref target is not
-	 * yet in the DOM, regardless of whether the strip is visible.
+	 * Note: useCopyToClipboard from @wordpress/compose was removed because the
+	 * runtime version bundled with WordPress uses an older clipboard.js-backed
+	 * API that throws during first render when its ref target is not yet in the
+	 * DOM (see v0.3.9 / v0.3.10 changelogs).
 	 */
 	function handleCopy() {
-		if ( ! navigator.clipboard ) {
+		const fire = () => {
+			setIsCopied( true );
+			setTimeout( () => setIsCopied( false ), 2000 );
+		};
+
+		if ( navigator.clipboard && navigator.clipboard.writeText ) {
+			navigator.clipboard.writeText( shortcode ).then(
+				fire,
+				() => fallbackCopy( shortcode, fire )
+			);
 			return;
 		}
-		navigator.clipboard.writeText( shortcode ).then(
-			() => {
-				setIsCopied( true );
-				setTimeout( () => setIsCopied( false ), 2000 );
-			},
-			() => { /* swallow write errors — user can still select manually */ }
-		);
+
+		fallbackCopy( shortcode, fire );
 	}
 
 	// Backwards compatibility: if height is a bare number (from pre-0.4.0 blocks),
@@ -1322,6 +1355,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 								type="button"
 								className="bflm-shortcode-strip__copy"
 								onClick={ handleCopy }
+								onMouseDown={ ( e ) => e.stopPropagation() }
 							>
 								{ isCopied
 									? __( 'Copied!', 'blocks-for-leaflet-map' )
@@ -1329,7 +1363,10 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 								}
 							</button>
 						</div>
-						<pre className="bflm-shortcode-strip__code">{ shortcode }</pre>
+						<pre
+							className="bflm-shortcode-strip__code"
+							onMouseDown={ ( e ) => e.stopPropagation() }
+						>{ shortcode }</pre>
 					</div>
 				) }
 			</div>

@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.0
 Tested up to:      6.9
-Stable tag:        0.3.10
+Stable tag:        0.3.11
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -61,6 +61,10 @@ Whatever you have configured in the Leaflet Map plugin settings. By default, Ope
 3. Frontend rendering with Leaflet Map shortcodes.
 
 == Changelog ==
+
+= 0.3.11 =
+* Fixed: Copy button in the shortcode viewer now works in insecure contexts (plain HTTP). The previous implementation relied on `navigator.clipboard.writeText`, which browsers only expose on HTTPS, localhost, or 127.0.0.1 — custom development domains such as `.test` silently got no clipboard object. A `document.execCommand('copy')` fallback via a temporary textarea has been added.
+* Fixed: Text inside the shortcode strip can now be drag-selected for manual copying, and the Copy button responds to hover/click interactions. The block wrapper's `data-draggable="true"` attribute (set by Gutenberg for block reordering) was intercepting `mousedown` events on all descendants before the browser could start native text selection or register button interactions. Adding `onMouseDown` with `stopPropagation` on the `<pre>` and the Copy button restores normal behaviour.
 
 = 0.3.10 =
 * Fixed: The Copy button in the shortcode viewer still crashed the block after v0.3.9 because the runtime version of `@wordpress/compose` bundled with WordPress uses an older `useCopyToClipboard` API that throws during first render when its ref target is not yet in the DOM. The hook has been removed entirely and replaced with a plain `onClick` handler using `navigator.clipboard.writeText`, which has no ref dependency and no runtime API coupling.
