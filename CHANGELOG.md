@@ -5,6 +5,15 @@ All notable changes to the Blocks for Leaflet Map plugin will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.8] - 2026-04-19
+
+### Added
+- Shortcode viewer (closes #13): a code icon button in the block toolbar toggles a strip below the map preview showing the exact `[leaflet-map]` and `[leaflet-marker]` shortcodes the block will emit on the frontend.
+  - Built from a declarative `LEAFLET_MAP_DESCRIPTORS` table in `edit.js` that mirrors `render.php` attribute-for-attribute, with cross-reference comments in both files to prevent drift.
+  - Includes a Copy button (`useCopyToClipboard` from `@wordpress/compose`) with a 2-second "Copied!" inline confirmation.
+  - Shortcode text is selectable (overrides the block wrapper's `user-select: none`).
+  - Strip is local editor UI state only (`useState`); never persisted as a block attribute and never rendered on the frontend.
+
 ## [0.3.7] - 2026-04-19
 
 ### Added

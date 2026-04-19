@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.0
 Tested up to:      6.9
-Stable tag:        0.3.7
+Stable tag:        0.3.8
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -61,6 +61,9 @@ Whatever you have configured in the Leaflet Map plugin settings. By default, Ope
 3. Frontend rendering with Leaflet Map shortcodes.
 
 == Changelog ==
+
+= 0.3.8 =
+* Added: Shortcode viewer — a code icon button in the block toolbar toggles a strip below the map preview that shows the exact [leaflet-map] and [leaflet-marker] shortcodes the block will emit on the frontend. The strip includes a Copy button for one-click clipboard access and a 2-second "Copied!" confirmation. The strip is editor-only local UI state and never appears on the frontend.
 
 = 0.3.7 =
 * Added: Address geocoding in the block inspector. New "Address" input mode in the Location panel lets you search for a place by name — the plugin queries Nominatim (OpenStreetMap) via a secure server-side AJAX endpoint and returns up to 5 candidates for you to choose from. The resolved coordinates are saved in the block; the address itself is editor-only metadata and never appears in the rendered shortcode, so no runtime geocoding happens on the frontend.
