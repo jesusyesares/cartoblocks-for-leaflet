@@ -48,6 +48,7 @@ import {
 	PanelBody,
 	Button,
 	Notice,
+	Popover,
 	RadioControl,
 	Spinner,
 	ToolbarGroup,
@@ -465,8 +466,8 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 	/** setTimeout handle for the 100 ms view postMessage debounce. */
 	const viewDebounceRef = useRef( null );
 
-	/** Ref attached to the shortcode strip container for capture-phase event blocking. */
-	const stripRef = useRef( null );
+	/** Ref attached to the toolbar shortcode toggle button for Popover anchoring. */
+	const toggleButtonRef = useRef( null );
 
 	const blockProps = useBlockProps( {
 		className: 'bflm-leaflet-map-block',
@@ -745,6 +746,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 			<BlockControls>
 				<ToolbarGroup>
 					<ToolbarButton
+						ref={ toggleButtonRef }
 						icon={ codeIcon }
 						label={ __( 'View shortcode', 'blocks-for-leaflet-map' ) }
 						onClick={ () => setShowShortcode( ( prev ) => ! prev ) }
@@ -752,6 +754,35 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 					/>
 				</ToolbarGroup>
 			</BlockControls>
+
+			{ /* ── Shortcode popover ───────────────────────────────────────────── */ }
+			{ showShortcode && toggleButtonRef.current && (
+				<Popover
+					anchor={ toggleButtonRef.current }
+					onClose={ () => setShowShortcode( false ) }
+					placement="bottom-start"
+					className="bflm-shortcode-popover"
+				>
+					<div className="bflm-shortcode-popover__inner">
+						<div className="bflm-shortcode-popover__header">
+							<span className="bflm-shortcode-popover__label">
+								{ __( 'Shortcode', 'blocks-for-leaflet-map' ) }
+							</span>
+							<button
+								type="button"
+								className="bflm-shortcode-popover__copy"
+								onClick={ handleCopy }
+							>
+								{ isCopied
+									? __( 'Copied!', 'blocks-for-leaflet-map' )
+									: __( 'Copy', 'blocks-for-leaflet-map' )
+								}
+							</button>
+						</div>
+						<pre className="bflm-shortcode-popover__code">{ shortcode }</pre>
+					</div>
+				</Popover>
+			) }
 
 			<InspectorControls>
 
@@ -1347,27 +1378,6 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 					) }
 				</div>
 
-				{ /* ── Shortcode strip ────────────────────────────────────────────── */ }
-				{ showShortcode && (
-					<div className="bflm-shortcode-strip" ref={ stripRef } draggable="false">
-						<div className="bflm-shortcode-strip__header">
-							<span className="bflm-shortcode-strip__label">
-								{ __( 'Shortcode', 'blocks-for-leaflet-map' ) }
-							</span>
-							<button
-								type="button"
-								className="bflm-shortcode-strip__copy"
-								onClick={ handleCopy }
-							>
-								{ isCopied
-									? __( 'Copied!', 'blocks-for-leaflet-map' )
-									: __( 'Copy', 'blocks-for-leaflet-map' )
-								}
-							</button>
-						</div>
-						<pre className="bflm-shortcode-strip__code" draggable="false">{ shortcode }</pre>
-					</div>
-				) }
 			</div>
 		</>
 	);

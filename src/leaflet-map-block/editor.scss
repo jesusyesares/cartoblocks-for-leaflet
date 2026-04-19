@@ -14,18 +14,22 @@
 	-webkit-user-drag: none;
 }
 
-// Shortcode strip — shown below the map preview when the toolbar toggle is active.
-// Only rendered in the editor (edit.js local state); never appears on the frontend.
-.bflm-shortcode-strip {
-	background: #f0f0f1;
-	border-top: 1px solid #ddd;
-	padding: 8px 12px;
+// Shortcode popover — shown when the toolbar shortcode toggle is active.
+// Rendered via a React portal outside the block's DOM subtree, so Gutenberg's
+// draggable="true" attribute on the block wrapper does not affect text selection
+// inside the popover.
+.bflm-shortcode-popover {
+	&__inner {
+		padding: 12px;
+		min-width: 320px;
+		max-width: 520px;
+	}
 
 	&__header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		margin-bottom: 6px;
+		margin-bottom: 8px;
 	}
 
 	&__label {
@@ -66,12 +70,9 @@
 	}
 
 	&__code {
-		// Override the parent block wrapper's user-select: none so the shortcode
-		// text is drag-selectable for manual copying.
-		user-select: text;
 		margin: 0;
-		padding: 6px 8px;
-		background: #fff;
+		padding: 8px;
+		background: #f0f0f1;
 		border: 1px solid #ddd;
 		border-radius: 2px;
 		font-family: monospace;
@@ -80,5 +81,7 @@
 		white-space: pre-wrap;
 		word-break: break-all;
 		color: #1e1e1e;
+		max-height: 320px;
+		overflow: auto;
 	}
 }
