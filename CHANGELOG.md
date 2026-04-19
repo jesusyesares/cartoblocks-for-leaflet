@@ -5,6 +5,11 @@ All notable changes to the Blocks for Leaflet Map plugin will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.16] - 2026-04-19
+
+### Changed
+- Shortcode viewer relocated from an in-block strip to a toolbar popover. The previous strip rendered inside the block's DOM subtree, where Gutenberg's `draggable="true"` attribute on the block wrapper made text selection impossible — six iterations across v0.3.10–v0.3.15 attempted React bubble-phase `onMouseDown`, native capture-phase `mousedown` + `stopImmediatePropagation`, `dragstart` + `preventDefault` on the strip node, `dragstart` + `preventDefault` on `ownerDocument` with a closest-guard, and `draggable="false"` as a JSX attribute — none succeeded because the drag is initiated by the browser's OS-level DnD system on the block wrapper, which sits outside the strip's subtree. The `<Popover>` component renders via a React portal into the document body (outside the block's DOM subtree entirely), so none of the drag/selection constraints apply. The popover is anchored to the toolbar button via `anchor={ toggleButtonRef.current }`, closes on outside click or Escape via `onClose`, and is placed below the button via `placement="bottom-start"`. The toolbar button, Copy action, and "Copied!" feedback are unchanged. The `stripRef` ref and all dragstart/mousedown event-listener useEffects have been removed.
+
 ## [0.3.15] - 2026-04-19
 
 ### Fixed
