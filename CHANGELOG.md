@@ -5,6 +5,11 @@ All notable changes to the Blocks for Leaflet Map plugin will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.10] - 2026-04-19
+
+### Fixed
+- The Copy button in the shortcode viewer still crashed the block after v0.3.9 because the runtime version of `@wordpress/compose` bundled with WordPress uses an older `useCopyToClipboard` API (backed by clipboard.js) that throws "TypeError: First argument must be a String, HTMLElement, HTMLCollection, or NodeList" during first render when its ref target is not yet in the DOM. The v0.3.9 fix (switching from `<Button>` to a native `<button>`) addressed only the ref-forwarding symptom, not the root cause: the hook itself was incompatible with the runtime. The hook and its `@wordpress/compose` import have been removed entirely and replaced with a plain `onClick` handler using `navigator.clipboard.writeText`, which has no ref dependency and no runtime API coupling. Includes a silent fallback for insecure contexts where `navigator.clipboard` is unavailable.
+
 ## [0.3.9] - 2026-04-19
 
 ### Fixed

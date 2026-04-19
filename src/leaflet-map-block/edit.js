@@ -60,7 +60,6 @@ import {
 	TextControl,
 	TextareaControl,
 } from '@wordpress/components';
-import { useCopyToClipboard } from '@wordpress/compose';
 import { code as codeIcon } from '@wordpress/icons';
 
 import './editor.scss';
@@ -362,16 +361,35 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 	const [ isCopied, setIsCopied ] = useState( false );
 
 	/**
-	 * Ref attached to the Copy button. useCopyToClipboard wires up the click
-	 * handler and manages cross-browser clipboard access.
-	 * The shortcode string is recomputed on every render so the ref always
-	 * copies the current value when clicked.
+	 * The shortcode string shown in the strip, recomputed on every render so
+	 * it always reflects the current block attributes.
 	 */
 	const shortcode = buildShortcode( attributes );
-	const copyRef   = useCopyToClipboard( shortcode, () => {
-		setIsCopied( true );
-		setTimeout( () => setIsCopied( false ), 2000 );
-	} );
+
+	/**
+	 * Copy the shortcode to the clipboard using the native Clipboard API.
+	 *
+	 * navigator.clipboard is only available in secure contexts (HTTPS /
+	 * localhost). In insecure contexts or very old browsers the function
+	 * returns early — the user can still select the <pre> text manually.
+	 *
+	 * Note: useCopyToClipboard from @wordpress/compose was removed because
+	 * the runtime version bundled with WordPress uses an older clipboard.js-
+	 * backed API that throws during first render when its ref target is not
+	 * yet in the DOM, regardless of whether the strip is visible.
+	 */
+	function handleCopy() {
+		if ( ! navigator.clipboard ) {
+			return;
+		}
+		navigator.clipboard.writeText( shortcode ).then(
+			() => {
+				setIsCopied( true );
+				setTimeout( () => setIsCopied( false ), 2000 );
+			},
+			() => { /* swallow write errors — user can still select manually */ }
+		);
+	}
 
 	// Backwards compatibility: if height is a bare number (from pre-0.4.0 blocks),
 	// convert it to a string with 'px' unit.
@@ -1301,9 +1319,9 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 								{ __( 'Shortcode', 'blocks-for-leaflet-map' ) }
 							</span>
 							<button
-								ref={ copyRef }
 								type="button"
 								className="bflm-shortcode-strip__copy"
+								onClick={ handleCopy }
 							>
 								{ isCopied
 									? __( 'Copied!', 'blocks-for-leaflet-map' )
