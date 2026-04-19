@@ -5,6 +5,11 @@ All notable changes to the Blocks for Leaflet Map plugin will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.13] - 2026-04-19
+
+### Fixed
+- Drag-selecting shortcode text in the editor now works correctly. All previous attempts (React bubble-phase `onMouseDown`, capture-phase `mousedown` with `stopImmediatePropagation`) targeted the wrong event. The root cause is the block wrapper's `draggable="true"` attribute (native HTML5 DnD, set by Gutenberg for block reordering): the browser initiates a native drag on mousedown+movement at the OS level before JavaScript text selection can start, and JavaScript `stopPropagation`/`stopImmediatePropagation` on `mousedown` cannot veto it. The fix attaches a `dragstart` listener with `e.preventDefault()` on the shortcode strip container — this is the only point where native HTML5 drag can be cancelled. The `mousedown` listener (added in v0.3.12) has been removed entirely.
+
 ## [0.3.12] - 2026-04-19
 
 ### Fixed
