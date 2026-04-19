@@ -388,18 +388,13 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 	/** True for ~2 s after the user copies the shortcode, to show "Copied!" feedback. */
 	const [ isCopied, setIsCopied ] = useState( false );
 
-	// ── Capture-phase mousedown / dragstart blocker for the shortcode strip ──
+	// ── Cancel native HTML5 drag so text selection works in the shortcode strip ──
 	//
-	// Gutenberg attaches its block-drag listener in the capture phase at the
-	// document or block-wrapper level, so React bubble-phase onMouseDown handlers
-	// never fire in time to stop it. We use a native addEventListener with
-	// capture = true, which runs before any bubble-phase listener (including
-	// Gutenberg's), and call stopImmediatePropagation to prevent any further
-	// capture-phase listeners from also seeing the event.
-	//
-	// This does NOT cancel the subsequent `click` event — onClick on the Copy
-	// button still fires normally because stopPropagation on mousedown does not
-	// suppress click.
+	// The block wrapper has draggable="true" (native HTML5 DnD) to support block
+	// reordering. When the user presses and drags inside the shortcode strip, the
+	// browser's native drag system initiates a block drag before native text
+	// selection can start — this cannot be prevented via mousedown listeners; it
+	// must be vetoed via dragstart preventDefault().
 	useEffect( () => {
 		if ( ! showShortcode ) {
 			return;
@@ -409,17 +404,15 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 			return;
 		}
 
-		const block = ( e ) => {
+		const cancelDrag = ( e ) => {
+			e.preventDefault();
 			e.stopPropagation();
-			e.stopImmediatePropagation();
 		};
 
-		node.addEventListener( 'mousedown', block, true );
-		node.addEventListener( 'dragstart', block, true );
+		node.addEventListener( 'dragstart', cancelDrag, true );
 
 		return () => {
-			node.removeEventListener( 'mousedown', block, true );
-			node.removeEventListener( 'dragstart', block, true );
+			node.removeEventListener( 'dragstart', cancelDrag, true );
 		};
 	}, [ showShortcode ] );
 
