@@ -390,11 +390,18 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 
 	// ── Cancel native HTML5 drag so text selection works in the shortcode strip ──
 	//
-	// The block wrapper has draggable="true" (native HTML5 DnD) to support block
-	// reordering. When the user presses and drags inside the shortcode strip, the
-	// browser's native drag system initiates a block drag before native text
-	// selection can start — this cannot be prevented via mousedown listeners; it
-	// must be vetoed via dragstart preventDefault().
+	// The block wrapper has draggable="true" (native HTML5 DnD, set by Gutenberg
+	// for block reordering). When the user mousedowns+moves inside our strip,
+	// the browser initiates a native drag on the block wrapper — NOT on the strip,
+	// because the wrapper is not an ancestor of the strip in the rendered DOM
+	// (Gutenberg decouples them). The dragstart event therefore never reaches a
+	// listener attached to the strip itself.
+	//
+	// Fix: listen at the strip's ownerDocument and filter by whether the event
+	// originates inside the strip subtree. preventDefault() cancels the native
+	// drag before it starts, leaving normal text selection in place. Using
+	// ownerDocument (rather than the top-level window.document) also handles the
+	// case where the editor canvas is rendered inside an iframe.
 	useEffect( () => {
 		if ( ! showShortcode ) {
 			return;
@@ -404,15 +411,19 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 			return;
 		}
 
-		const cancelDrag = ( e ) => {
-			e.preventDefault();
-			e.stopPropagation();
+		const doc = node.ownerDocument;
+
+		const maybeCancelDrag = ( e ) => {
+			if ( e.target && e.target.closest && e.target.closest( '.bflm-shortcode-strip' ) ) {
+				e.preventDefault();
+				e.stopPropagation();
+			}
 		};
 
-		node.addEventListener( 'dragstart', cancelDrag, true );
+		doc.addEventListener( 'dragstart', maybeCancelDrag, true );
 
 		return () => {
-			node.removeEventListener( 'dragstart', cancelDrag, true );
+			doc.removeEventListener( 'dragstart', maybeCancelDrag, true );
 		};
 	}, [ showShortcode ] );
 
