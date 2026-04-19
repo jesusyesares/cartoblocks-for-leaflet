@@ -5,6 +5,12 @@ All notable changes to the Blocks for Leaflet Map plugin will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.11] - 2026-04-19
+
+### Fixed
+- Copy button in the shortcode viewer now works in insecure contexts (plain HTTP). The previous implementation relied on `navigator.clipboard.writeText`, which browsers only expose on HTTPS, localhost, or 127.0.0.1 — custom development domains such as `.test` silently got no clipboard object. A `document.execCommand('copy')` fallback via a hidden off-screen textarea has been added as a secondary path; the primary path still uses the Clipboard API when available.
+- Text inside the shortcode strip can now be drag-selected for manual copying, and the Copy button responds correctly to hover/click interactions. Gutenberg sets `data-draggable="true"` on the block wrapper and intercepts `mousedown` on all descendants to initiate block reordering — preventing native text selection on the `<pre>` and suppressing interactive states on the Copy button. `onMouseDown` handlers calling `e.stopPropagation()` on both elements prevent the event from reaching Gutenberg's drag listener.
+
 ## [0.3.10] - 2026-04-19
 
 ### Fixed

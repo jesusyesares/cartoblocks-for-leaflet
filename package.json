@@ -1,6 +1,6 @@
 {
 	"name": "blocks-for-leaflet-map",
-	"version": "0.3.10",
+	"version": "0.3.11",
 	"description": "A dynamic block that renders Leaflet Map shortcodes from block attributes.",
 	"author": "The WordPress Contributors",
 	"license": "GPL-2.0-or-later",
