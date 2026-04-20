@@ -2,7 +2,7 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "blocks-for-leaflet-map/leaflet-map-block",
-	"version": "0.4.0",
+	"version": "0.4.1",
 	"title": "Leaflet Map Block",
 	"category": "embed",
 	"icon": "location-alt",
@@ -151,7 +151,27 @@
 					"visible":      { "type": "boolean" },
 					"draggable":    { "type": "boolean" },
 					"opacity":      { "type": "number" },
-					"zIndexOffset": { "type": "integer" }
+					"zIndexOffset": { "type": "integer" },
+					"useCustomIcon": { "type": "boolean", "default": false },
+					"iconUrl":       { "type": "string",  "default": "" },
+					"iconWidth":     { "type": ["number", "null"] },
+					"iconHeight":    { "type": ["number", "null"] },
+					"iconAnchorX":   { "type": ["number", "null"] },
+					"iconAnchorY":   { "type": ["number", "null"] },
+					"popupAnchorX":  { "type": ["number", "null"] },
+					"popupAnchorY":  { "type": ["number", "null"] },
+					"useShadow":     { "type": "boolean", "default": false },
+					"shadowUrl":     { "type": "string",  "default": "" },
+					"shadowWidth":   { "type": ["number", "null"] },
+					"shadowHeight":  { "type": ["number", "null"] },
+					"shadowAnchorX": { "type": ["number", "null"] },
+					"shadowAnchorY": { "type": ["number", "null"] },
+					"iconOriginalWidth":     { "type": ["number", "null"] },
+					"iconOriginalHeight":    { "type": ["number", "null"] },
+					"lockIconAspectRatio":   { "type": "boolean", "default": true },
+					"shadowOriginalWidth":   { "type": ["number", "null"] },
+					"shadowOriginalHeight":  { "type": ["number", "null"] },
+					"lockShadowAspectRatio": { "type": "boolean", "default": true }
 				}
 			}
 		}

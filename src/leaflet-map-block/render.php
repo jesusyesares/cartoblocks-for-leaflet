@@ -212,10 +212,48 @@ foreach ( $markers as $marker ) {
 		}
 	}
 
+	// Custom icon: only emit the icon group when useCustomIcon is true.
+	if ( ! empty( $marker['useCustomIcon'] ) ) {
+		if ( ! empty( $marker['iconUrl'] ) ) {
+			$m_open_tag .= sprintf( ' iconurl="%s"', esc_attr( $marker['iconUrl'] ) );
+		}
+		$icon_w = isset( $marker['iconWidth'] ) && is_numeric( $marker['iconWidth'] ) ? (int) $marker['iconWidth'] : null;
+		$icon_h = isset( $marker['iconHeight'] ) && is_numeric( $marker['iconHeight'] ) ? (int) $marker['iconHeight'] : null;
+		if ( null !== $icon_w && null !== $icon_h && $icon_w >= 1 && $icon_h >= 1 ) {
+			$m_open_tag .= sprintf( ' iconsize="%d,%d"', $icon_w, $icon_h );
+		}
+		$icon_ax = isset( $marker['iconAnchorX'] ) && is_numeric( $marker['iconAnchorX'] ) ? (int) $marker['iconAnchorX'] : null;
+		$icon_ay = isset( $marker['iconAnchorY'] ) && is_numeric( $marker['iconAnchorY'] ) ? (int) $marker['iconAnchorY'] : null;
+		if ( null !== $icon_ax && null !== $icon_ay ) {
+			$m_open_tag .= sprintf( ' iconanchor="%d,%d"', $icon_ax, $icon_ay );
+		}
+		$popup_ax = isset( $marker['popupAnchorX'] ) && is_numeric( $marker['popupAnchorX'] ) ? (int) $marker['popupAnchorX'] : null;
+		$popup_ay = isset( $marker['popupAnchorY'] ) && is_numeric( $marker['popupAnchorY'] ) ? (int) $marker['popupAnchorY'] : null;
+		if ( null !== $popup_ax && null !== $popup_ay ) {
+			$m_open_tag .= sprintf( ' popupanchor="%d,%d"', $popup_ax, $popup_ay );
+		}
+		// Shadow: only emit shadow attributes when useShadow is also true.
+		if ( ! empty( $marker['useShadow'] ) ) {
+			if ( ! empty( $marker['shadowUrl'] ) ) {
+				$m_open_tag .= sprintf( ' shadowurl="%s"', esc_attr( $marker['shadowUrl'] ) );
+			}
+			$shadow_w = isset( $marker['shadowWidth'] ) && is_numeric( $marker['shadowWidth'] ) ? (int) $marker['shadowWidth'] : null;
+			$shadow_h = isset( $marker['shadowHeight'] ) && is_numeric( $marker['shadowHeight'] ) ? (int) $marker['shadowHeight'] : null;
+			if ( null !== $shadow_w && null !== $shadow_h && $shadow_w >= 1 && $shadow_h >= 1 ) {
+				$m_open_tag .= sprintf( ' shadowsize="%d,%d"', $shadow_w, $shadow_h );
+			}
+			$shadow_ax = isset( $marker['shadowAnchorX'] ) && is_numeric( $marker['shadowAnchorX'] ) ? (int) $marker['shadowAnchorX'] : null;
+			$shadow_ay = isset( $marker['shadowAnchorY'] ) && is_numeric( $marker['shadowAnchorY'] ) ? (int) $marker['shadowAnchorY'] : null;
+			if ( null !== $shadow_ax && null !== $shadow_ay ) {
+				$m_open_tag .= sprintf( ' shadowanchor="%d,%d"', $shadow_ax, $shadow_ay );
+			}
+		}
+	}
+
 	if ( '' !== $m_content ) {
 		$marker_shortcodes .= $m_open_tag . ']' . $m_content . '[/leaflet-marker]';
 	} else {
-		$marker_shortcodes .= $m_open_tag . ']';
+		$marker_shortcodes .= $m_open_tag . ' /]';
 	}
 }
 

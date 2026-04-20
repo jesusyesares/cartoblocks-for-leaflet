@@ -73,20 +73,32 @@ Reading `src/leaflet-map-block/block.json` (markers item schema) and `render.php
 
 | Attribute | Where |
 |---|---|
-| `lat` | `block.json` items schema → `render.php` line 163 → emitted as `lat="…"` |
-| `lng` | `block.json` items schema → `render.php` line 164 → emitted as `lng="…"` |
-| `title` | `block.json` items schema → `render.php` line 168 → emitted as `title="…"` |
-| `content` (popup body) | `block.json` items schema → `render.php` lines 169–186 → emitted as inner content between `[leaflet-marker]…[/leaflet-marker]` |
+| `lat` | `block.json` items schema → `render.php` → emitted as `lat="…"` |
+| `lng` | `block.json` items schema → `render.php` → emitted as `lng="…"` |
+| `title` | `block.json` items schema → `render.php` → emitted as `title="…"` |
+| `content` (popup body) | `block.json` items schema → `render.php` → emitted as inner content between `[leaflet-marker]…[/leaflet-marker]` |
+| `alt` | Added v0.4.0 — `block.json` items schema → `render.php` → emitted as `alt="…"` |
+| `visible` | Added v0.4.0 — `block.json` items schema → `render.php` → emitted as `visible="1"` when true |
+| `draggable` | Added v0.4.0 — `block.json` items schema → `render.php` → emitted as `draggable="1"` when true |
+| `opacity` | Added v0.4.0 — `block.json` items schema → `render.php` → emitted as `opacity="…"` when ≠ 1 |
+| `zindexoffset` | Added v0.4.0 — `block.json` items schema (as `zIndexOffset`) → `render.php` → emitted as `zindexoffset="…"` when ≠ 0 |
+| `iconurl` | Added v0.4.1 — gated on `useCustomIcon` block flag; `render.php` emits `iconurl="…"` via `esc_attr()` |
+| `iconsize` | Added v0.4.1 — stored as `iconWidth` + `iconHeight`; `render.php` emits `iconsize="W,H"` when both ≥ 1 |
+| `iconanchor` | Added v0.4.1 — stored as `iconAnchorX` + `iconAnchorY`; `render.php` emits `iconanchor="X,Y"` when both numeric |
+| `popupanchor` | Added v0.4.1 — stored as `popupAnchorX` + `popupAnchorY`; `render.php` emits `popupanchor="X,Y"` when both numeric |
+| `shadowurl` | Added v0.4.1 — additionally gated on `useShadow` block flag; `render.php` emits `shadowurl="…"` via `esc_attr()` |
+| `shadowsize` | Added v0.4.1 — stored as `shadowWidth` + `shadowHeight`; `render.php` emits `shadowsize="W,H"` when both ≥ 1 |
+| `shadowanchor` | Added v0.4.1 — stored as `shadowAnchorX` + `shadowAnchorY`; `render.php` emits `shadowanchor="X,Y"` when both numeric |
 
-Everything else in the table above is **not yet implemented**.
+`tooltipanchor`, `svg`, `background`, `iconclass`, `color`, `message`, `address`, `x`, `y` are **not yet implemented** (see proposals below).
 
 ---
 
 ## Proposed grouping for v0.4.x releases
 
-> These are proposals only. No code exists yet. Human review required before starting any branch.
+> Shipped sections are marked ✅. Remaining sections are proposals only — human review required before starting any branch.
 
-### v0.4.0 — Popup & visibility
+### v0.4.0 — Popup & visibility ✅ Shipped in v0.4.0
 
 Complete the popup story for the basic marker use case.
 
@@ -99,7 +111,7 @@ Implementation note: `visible` currently requires no block attribute changes —
 
 ---
 
-### v0.4.1 — Marker behaviour
+### v0.4.1 — Marker behaviour ✅ Shipped in v0.4.0
 
 Non-visual options that change how the marker interacts with the user.
 
@@ -113,7 +125,7 @@ Non-visual options that change how the marker interacts with the user.
 
 ---
 
-### v0.4.2 — Custom icon (image)
+### v0.4.2 — Custom icon (image) ✅ Shipped in v0.4.1
 
 The icon group: URL + dimensions + anchors. These should be exposed together because `iconUrl` without `iconSize`/`iconAnchor` leads to broken layouts.
 

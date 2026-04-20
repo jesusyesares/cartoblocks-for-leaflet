@@ -3,7 +3,7 @@
  * Plugin Name:       Blocks for Leaflet Map
  * Plugin URI:        https://github.com/jesusyesares/blocks-for-leaflet-map
  * Description:       A dynamic Gutenberg block that wraps the Leaflet Map plugin shortcodes. Requires the "Leaflet Map" plugin to be installed and active.
- * Version:           0.4.0
+ * Version:           0.4.1
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Jesús Yesares García
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-define( 'BFLM_VERSION', '0.4.0' );
+define( 'BFLM_VERSION', '0.4.1' );
 define( 'BFLM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BFLM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BFLM_LEAFLET_MAP_PLUGIN', 'leaflet-map/leaflet-map.php' );
@@ -283,10 +283,50 @@ function bflm_preview_map(): void {
 			}
 		}
 
+		// Custom icon: mirror buildShortcode() logic in edit.js.
+		if ( ! empty( $marker['useCustomIcon'] ) ) {
+			$m_icon_url = isset( $marker['iconUrl'] ) ? sanitize_text_field( $marker['iconUrl'] ) : '';
+			if ( '' !== $m_icon_url ) {
+				$m_open_tag .= sprintf( ' iconurl="%s"', esc_attr( $m_icon_url ) );
+			}
+			$m_icon_w = isset( $marker['iconWidth'] )  ? (int) $marker['iconWidth']  : 0;
+			$m_icon_h = isset( $marker['iconHeight'] ) ? (int) $marker['iconHeight'] : 0;
+			if ( $m_icon_w >= 1 && $m_icon_h >= 1 ) {
+				$m_open_tag .= sprintf( ' iconsize="%d,%d"', $m_icon_w, $m_icon_h );
+			}
+			$m_anchor_x = isset( $marker['iconAnchorX'] ) ? $marker['iconAnchorX'] : null;
+			$m_anchor_y = isset( $marker['iconAnchorY'] ) ? $marker['iconAnchorY'] : null;
+			if ( null !== $m_anchor_x && null !== $m_anchor_y ) {
+				$m_open_tag .= sprintf( ' iconanchor="%d,%d"', (int) $m_anchor_x, (int) $m_anchor_y );
+			}
+			$m_popup_x = isset( $marker['popupAnchorX'] ) ? $marker['popupAnchorX'] : null;
+			$m_popup_y = isset( $marker['popupAnchorY'] ) ? $marker['popupAnchorY'] : null;
+			if ( null !== $m_popup_x && null !== $m_popup_y ) {
+				$m_open_tag .= sprintf( ' popupanchor="%d,%d"', (int) $m_popup_x, (int) $m_popup_y );
+			}
+			// Shadow: only when useShadow is also true.
+			if ( ! empty( $marker['useShadow'] ) ) {
+				$m_shadow_url = isset( $marker['shadowUrl'] ) ? sanitize_text_field( $marker['shadowUrl'] ) : '';
+				if ( '' !== $m_shadow_url ) {
+					$m_open_tag .= sprintf( ' shadowurl="%s"', esc_attr( $m_shadow_url ) );
+				}
+				$m_shadow_w = isset( $marker['shadowWidth'] )  ? (int) $marker['shadowWidth']  : 0;
+				$m_shadow_h = isset( $marker['shadowHeight'] ) ? (int) $marker['shadowHeight'] : 0;
+				if ( $m_shadow_w >= 1 && $m_shadow_h >= 1 ) {
+					$m_open_tag .= sprintf( ' shadowsize="%d,%d"', $m_shadow_w, $m_shadow_h );
+				}
+				$m_shadow_ax = isset( $marker['shadowAnchorX'] ) ? $marker['shadowAnchorX'] : null;
+				$m_shadow_ay = isset( $marker['shadowAnchorY'] ) ? $marker['shadowAnchorY'] : null;
+				if ( null !== $m_shadow_ax && null !== $m_shadow_ay ) {
+					$m_open_tag .= sprintf( ' shadowanchor="%d,%d"', (int) $m_shadow_ax, (int) $m_shadow_ay );
+				}
+			}
+		}
+
 		if ( '' !== $m_content ) {
 			$marker_shortcodes .= $m_open_tag . ']' . $m_content . '[/leaflet-marker]';
 		} else {
-			$marker_shortcodes .= $m_open_tag . ']';
+			$marker_shortcodes .= $m_open_tag . ' /]';
 		}
 	}
 
