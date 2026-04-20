@@ -1411,7 +1411,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 								<NumberControl
 									label={ __( 'Z-Index Offset', 'blocks-for-leaflet-map' ) }
 									help={ __(
-										'Raise or lower this marker above/below others. Positive values bring it to the front.',
+										'Raise or lower this marker relative to others. Leaflet already offsets markers by latitude, so you may need values of 10+ (or higher when markers are close together) to visibly change the stacking order.',
 										'blocks-for-leaflet-map'
 									) }
 									value={ marker.zIndexOffset ?? 0 }
