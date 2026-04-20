@@ -188,11 +188,21 @@ function buildShortcode( attributes ) {
 		const mLng     = marker.lng;
 		const mTitle   = marker.title   || '';
 		const mContent = marker.content || '';
+		const mAlt     = marker.alt     || '';
+
+		// Build open tag incrementally, mirroring render.php conditional emission.
+		let mTag = `[leaflet-marker lat="${ mLat }" lng="${ mLng }"`;
+		if ( mTitle )                                                   mTag += ` title="${ mTitle }"`;
+		if ( mAlt )                                                     mTag += ` alt="${ mAlt }"`;
+		if ( marker.visible )                                           mTag += ` visible="1"`;
+		if ( marker.draggable )                                         mTag += ` draggable="1"`;
+		if ( marker.opacity != null && Math.abs( marker.opacity - 1 ) > 0.001 ) mTag += ` opacity="${ marker.opacity }"`;
+		if ( marker.zIndexOffset != null && marker.zIndexOffset !== 0 ) mTag += ` zindexoffset="${ marker.zIndexOffset }"`;
 
 		if ( mContent ) {
-			shortcode += `\n[leaflet-marker lat="${ mLat }" lng="${ mLng }" title="${ mTitle }"]${ mContent }[/leaflet-marker]`;
+			shortcode += `\n${ mTag }]${ mContent }[/leaflet-marker]`;
 		} else {
-			shortcode += `\n[leaflet-marker lat="${ mLat }" lng="${ mLng }" title="${ mTitle }"]`;
+			shortcode += `\n${ mTag }]`;
 		}
 	}
 
@@ -348,6 +358,15 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 	// Sync local state when the block attribute changes externally (undo/redo, block switch).
 	useEffect( () => { setLocalTilesize( tilesize ); }, [ tilesize ] );
 	useEffect( () => { setLocalZoomoffset( zoomoffset ); }, [ zoomoffset ] );
+
+	/**
+	 * Per-marker z-index offset local state — keyed by marker index.
+	 * Same blur-commit pattern as Tile Size / Zoom Offset above.
+	 * Reset when the markers array length changes (marker added or removed)
+	 * so stale entries for shifted indices are cleared automatically.
+	 */
+	const [ localZIndexOffsets, setLocalZIndexOffsets ] = useState( {} );
+	useEffect( () => { setLocalZIndexOffsets( {} ); }, [ markers.length ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// ── Geocoding local state ─────────────────────────────────────────────────
 
@@ -1313,11 +1332,16 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 							/>
 							<TextControl
 								label={ __( 'Title', 'blocks-for-leaflet-map' ) }
+								help={ __(
+									'Browser tooltip shown on hover. Also used as the marker\'s accessible name.',
+									'blocks-for-leaflet-map'
+								) }
 								value={ marker.title || '' }
 								onChange={ ( value ) =>
 									handleUpdateMarker( index, { title: value } )
 								}
 								__next40pxDefaultSize
+								__nextHasNoMarginBottom
 							/>
 							<TextareaControl
 								label={ __(
@@ -1334,6 +1358,94 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 								}
 								rows={ 3 }
 							/>
+							{ /* Advanced marker options — collapsed by default to keep the
+							     common case (lat/lng + title + popup) compact. */ }
+							<PanelBody
+								title={ __( 'Advanced', 'blocks-for-leaflet-map' ) }
+								initialOpen={ false }
+							>
+								<TextControl
+									label={ __( 'Alt Text', 'blocks-for-leaflet-map' ) }
+									help={ __(
+										'Alternative text for the marker image. Improves accessibility for screen reader users.',
+										'blocks-for-leaflet-map'
+									) }
+									value={ marker.alt || '' }
+									onChange={ ( value ) =>
+										handleUpdateMarker( index, { alt: value } )
+									}
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+								<ToggleControl
+									label={ __( 'Auto-open Popup', 'blocks-for-leaflet-map' ) }
+									help={ __(
+										'Open the popup automatically when the page loads.',
+										'blocks-for-leaflet-map'
+									) }
+									checked={ marker.visible || false }
+									onChange={ ( value ) =>
+										handleUpdateMarker( index, { visible: value } )
+									}
+									__nextHasNoMarginBottom
+								/>
+								<ToggleControl
+									label={ __( 'Draggable', 'blocks-for-leaflet-map' ) }
+									help={ __(
+										'Allow visitors to drag the marker. The new position is logged to the browser console.',
+										'blocks-for-leaflet-map'
+									) }
+									checked={ marker.draggable || false }
+									onChange={ ( value ) =>
+										handleUpdateMarker( index, { draggable: value } )
+									}
+									__nextHasNoMarginBottom
+								/>
+								<RangeControl
+									label={ __( 'Opacity', 'blocks-for-leaflet-map' ) }
+									help={ __(
+										'Marker icon opacity. Default: 1 (fully opaque).',
+										'blocks-for-leaflet-map'
+									) }
+									value={ marker.opacity != null ? marker.opacity : 1 }
+									onChange={ ( value ) =>
+										handleUpdateMarker( index, { opacity: value } )
+									}
+									min={ 0 }
+									max={ 1 }
+									step={ 0.05 }
+									__nextHasNoMarginBottom
+								/>
+								<NumberControl
+									label={ __( 'Z-Index Offset', 'blocks-for-leaflet-map' ) }
+									help={ __(
+										'Raise or lower this marker above/below others. Positive values bring it to the front.',
+										'blocks-for-leaflet-map'
+									) }
+									value={
+										index in localZIndexOffsets
+											? localZIndexOffsets[ index ]
+											: ( marker.zIndexOffset ?? 0 )
+									}
+									onChange={ ( value ) =>
+										setLocalZIndexOffsets( ( prev ) => ( { ...prev, [ index ]: value ?? '' } ) )
+									}
+									onBlur={ () => {
+										const raw = index in localZIndexOffsets
+											? localZIndexOffsets[ index ]
+											: ( marker.zIndexOffset ?? 0 );
+										const val = parseInt( raw, 10 );
+										handleUpdateMarker( index, { zIndexOffset: isNaN( val ) ? 0 : val } );
+										setLocalZIndexOffsets( ( prev ) => {
+											const next = { ...prev };
+											delete next[ index ];
+											return next;
+										} );
+									} }
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+							</PanelBody>
 							<Button
 								variant="link"
 								isDestructive
