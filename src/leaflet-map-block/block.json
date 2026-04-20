@@ -165,7 +165,13 @@
 					"shadowWidth":   { "type": ["number", "null"] },
 					"shadowHeight":  { "type": ["number", "null"] },
 					"shadowAnchorX": { "type": ["number", "null"] },
-					"shadowAnchorY": { "type": ["number", "null"] }
+					"shadowAnchorY": { "type": ["number", "null"] },
+					"iconOriginalWidth":     { "type": ["number", "null"] },
+					"iconOriginalHeight":    { "type": ["number", "null"] },
+					"lockIconAspectRatio":   { "type": "boolean", "default": true },
+					"shadowOriginalWidth":   { "type": ["number", "null"] },
+					"shadowOriginalHeight":  { "type": ["number", "null"] },
+					"lockShadowAspectRatio": { "type": "boolean", "default": true }
 				}
 			}
 		}
