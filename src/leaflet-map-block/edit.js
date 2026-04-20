@@ -1742,7 +1742,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 															if ( media.width && media.height ) {
 																updates.shadowWidth          = media.width;
 																updates.shadowHeight         = media.height;
-																updates.shadowAnchorX        = Math.round( media.width / 2 );
+																updates.shadowAnchorX        = 0;
 																updates.shadowAnchorY        = media.height;
 																updates.shadowOriginalWidth  = media.width;
 																updates.shadowOriginalHeight = media.height;
