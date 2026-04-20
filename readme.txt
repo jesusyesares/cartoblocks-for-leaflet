@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.0
 Tested up to:      6.9
-Stable tag:        0.4.0
+Stable tag:        0.4.1
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -61,6 +61,16 @@ Whatever you have configured in the Leaflet Map plugin settings. By default, Ope
 3. Frontend rendering with Leaflet Map shortcodes.
 
 == Changelog ==
+
+= 0.4.1 =
+* Added: Custom icon support for each marker in a new collapsible "Custom Icon" subsection. Master "Use custom icon" toggle with non-destructive behaviour — disabling the toggle hides the fields but preserves the entered values. Icon image selected via the WordPress Media Library, with icon size (width/height) and icon anchor (X/Y) fields, plus a popup anchor (X/Y) field. Optional shadow via an "Add shadow" sub-toggle (also non-destructive) with its own image selector, size, and anchor fields.
+* Added: On image selection, the size and anchor fields are auto-filled from the image's actual dimensions. Icon defaults to the bottom-center "pin" position. Shadow defaults to the lower-left corner, matching the standard Leaflet-style drop shadow convention (light source from the upper-left).
+* Added: "Lock aspect ratio" toggle for icon and shadow size (default on). When active, editing width or height scales the other dimension proportionally and also recalculates all anchor coordinates to preserve the marker's visual anchoring on the map. Icon and shadow are fully independent — locking or resizing one never affects the other.
+* Added: "Anchor position" preset selector above each anchor's X/Y fields, with nine canonical positions (top-left through bottom-right). The selector reflects the current anchor values automatically and shows "Custom" when the values don't match any preset.
+* Fixed: Custom icon was not visible in the editor's iframe preview although it rendered correctly on the frontend. The PHP AJAX handler that builds the preview shortcode did not mirror the serialization added to the JavaScript shortcode builder in v0.4.1.
+* Fixed: Markers with popup content caused sibling content-less markers to disappear from both the editor preview and the frontend. WordPress' greedy shortcode parser was pairing the orphan opener of a content-less marker with the `[/leaflet-marker]` closer of the next marker. Content-less markers are now emitted as self-closing shortcodes (`[leaflet-marker ... /]`) to prevent the parser from matching them to an unrelated closer.
+* Fixed: Gutenberg block validation warnings on save for markers with custom icon fields. The nullable numeric attributes (icon/shadow width, height, and anchor coordinates) were declared with `type: "number"` only; switched to the `["number", "null"]` union so cleared fields validate correctly.
+* Changed: Opacity RangeControl, Zoom Level RangeControl, and the new "Anchor position" SelectControls opt into the upcoming 40px default size (`__next40pxDefaultSize`), eliminating deprecation warnings on WordPress 6.8+.
 
 = 0.4.0 =
 * Added: Five new per-marker controls in the Markers panel, inside a collapsible "Advanced" subsection per marker: Alt Text, Auto-open Popup (opens popup on page load), Draggable, Opacity (0–1), and Z-Index Offset. Title field now shows help text. Part of the v0.4.x [leaflet-marker] attribute cycle (#14).
