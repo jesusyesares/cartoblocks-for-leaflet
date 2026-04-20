@@ -253,7 +253,7 @@ foreach ( $markers as $marker ) {
 	if ( '' !== $m_content ) {
 		$marker_shortcodes .= $m_open_tag . ']' . $m_content . '[/leaflet-marker]';
 	} else {
-		$marker_shortcodes .= $m_open_tag . ']';
+		$marker_shortcodes .= $m_open_tag . ' /]';
 	}
 }
 
