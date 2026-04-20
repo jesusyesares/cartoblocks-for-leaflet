@@ -1468,9 +1468,18 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 										</p>
 										<MediaUploadCheck>
 											<MediaUpload
-												onSelect={ ( media ) =>
-													handleUpdateMarker( index, { iconUrl: media.url } )
-												}
+												onSelect={ ( media ) => {
+													const updates = { iconUrl: media.url };
+													if ( media.width && media.height ) {
+														updates.iconWidth    = media.width;
+														updates.iconHeight   = media.height;
+														updates.iconAnchorX  = Math.round( media.width / 2 );
+														updates.iconAnchorY  = media.height;
+														updates.popupAnchorX = 0;
+														updates.popupAnchorY = -media.height;
+													}
+													handleUpdateMarker( index, updates );
+												} }
 												allowedTypes={ [ 'image' ] }
 												render={ ( { open } ) => (
 													<>
@@ -1602,9 +1611,16 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 												</p>
 												<MediaUploadCheck>
 													<MediaUpload
-														onSelect={ ( media ) =>
-															handleUpdateMarker( index, { shadowUrl: media.url } )
-														}
+														onSelect={ ( media ) => {
+															const updates = { shadowUrl: media.url };
+															if ( media.width && media.height ) {
+																updates.shadowWidth   = media.width;
+																updates.shadowHeight  = media.height;
+																updates.shadowAnchorX = Math.round( media.width / 2 );
+																updates.shadowAnchorY = media.height;
+															}
+															handleUpdateMarker( index, updates );
+														} }
 														allowedTypes={ [ 'image' ] }
 														render={ ( { open } ) => (
 															<>
