@@ -43,7 +43,7 @@
 
 import { __, sprintf } from '@wordpress/i18n';
 import { useEffect, useRef, useState } from '@wordpress/element';
-import { useBlockProps, BlockControls, InspectorControls } from '@wordpress/block-editor';
+import { useBlockProps, BlockControls, InspectorControls, MediaUpload, MediaUploadCheck } from '@wordpress/block-editor';
 import {
 	PanelBody,
 	Button,
@@ -198,6 +198,30 @@ function buildShortcode( attributes ) {
 		if ( marker.draggable )                                         mTag += ` draggable="1"`;
 		if ( marker.opacity != null && Math.abs( marker.opacity - 1 ) > 0.001 ) mTag += ` opacity="${ marker.opacity }"`;
 		if ( marker.zIndexOffset != null && marker.zIndexOffset !== 0 ) mTag += ` zindexoffset="${ marker.zIndexOffset }"`;
+
+		// Custom icon: only emit when useCustomIcon is true.
+		if ( marker.useCustomIcon ) {
+			if ( marker.iconUrl ) mTag += ` iconurl="${ marker.iconUrl }"`;
+			if ( marker.iconWidth != null && marker.iconHeight != null && marker.iconWidth >= 1 && marker.iconHeight >= 1 ) {
+				mTag += ` iconsize="${ marker.iconWidth },${ marker.iconHeight }"`;
+			}
+			if ( marker.iconAnchorX != null && marker.iconAnchorY != null ) {
+				mTag += ` iconanchor="${ marker.iconAnchorX },${ marker.iconAnchorY }"`;
+			}
+			if ( marker.popupAnchorX != null && marker.popupAnchorY != null ) {
+				mTag += ` popupanchor="${ marker.popupAnchorX },${ marker.popupAnchorY }"`;
+			}
+			// Shadow: only when useShadow is also true.
+			if ( marker.useShadow ) {
+				if ( marker.shadowUrl ) mTag += ` shadowurl="${ marker.shadowUrl }"`;
+				if ( marker.shadowWidth != null && marker.shadowHeight != null && marker.shadowWidth >= 1 && marker.shadowHeight >= 1 ) {
+					mTag += ` shadowsize="${ marker.shadowWidth },${ marker.shadowHeight }"`;
+				}
+				if ( marker.shadowAnchorX != null && marker.shadowAnchorY != null ) {
+					mTag += ` shadowanchor="${ marker.shadowAnchorX },${ marker.shadowAnchorY }"`;
+				}
+			}
+		}
 
 		if ( mContent ) {
 			shortcode += `\n${ mTag }]${ mContent }[/leaflet-marker]`;
@@ -1422,6 +1446,256 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 									__next40pxDefaultSize
 									__nextHasNoMarginBottom
 								/>
+							</PanelBody>
+							{ /* Custom Icon options — collapsed by default. */ }
+							<PanelBody
+								title={ __( 'Custom Icon', 'blocks-for-leaflet-map' ) }
+								initialOpen={ false }
+							>
+								<ToggleControl
+									label={ __( 'Use custom icon', 'blocks-for-leaflet-map' ) }
+									checked={ marker.useCustomIcon || false }
+									onChange={ ( value ) =>
+										handleUpdateMarker( index, { useCustomIcon: value } )
+									}
+									__nextHasNoMarginBottom
+								/>
+								{ marker.useCustomIcon && (
+									<>
+										{ /* Icon URL */ }
+										<p style={ { margin: '12px 0 4px', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', color: '#1e1e1e' } }>
+											{ __( 'Icon', 'blocks-for-leaflet-map' ) }
+										</p>
+										<MediaUploadCheck>
+											<MediaUpload
+												onSelect={ ( media ) =>
+													handleUpdateMarker( index, { iconUrl: media.url } )
+												}
+												allowedTypes={ [ 'image' ] }
+												render={ ( { open } ) => (
+													<>
+														<Button
+															variant="secondary"
+															onClick={ open }
+															style={ { width: '100%', justifyContent: 'center' } }
+														>
+															{ marker.iconUrl
+																? __( 'Replace image', 'blocks-for-leaflet-map' )
+																: __( 'Select image', 'blocks-for-leaflet-map' )
+															}
+														</Button>
+														{ marker.iconUrl && (
+															<>
+																<p style={ { fontSize: '11px', wordBreak: 'break-all', margin: '4px 0' } }>
+																	{ marker.iconUrl }
+																</p>
+																<Button
+																	variant="link"
+																	isDestructive
+																	onClick={ () =>
+																		handleUpdateMarker( index, { iconUrl: '' } )
+																	}
+																>
+																	{ __( 'Remove', 'blocks-for-leaflet-map' ) }
+																</Button>
+															</>
+														) }
+													</>
+												) }
+											/>
+										</MediaUploadCheck>
+										{ /* Icon Size */ }
+										<p style={ { margin: '12px 0 4px', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: '#1e1e1e' } }>
+											{ __( 'Icon Size (px)', 'blocks-for-leaflet-map' ) }
+										</p>
+										<div style={ { display: 'flex', gap: '8px' } }>
+											<NumberControl
+												label={ __( 'Width', 'blocks-for-leaflet-map' ) }
+												value={ marker.iconWidth ?? '' }
+												min={ 1 }
+												onChange={ ( value ) => {
+													const val = parseInt( value, 10 );
+													handleUpdateMarker( index, { iconWidth: isNaN( val ) ? null : val } );
+												} }
+												style={ { flex: 1 } }
+												__next40pxDefaultSize
+											/>
+											<NumberControl
+												label={ __( 'Height', 'blocks-for-leaflet-map' ) }
+												value={ marker.iconHeight ?? '' }
+												min={ 1 }
+												onChange={ ( value ) => {
+													const val = parseInt( value, 10 );
+													handleUpdateMarker( index, { iconHeight: isNaN( val ) ? null : val } );
+												} }
+												style={ { flex: 1 } }
+												__next40pxDefaultSize
+											/>
+										</div>
+										{ /* Icon Anchor */ }
+										<p style={ { margin: '12px 0 4px', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: '#1e1e1e' } }>
+											{ __( 'Icon Anchor (px)', 'blocks-for-leaflet-map' ) }
+										</p>
+										<div style={ { display: 'flex', gap: '8px' } }>
+											<NumberControl
+												label={ __( 'X', 'blocks-for-leaflet-map' ) }
+												value={ marker.iconAnchorX ?? '' }
+												onChange={ ( value ) => {
+													const val = parseInt( value, 10 );
+													handleUpdateMarker( index, { iconAnchorX: isNaN( val ) ? null : val } );
+												} }
+												style={ { flex: 1 } }
+												__next40pxDefaultSize
+											/>
+											<NumberControl
+												label={ __( 'Y', 'blocks-for-leaflet-map' ) }
+												value={ marker.iconAnchorY ?? '' }
+												onChange={ ( value ) => {
+													const val = parseInt( value, 10 );
+													handleUpdateMarker( index, { iconAnchorY: isNaN( val ) ? null : val } );
+												} }
+												style={ { flex: 1 } }
+												__next40pxDefaultSize
+											/>
+										</div>
+										{ /* Popup Anchor */ }
+										<p style={ { margin: '12px 0 4px', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: '#1e1e1e' } }>
+											{ __( 'Popup Anchor (px)', 'blocks-for-leaflet-map' ) }
+										</p>
+										<div style={ { display: 'flex', gap: '8px' } }>
+											<NumberControl
+												label={ __( 'X', 'blocks-for-leaflet-map' ) }
+												value={ marker.popupAnchorX ?? '' }
+												onChange={ ( value ) => {
+													const val = parseInt( value, 10 );
+													handleUpdateMarker( index, { popupAnchorX: isNaN( val ) ? null : val } );
+												} }
+												style={ { flex: 1 } }
+												__next40pxDefaultSize
+											/>
+											<NumberControl
+												label={ __( 'Y', 'blocks-for-leaflet-map' ) }
+												value={ marker.popupAnchorY ?? '' }
+												onChange={ ( value ) => {
+													const val = parseInt( value, 10 );
+													handleUpdateMarker( index, { popupAnchorY: isNaN( val ) ? null : val } );
+												} }
+												style={ { flex: 1 } }
+												__next40pxDefaultSize
+											/>
+										</div>
+										{ /* Shadow toggle */ }
+										<ToggleControl
+											label={ __( 'Add shadow', 'blocks-for-leaflet-map' ) }
+											checked={ marker.useShadow || false }
+											onChange={ ( value ) =>
+												handleUpdateMarker( index, { useShadow: value } )
+											}
+											style={ { marginTop: '12px' } }
+											__nextHasNoMarginBottom
+										/>
+										{ marker.useShadow && (
+											<>
+												{ /* Shadow URL */ }
+												<p style={ { margin: '12px 0 4px', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', color: '#1e1e1e' } }>
+													{ __( 'Shadow', 'blocks-for-leaflet-map' ) }
+												</p>
+												<MediaUploadCheck>
+													<MediaUpload
+														onSelect={ ( media ) =>
+															handleUpdateMarker( index, { shadowUrl: media.url } )
+														}
+														allowedTypes={ [ 'image' ] }
+														render={ ( { open } ) => (
+															<>
+																<Button
+																	variant="secondary"
+																	onClick={ open }
+																	style={ { width: '100%', justifyContent: 'center' } }
+																>
+																	{ marker.shadowUrl
+																		? __( 'Replace image', 'blocks-for-leaflet-map' )
+																		: __( 'Select image', 'blocks-for-leaflet-map' )
+																	}
+																</Button>
+																{ marker.shadowUrl && (
+																	<>
+																		<p style={ { fontSize: '11px', wordBreak: 'break-all', margin: '4px 0' } }>
+																			{ marker.shadowUrl }
+																		</p>
+																		<Button
+																			variant="link"
+																			isDestructive
+																			onClick={ () =>
+																				handleUpdateMarker( index, { shadowUrl: '' } )
+																			}
+																		>
+																			{ __( 'Remove', 'blocks-for-leaflet-map' ) }
+																		</Button>
+																	</>
+																) }
+															</>
+														) }
+													/>
+												</MediaUploadCheck>
+												{ /* Shadow Size */ }
+												<p style={ { margin: '12px 0 4px', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: '#1e1e1e' } }>
+													{ __( 'Shadow Size (px)', 'blocks-for-leaflet-map' ) }
+												</p>
+												<div style={ { display: 'flex', gap: '8px' } }>
+													<NumberControl
+														label={ __( 'Width', 'blocks-for-leaflet-map' ) }
+														value={ marker.shadowWidth ?? '' }
+														min={ 1 }
+														onChange={ ( value ) => {
+															const val = parseInt( value, 10 );
+															handleUpdateMarker( index, { shadowWidth: isNaN( val ) ? null : val } );
+														} }
+														style={ { flex: 1 } }
+														__next40pxDefaultSize
+													/>
+													<NumberControl
+														label={ __( 'Height', 'blocks-for-leaflet-map' ) }
+														value={ marker.shadowHeight ?? '' }
+														min={ 1 }
+														onChange={ ( value ) => {
+															const val = parseInt( value, 10 );
+															handleUpdateMarker( index, { shadowHeight: isNaN( val ) ? null : val } );
+														} }
+														style={ { flex: 1 } }
+														__next40pxDefaultSize
+													/>
+												</div>
+												{ /* Shadow Anchor */ }
+												<p style={ { margin: '12px 0 4px', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: '#1e1e1e' } }>
+													{ __( 'Shadow Anchor (px)', 'blocks-for-leaflet-map' ) }
+												</p>
+												<div style={ { display: 'flex', gap: '8px' } }>
+													<NumberControl
+														label={ __( 'X', 'blocks-for-leaflet-map' ) }
+														value={ marker.shadowAnchorX ?? '' }
+														onChange={ ( value ) => {
+															const val = parseInt( value, 10 );
+															handleUpdateMarker( index, { shadowAnchorX: isNaN( val ) ? null : val } );
+														} }
+														style={ { flex: 1 } }
+														__next40pxDefaultSize
+													/>
+													<NumberControl
+														label={ __( 'Y', 'blocks-for-leaflet-map' ) }
+														value={ marker.shadowAnchorY ?? '' }
+														onChange={ ( value ) => {
+															const val = parseInt( value, 10 );
+															handleUpdateMarker( index, { shadowAnchorY: isNaN( val ) ? null : val } );
+														} }
+														style={ { flex: 1 } }
+														__next40pxDefaultSize
+													/>
+												</div>
+											</>
+										) }
+									</>
+								) }
 							</PanelBody>
 							<Button
 								variant="link"

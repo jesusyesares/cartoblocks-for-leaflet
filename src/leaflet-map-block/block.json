@@ -151,7 +151,21 @@
 					"visible":      { "type": "boolean" },
 					"draggable":    { "type": "boolean" },
 					"opacity":      { "type": "number" },
-					"zIndexOffset": { "type": "integer" }
+					"zIndexOffset": { "type": "integer" },
+					"useCustomIcon": { "type": "boolean", "default": false },
+					"iconUrl":       { "type": "string",  "default": "" },
+					"iconWidth":     { "type": "number" },
+					"iconHeight":    { "type": "number" },
+					"iconAnchorX":   { "type": "number" },
+					"iconAnchorY":   { "type": "number" },
+					"popupAnchorX":  { "type": "number" },
+					"popupAnchorY":  { "type": "number" },
+					"useShadow":     { "type": "boolean", "default": false },
+					"shadowUrl":     { "type": "string",  "default": "" },
+					"shadowWidth":   { "type": "number" },
+					"shadowHeight":  { "type": "number" },
+					"shadowAnchorX": { "type": "number" },
+					"shadowAnchorY": { "type": "number" }
 				}
 			}
 		}
