@@ -1092,6 +1092,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 						onChange={ ( value ) => setAttributes( { zoom: value } ) }
 						min={ 1 }
 						max={ 20 }
+						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
 					<ToggleControl
@@ -1572,6 +1573,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 									min={ 0 }
 									max={ 1 }
 									step={ 0.05 }
+									__next40pxDefaultSize
 									__nextHasNoMarginBottom
 								/>
 								<NumberControl
@@ -1775,6 +1777,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 														}
 													} }
 													style={ { marginTop: '12px' } }
+													__next40pxDefaultSize
 													__nextHasNoMarginBottom
 												/>
 											);
@@ -2007,6 +2010,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 																}
 															} }
 															style={ { marginTop: '12px' } }
+															__next40pxDefaultSize
 															__nextHasNoMarginBottom
 														/>
 													);
