@@ -143,10 +143,15 @@
 			"items": {
 				"type": "object",
 				"properties": {
-					"lat":     { "type": "number" },
-					"lng":     { "type": "number" },
-					"title":   { "type": "string" },
-					"content": { "type": "string" }
+					"lat":          { "type": "number" },
+					"lng":          { "type": "number" },
+					"title":        { "type": "string" },
+					"content":      { "type": "string" },
+					"alt":          { "type": "string" },
+					"visible":      { "type": "boolean" },
+					"draggable":    { "type": "boolean" },
+					"opacity":      { "type": "number" },
+					"zIndexOffset": { "type": "integer" }
 				}
 			}
 		}
