@@ -332,6 +332,78 @@ function computeProportionalResize( { axis, newVal, wKey, hKey, origW, origH, cu
 }
 
 /**
+ * The 9 canonical anchor preset positions, in SelectControl display order.
+ * xFn/yFn receive (width, height) and return the integer coordinate.
+ */
+const ANCHOR_PRESETS = [
+	{ id: 'top-left',      xFn: ( w )    => 0,                   yFn: ()       => 0                   },
+	{ id: 'top-center',    xFn: ( w )    => Math.round( w / 2 ), yFn: ()       => 0                   },
+	{ id: 'top-right',     xFn: ( w )    => w,                   yFn: ()       => 0                   },
+	{ id: 'middle-left',   xFn: ()       => 0,                   yFn: ( w, h ) => Math.round( h / 2 ) },
+	{ id: 'middle-center', xFn: ( w )    => Math.round( w / 2 ), yFn: ( w, h ) => Math.round( h / 2 ) },
+	{ id: 'middle-right',  xFn: ( w )    => w,                   yFn: ( w, h ) => Math.round( h / 2 ) },
+	{ id: 'bottom-left',   xFn: ()       => 0,                   yFn: ( w, h ) => h                   },
+	{ id: 'bottom-center', xFn: ( w )    => Math.round( w / 2 ), yFn: ( w, h ) => h                   },
+	{ id: 'bottom-right',  xFn: ( w )    => w,                   yFn: ( w, h ) => h                   },
+];
+
+/**
+ * Return the preset id that matches (anchorX, anchorY) for the given dimensions,
+ * or "custom" if no preset matches or the inputs are invalid.
+ *
+ * Matching uses ±1 px tolerance to absorb rounding differences.
+ * Presets are checked in ANCHOR_PRESETS order; first match wins.
+ *
+ * @param {*} anchorX
+ * @param {*} anchorY
+ * @param {*} width
+ * @param {*} height
+ * @return {string} Preset id or "custom".
+ */
+function getAnchorPreset( anchorX, anchorY, width, height ) {
+	if (
+		anchorX == null || ! isFinite( anchorX ) ||
+		anchorY == null || ! isFinite( anchorY ) ||
+		! ( width  >= 1 ) || ! isFinite( width  ) ||
+		! ( height >= 1 ) || ! isFinite( height )
+	) {
+		return 'custom';
+	}
+	for ( const preset of ANCHOR_PRESETS ) {
+		const expectedX = preset.xFn( width, height );
+		const expectedY = preset.yFn( width, height );
+		if ( Math.abs( anchorX - expectedX ) <= 1 && Math.abs( anchorY - expectedY ) <= 1 ) {
+			return preset.id;
+		}
+	}
+	return 'custom';
+}
+
+/**
+ * Return { x, y } for the given preset id and dimensions, or null if the
+ * preset is "custom", unknown, or the dimensions are invalid.
+ *
+ * @param {string} presetId
+ * @param {*}      width
+ * @param {*}      height
+ * @return {{ x: number, y: number }|null}
+ */
+function computeAnchorFromPreset( presetId, width, height ) {
+	if (
+		presetId === 'custom' ||
+		! ( width  >= 1 ) || ! isFinite( width  ) ||
+		! ( height >= 1 ) || ! isFinite( height )
+	) {
+		return null;
+	}
+	const preset = ANCHOR_PRESETS.find( ( p ) => p.id === presetId );
+	if ( ! preset ) {
+		return null;
+	}
+	return { x: preset.xFn( width, height ), y: preset.yFn( width, height ) };
+}
+
+/**
  * Build the full preview iframe src URL from block attributes.
  * All attributes are included so the map initialises at the correct position
  * on every full reload (mount or structural change).
@@ -1668,7 +1740,46 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 											__nextHasNoMarginBottom
 										/>
 										{ /* Icon Anchor */ }
-										<p style={ { margin: '12px 0 4px', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: '#1e1e1e' } }>
+										{ ( () => {
+											const iconDimValid = marker.iconWidth >= 1 && isFinite( marker.iconWidth ) &&
+												marker.iconHeight >= 1 && isFinite( marker.iconHeight );
+											return (
+												<SelectControl
+													label={ __( 'Anchor position', 'blocks-for-leaflet-map' ) }
+													value={ iconDimValid
+														? getAnchorPreset( marker.iconAnchorX, marker.iconAnchorY, marker.iconWidth, marker.iconHeight )
+														: ''
+													}
+													disabled={ ! iconDimValid }
+													help={ iconDimValid
+														? __( 'Quick-set common anchor positions', 'blocks-for-leaflet-map' )
+														: __( 'Set icon size first', 'blocks-for-leaflet-map' )
+													}
+													options={ [
+														{ label: __( '— Select —', 'blocks-for-leaflet-map' ),   value: ''               },
+														{ label: __( 'Top left',      'blocks-for-leaflet-map' ), value: 'top-left'      },
+														{ label: __( 'Top center',    'blocks-for-leaflet-map' ), value: 'top-center'    },
+														{ label: __( 'Top right',     'blocks-for-leaflet-map' ), value: 'top-right'     },
+														{ label: __( 'Middle left',   'blocks-for-leaflet-map' ), value: 'middle-left'   },
+														{ label: __( 'Middle center', 'blocks-for-leaflet-map' ), value: 'middle-center' },
+														{ label: __( 'Middle right',  'blocks-for-leaflet-map' ), value: 'middle-right'  },
+														{ label: __( 'Bottom left',   'blocks-for-leaflet-map' ), value: 'bottom-left'   },
+														{ label: __( 'Bottom center', 'blocks-for-leaflet-map' ), value: 'bottom-center' },
+														{ label: __( 'Bottom right',  'blocks-for-leaflet-map' ), value: 'bottom-right'  },
+														{ label: __( 'Custom',        'blocks-for-leaflet-map' ), value: 'custom', disabled: true },
+													] }
+													onChange={ ( presetId ) => {
+														const coords = computeAnchorFromPreset( presetId, marker.iconWidth, marker.iconHeight );
+														if ( coords ) {
+															handleUpdateMarker( index, { iconAnchorX: coords.x, iconAnchorY: coords.y } );
+														}
+													} }
+													style={ { marginTop: '12px' } }
+													__nextHasNoMarginBottom
+												/>
+											);
+										} )() }
+										<p style={ { margin: '8px 0 4px', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: '#1e1e1e' } }>
 											{ __( 'Icon Anchor (px)', 'blocks-for-leaflet-map' ) }
 										</p>
 										<div style={ { display: 'flex', gap: '8px' } }>
@@ -1861,7 +1972,46 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 													__nextHasNoMarginBottom
 												/>
 												{ /* Shadow Anchor */ }
-												<p style={ { margin: '12px 0 4px', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: '#1e1e1e' } }>
+												{ ( () => {
+													const shadowDimValid = marker.shadowWidth >= 1 && isFinite( marker.shadowWidth ) &&
+														marker.shadowHeight >= 1 && isFinite( marker.shadowHeight );
+													return (
+														<SelectControl
+															label={ __( 'Anchor position', 'blocks-for-leaflet-map' ) }
+															value={ shadowDimValid
+																? getAnchorPreset( marker.shadowAnchorX, marker.shadowAnchorY, marker.shadowWidth, marker.shadowHeight )
+																: ''
+															}
+															disabled={ ! shadowDimValid }
+															help={ shadowDimValid
+																? __( 'Quick-set common anchor positions', 'blocks-for-leaflet-map' )
+																: __( 'Set shadow size first', 'blocks-for-leaflet-map' )
+															}
+															options={ [
+																{ label: __( '— Select —', 'blocks-for-leaflet-map' ),   value: ''               },
+																{ label: __( 'Top left',      'blocks-for-leaflet-map' ), value: 'top-left'      },
+																{ label: __( 'Top center',    'blocks-for-leaflet-map' ), value: 'top-center'    },
+																{ label: __( 'Top right',     'blocks-for-leaflet-map' ), value: 'top-right'     },
+																{ label: __( 'Middle left',   'blocks-for-leaflet-map' ), value: 'middle-left'   },
+																{ label: __( 'Middle center', 'blocks-for-leaflet-map' ), value: 'middle-center' },
+																{ label: __( 'Middle right',  'blocks-for-leaflet-map' ), value: 'middle-right'  },
+																{ label: __( 'Bottom left',   'blocks-for-leaflet-map' ), value: 'bottom-left'   },
+																{ label: __( 'Bottom center', 'blocks-for-leaflet-map' ), value: 'bottom-center' },
+																{ label: __( 'Bottom right',  'blocks-for-leaflet-map' ), value: 'bottom-right'  },
+																{ label: __( 'Custom',        'blocks-for-leaflet-map' ), value: 'custom', disabled: true },
+															] }
+															onChange={ ( presetId ) => {
+																const coords = computeAnchorFromPreset( presetId, marker.shadowWidth, marker.shadowHeight );
+																if ( coords ) {
+																	handleUpdateMarker( index, { shadowAnchorX: coords.x, shadowAnchorY: coords.y } );
+																}
+															} }
+															style={ { marginTop: '12px' } }
+															__nextHasNoMarginBottom
+														/>
+													);
+												} )() }
+												<p style={ { margin: '8px 0 4px', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: '#1e1e1e' } }>
 													{ __( 'Shadow Anchor (px)', 'blocks-for-leaflet-map' ) }
 												</p>
 												<div style={ { display: 'flex', gap: '8px' } }>
