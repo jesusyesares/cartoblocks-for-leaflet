@@ -3,7 +3,7 @@
  * Plugin Name:       Blocks for Leaflet Map
  * Plugin URI:        https://github.com/jesusyesares/blocks-for-leaflet-map
  * Description:       A dynamic Gutenberg block that wraps the Leaflet Map plugin shortcodes. Requires the "Leaflet Map" plugin to be installed and active.
- * Version:           0.3.17
+ * Version:           0.4.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Jesús Yesares García
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-define( 'BFLM_VERSION', '0.3.17' );
+define( 'BFLM_VERSION', '0.4.0' );
 define( 'BFLM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BFLM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BFLM_LEAFLET_MAP_PLUGIN', 'leaflet-map/leaflet-map.php' );
@@ -249,22 +249,44 @@ function bflm_preview_map(): void {
 		$m_lng     = (float) $marker['lng'];
 		$m_title   = isset( $marker['title'] ) ? sanitize_text_field( $marker['title'] ) : '';
 		$m_content = isset( $marker['content'] ) ? wp_kses_post( $marker['content'] ) : '';
+		$m_alt     = isset( $marker['alt'] ) ? sanitize_text_field( $marker['alt'] ) : '';
+
+		// Build open tag incrementally; include optional attrs only when set.
+		$m_open_tag = sprintf(
+			'[leaflet-marker lat="%1$s" lng="%2$s"',
+			esc_attr( $m_lat ),
+			esc_attr( $m_lng )
+		);
+
+		if ( '' !== $m_title ) {
+			$m_open_tag .= sprintf( ' title="%s"', esc_attr( $m_title ) );
+		}
+		if ( '' !== $m_alt ) {
+			$m_open_tag .= sprintf( ' alt="%s"', esc_attr( $m_alt ) );
+		}
+		if ( ! empty( $marker['visible'] ) ) {
+			$m_open_tag .= ' visible="1"';
+		}
+		if ( ! empty( $marker['draggable'] ) ) {
+			$m_open_tag .= ' draggable="1"';
+		}
+		if ( isset( $marker['opacity'] ) ) {
+			$m_opacity = (float) $marker['opacity'];
+			if ( abs( $m_opacity - 1.0 ) > 0.001 ) {
+				$m_open_tag .= sprintf( ' opacity="%s"', esc_attr( $m_opacity ) );
+			}
+		}
+		if ( isset( $marker['zIndexOffset'] ) ) {
+			$m_zindex = (int) $marker['zIndexOffset'];
+			if ( 0 !== $m_zindex ) {
+				$m_open_tag .= sprintf( ' zindexoffset="%d"', $m_zindex );
+			}
+		}
 
 		if ( '' !== $m_content ) {
-			$marker_shortcodes .= sprintf(
-				'[leaflet-marker lat="%1$s" lng="%2$s" title="%3$s"]%4$s[/leaflet-marker]',
-				esc_attr( $m_lat ),
-				esc_attr( $m_lng ),
-				esc_attr( $m_title ),
-				$m_content
-			);
+			$marker_shortcodes .= $m_open_tag . ']' . $m_content . '[/leaflet-marker]';
 		} else {
-			$marker_shortcodes .= sprintf(
-				'[leaflet-marker lat="%1$s" lng="%2$s" title="%3$s"]',
-				esc_attr( $m_lat ),
-				esc_attr( $m_lng ),
-				esc_attr( $m_title )
-			);
+			$marker_shortcodes .= $m_open_tag . ']';
 		}
 	}
 

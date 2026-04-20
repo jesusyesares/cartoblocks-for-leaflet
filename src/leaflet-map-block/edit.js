@@ -188,11 +188,21 @@ function buildShortcode( attributes ) {
 		const mLng     = marker.lng;
 		const mTitle   = marker.title   || '';
 		const mContent = marker.content || '';
+		const mAlt     = marker.alt     || '';
+
+		// Build open tag incrementally, mirroring render.php conditional emission.
+		let mTag = `[leaflet-marker lat="${ mLat }" lng="${ mLng }"`;
+		if ( mTitle )                                                   mTag += ` title="${ mTitle }"`;
+		if ( mAlt )                                                     mTag += ` alt="${ mAlt }"`;
+		if ( marker.visible )                                           mTag += ` visible="1"`;
+		if ( marker.draggable )                                         mTag += ` draggable="1"`;
+		if ( marker.opacity != null && Math.abs( marker.opacity - 1 ) > 0.001 ) mTag += ` opacity="${ marker.opacity }"`;
+		if ( marker.zIndexOffset != null && marker.zIndexOffset !== 0 ) mTag += ` zindexoffset="${ marker.zIndexOffset }"`;
 
 		if ( mContent ) {
-			shortcode += `\n[leaflet-marker lat="${ mLat }" lng="${ mLng }" title="${ mTitle }"]${ mContent }[/leaflet-marker]`;
+			shortcode += `\n${ mTag }]${ mContent }[/leaflet-marker]`;
 		} else {
-			shortcode += `\n[leaflet-marker lat="${ mLat }" lng="${ mLng }" title="${ mTitle }"]`;
+			shortcode += `\n${ mTag }]`;
 		}
 	}
 
@@ -348,6 +358,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 	// Sync local state when the block attribute changes externally (undo/redo, block switch).
 	useEffect( () => { setLocalTilesize( tilesize ); }, [ tilesize ] );
 	useEffect( () => { setLocalZoomoffset( zoomoffset ); }, [ zoomoffset ] );
+
 
 	// ── Geocoding local state ─────────────────────────────────────────────────
 
@@ -1313,11 +1324,16 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 							/>
 							<TextControl
 								label={ __( 'Title', 'blocks-for-leaflet-map' ) }
+								help={ __(
+									'Browser tooltip shown on hover. Also used as the marker\'s accessible name.',
+									'blocks-for-leaflet-map'
+								) }
 								value={ marker.title || '' }
 								onChange={ ( value ) =>
 									handleUpdateMarker( index, { title: value } )
 								}
 								__next40pxDefaultSize
+								__nextHasNoMarginBottom
 							/>
 							<TextareaControl
 								label={ __(
@@ -1334,6 +1350,79 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 								}
 								rows={ 3 }
 							/>
+							{ /* Advanced marker options — collapsed by default to keep the
+							     common case (lat/lng + title + popup) compact. */ }
+							<PanelBody
+								title={ __( 'Advanced', 'blocks-for-leaflet-map' ) }
+								initialOpen={ false }
+							>
+								<TextControl
+									label={ __( 'Alt Text', 'blocks-for-leaflet-map' ) }
+									help={ __(
+										'Alternative text for the marker image. Improves accessibility for screen reader users.',
+										'blocks-for-leaflet-map'
+									) }
+									value={ marker.alt || '' }
+									onChange={ ( value ) =>
+										handleUpdateMarker( index, { alt: value } )
+									}
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+								<ToggleControl
+									label={ __( 'Auto-open Popup', 'blocks-for-leaflet-map' ) }
+									help={ __(
+										'Open the popup automatically when the page loads.',
+										'blocks-for-leaflet-map'
+									) }
+									checked={ marker.visible || false }
+									onChange={ ( value ) =>
+										handleUpdateMarker( index, { visible: value } )
+									}
+									__nextHasNoMarginBottom
+								/>
+								<ToggleControl
+									label={ __( 'Draggable', 'blocks-for-leaflet-map' ) }
+									help={ __(
+										'Allow visitors to drag the marker. The new position is logged to the browser console.',
+										'blocks-for-leaflet-map'
+									) }
+									checked={ marker.draggable || false }
+									onChange={ ( value ) =>
+										handleUpdateMarker( index, { draggable: value } )
+									}
+									__nextHasNoMarginBottom
+								/>
+								<RangeControl
+									label={ __( 'Opacity', 'blocks-for-leaflet-map' ) }
+									help={ __(
+										'Marker icon opacity. Default: 1 (fully opaque).',
+										'blocks-for-leaflet-map'
+									) }
+									value={ marker.opacity != null ? marker.opacity : 1 }
+									onChange={ ( value ) =>
+										handleUpdateMarker( index, { opacity: value } )
+									}
+									min={ 0 }
+									max={ 1 }
+									step={ 0.05 }
+									__nextHasNoMarginBottom
+								/>
+								<NumberControl
+									label={ __( 'Z-Index Offset', 'blocks-for-leaflet-map' ) }
+									help={ __(
+										'Raise or lower this marker relative to others. Leaflet already offsets markers by latitude, so you may need values of 10+ (or higher when markers are close together) to visibly change the stacking order.',
+										'blocks-for-leaflet-map'
+									) }
+									value={ marker.zIndexOffset ?? 0 }
+									onChange={ ( value ) => {
+										const val = parseInt( value, 10 );
+										handleUpdateMarker( index, { zIndexOffset: isNaN( val ) ? 0 : val } );
+									} }
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+							</PanelBody>
 							<Button
 								variant="link"
 								isDestructive

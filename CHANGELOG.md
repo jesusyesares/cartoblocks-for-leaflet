@@ -5,6 +5,21 @@ All notable changes to the Blocks for Leaflet Map plugin will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-04-20
+
+### Added
+- Six per-marker controls in the Markers panel, grouped under a collapsible "Advanced" subsection inside each marker card (closes part of [#14](https://github.com/jesusyesares/blocks-for-leaflet-map/issues/14)):
+  - **Alt Text** — accessible alternative text for the marker image.
+  - **Auto-open Popup** — opens the marker popup automatically on page load (`visible="1"`).
+  - **Draggable** — allows visitors to drag the marker; the new position is logged to the browser console.
+  - **Opacity** — marker icon opacity, 0–1 range, step 0.05.
+  - **Z-Index Offset** — integer offset to raise or lower the marker in the stacking order relative to others. Help text notes that Leaflet already offsets markers by latitude, so values of 10+ are typically needed to see a visible change.
+  - **Title** field now has help text ("Browser tooltip shown on hover. Also used as the marker's accessible name.").
+- All new attributes are emitted conditionally: omitted from the `[leaflet-marker]` shortcode when at their Leaflet defaults (false booleans, opacity 1, zIndexOffset 0, empty strings). Matches the omit-when-default pattern used by map-level attributes since v0.3.x.
+
+### Fixed
+- Z-Index Offset NumberControl was not persisting changes. The blur-commit pattern (index-keyed object state + `onBlur`) failed because in React 18 automatic batching `onChange` and `onBlur` can fire within the same rendering cycle: the `onBlur` closure captured a stale `localZIndexOffsets = {}` reference, fell back to `marker.zIndexOffset ?? 0`, and called `handleUpdateMarker` with `0` — a no-op that never dirtied the post. Switched to direct `onChange` commit, matching all other per-marker controls. (Discovered and fixed during v0.4.0 manual testing, before merge.)
+
 ## [0.3.17] - 2026-04-19
 
 ### Changed
