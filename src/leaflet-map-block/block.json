@@ -154,18 +154,18 @@
 					"zIndexOffset": { "type": "integer" },
 					"useCustomIcon": { "type": "boolean", "default": false },
 					"iconUrl":       { "type": "string",  "default": "" },
-					"iconWidth":     { "type": "number" },
-					"iconHeight":    { "type": "number" },
-					"iconAnchorX":   { "type": "number" },
-					"iconAnchorY":   { "type": "number" },
-					"popupAnchorX":  { "type": "number" },
-					"popupAnchorY":  { "type": "number" },
+					"iconWidth":     { "type": ["number", "null"] },
+					"iconHeight":    { "type": ["number", "null"] },
+					"iconAnchorX":   { "type": ["number", "null"] },
+					"iconAnchorY":   { "type": ["number", "null"] },
+					"popupAnchorX":  { "type": ["number", "null"] },
+					"popupAnchorY":  { "type": ["number", "null"] },
 					"useShadow":     { "type": "boolean", "default": false },
 					"shadowUrl":     { "type": "string",  "default": "" },
-					"shadowWidth":   { "type": "number" },
-					"shadowHeight":  { "type": "number" },
-					"shadowAnchorX": { "type": "number" },
-					"shadowAnchorY": { "type": "number" }
+					"shadowWidth":   { "type": ["number", "null"] },
+					"shadowHeight":  { "type": ["number", "null"] },
+					"shadowAnchorX": { "type": ["number", "null"] },
+					"shadowAnchorY": { "type": ["number", "null"] }
 				}
 			}
 		}
