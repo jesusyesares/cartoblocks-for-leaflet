@@ -359,14 +359,6 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 	useEffect( () => { setLocalTilesize( tilesize ); }, [ tilesize ] );
 	useEffect( () => { setLocalZoomoffset( zoomoffset ); }, [ zoomoffset ] );
 
-	/**
-	 * Per-marker z-index offset local state — keyed by marker index.
-	 * Same blur-commit pattern as Tile Size / Zoom Offset above.
-	 * Reset when the markers array length changes (marker added or removed)
-	 * so stale entries for shifted indices are cleared automatically.
-	 */
-	const [ localZIndexOffsets, setLocalZIndexOffsets ] = useState( {} );
-	useEffect( () => { setLocalZIndexOffsets( {} ); }, [ markers.length ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// ── Geocoding local state ─────────────────────────────────────────────────
 
@@ -1422,25 +1414,10 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 										'Raise or lower this marker above/below others. Positive values bring it to the front.',
 										'blocks-for-leaflet-map'
 									) }
-									value={
-										index in localZIndexOffsets
-											? localZIndexOffsets[ index ]
-											: ( marker.zIndexOffset ?? 0 )
-									}
-									onChange={ ( value ) =>
-										setLocalZIndexOffsets( ( prev ) => ( { ...prev, [ index ]: value ?? '' } ) )
-									}
-									onBlur={ () => {
-										const raw = index in localZIndexOffsets
-											? localZIndexOffsets[ index ]
-											: ( marker.zIndexOffset ?? 0 );
-										const val = parseInt( raw, 10 );
+									value={ marker.zIndexOffset ?? 0 }
+									onChange={ ( value ) => {
+										const val = parseInt( value, 10 );
 										handleUpdateMarker( index, { zIndexOffset: isNaN( val ) ? 0 : val } );
-										setLocalZIndexOffsets( ( prev ) => {
-											const next = { ...prev };
-											delete next[ index ];
-											return next;
-										} );
 									} }
 									__next40pxDefaultSize
 									__nextHasNoMarginBottom
