@@ -226,7 +226,7 @@ function buildShortcode( attributes ) {
 		if ( mContent ) {
 			shortcode += `\n${ mTag }]${ mContent }[/leaflet-marker]`;
 		} else {
-			shortcode += `\n${ mTag }]`;
+			shortcode += `\n${ mTag } /]`;
 		}
 	}
 
