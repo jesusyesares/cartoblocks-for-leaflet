@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.0
 Tested up to:      6.9
-Stable tag:        0.3.17
+Stable tag:        0.4.0
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -61,6 +61,11 @@ Whatever you have configured in the Leaflet Map plugin settings. By default, Ope
 3. Frontend rendering with Leaflet Map shortcodes.
 
 == Changelog ==
+
+= 0.4.0 =
+* Added: Five new per-marker controls in the Markers panel, inside a collapsible "Advanced" subsection per marker: Alt Text, Auto-open Popup (opens popup on page load), Draggable, Opacity (0–1), and Z-Index Offset. Title field now shows help text. Part of the v0.4.x [leaflet-marker] attribute cycle (#14).
+* Added: All new marker attributes are emitted conditionally — omitted from the shortcode when at their Leaflet defaults (false booleans, opacity 1, zIndexOffset 0, empty strings).
+* Fixed: Z-Index Offset NumberControl was not persisting changes due to a React 18 batching race in the blur-commit pattern. Switched to direct onChange commit, matching all other per-marker controls.
 
 = 0.3.17 =
 * Changed: Shortcode popover is now wider (min 480px, max 720px) for better readability of long shortcodes.
