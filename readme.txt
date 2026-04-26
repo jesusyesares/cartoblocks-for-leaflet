@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.0
 Tested up to:      6.9
-Stable tag:        0.4.2
+Stable tag:        0.4.3
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -61,6 +61,9 @@ Whatever you have configured in the Leaflet Map plugin settings. By default, Ope
 3. Frontend rendering with Leaflet Map shortcodes.
 
 == Changelog ==
+
+= 0.4.3 =
+* Added: Per-marker "Search by address" helper in the editor. Each marker in the Markers panel gains a search field and Search button; results from Nominatim geocoding are listed as selectable candidates that update the marker's lat/lng coordinates. Transient UI only — no `address=` attribute is persisted in the block or emitted in the shortcode.
 
 = 0.4.2 =
 * Added: SVG marker support for each marker in a new collapsible "SVG Marker" subsection. Master "Use SVG marker" toggle with non-destructive behaviour — disabling the toggle hides the fields but preserves the entered values. Background color and icon color are exposed via Gutenberg's standard ColorPalette (with the full theme palette plus a custom color picker). An icon CSS class field accepts any icon-font glyph class (e.g. Font Awesome's `fas fa-star`).
