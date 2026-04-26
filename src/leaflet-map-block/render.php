@@ -212,8 +212,20 @@ foreach ( $markers as $marker ) {
 		}
 	}
 
-	// Custom icon: only emit the icon group when useCustomIcon is true.
-	if ( ! empty( $marker['useCustomIcon'] ) ) {
+	// SVG marker and custom image icon are mutually exclusive: SVG wins when both flags are set.
+	if ( ! empty( $marker['useSvgMarker'] ) ) {
+		$m_open_tag .= ' svg="true"';
+		if ( isset( $marker['svgBackground'] ) && '' !== trim( $marker['svgBackground'] ) ) {
+			$m_open_tag .= sprintf( ' background="%s"', esc_attr( trim( $marker['svgBackground'] ) ) );
+		}
+		if ( isset( $marker['svgIconClass'] ) && '' !== trim( $marker['svgIconClass'] ) ) {
+			$m_open_tag .= sprintf( ' iconclass="%s"', esc_attr( trim( $marker['svgIconClass'] ) ) );
+		}
+		if ( isset( $marker['svgColor'] ) && '' !== trim( $marker['svgColor'] ) ) {
+			$m_open_tag .= sprintf( ' color="%s"', esc_attr( trim( $marker['svgColor'] ) ) );
+		}
+	} elseif ( ! empty( $marker['useCustomIcon'] ) ) {
+		// Custom icon: only emit the icon group when useCustomIcon is true.
 		if ( ! empty( $marker['iconUrl'] ) ) {
 			$m_open_tag .= sprintf( ' iconurl="%s"', esc_attr( $marker['iconUrl'] ) );
 		}

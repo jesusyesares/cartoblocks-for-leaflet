@@ -3,7 +3,7 @@
  * Plugin Name:       Blocks for Leaflet Map
  * Plugin URI:        https://github.com/jesusyesares/blocks-for-leaflet-map
  * Description:       A dynamic Gutenberg block that wraps the Leaflet Map plugin shortcodes. Requires the "Leaflet Map" plugin to be installed and active.
- * Version:           0.4.1
+ * Version:           0.4.2
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Jesús Yesares García
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-define( 'BFLM_VERSION', '0.4.1' );
+define( 'BFLM_VERSION', '0.4.2' );
 define( 'BFLM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BFLM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BFLM_LEAFLET_MAP_PLUGIN', 'leaflet-map/leaflet-map.php' );
@@ -283,8 +283,21 @@ function bflm_preview_map(): void {
 			}
 		}
 
-		// Custom icon: mirror buildShortcode() logic in edit.js.
-		if ( ! empty( $marker['useCustomIcon'] ) ) {
+		// SVG marker and custom image icon are mutually exclusive: SVG wins when both flags are set.
+		// Mirror buildShortcode() logic in edit.js and render.php.
+		if ( ! empty( $marker['useSvgMarker'] ) ) {
+			$m_open_tag .= ' svg="true"';
+			if ( isset( $marker['svgBackground'] ) && '' !== trim( $marker['svgBackground'] ) ) {
+				$m_open_tag .= sprintf( ' background="%s"', esc_attr( trim( $marker['svgBackground'] ) ) );
+			}
+			if ( isset( $marker['svgIconClass'] ) && '' !== trim( $marker['svgIconClass'] ) ) {
+				$m_open_tag .= sprintf( ' iconclass="%s"', esc_attr( trim( $marker['svgIconClass'] ) ) );
+			}
+			if ( isset( $marker['svgColor'] ) && '' !== trim( $marker['svgColor'] ) ) {
+				$m_open_tag .= sprintf( ' color="%s"', esc_attr( trim( $marker['svgColor'] ) ) );
+			}
+		} elseif ( ! empty( $marker['useCustomIcon'] ) ) {
+			// Custom icon: mirror buildShortcode() logic in edit.js.
 			$m_icon_url = isset( $marker['iconUrl'] ) ? sanitize_text_field( $marker['iconUrl'] ) : '';
 			if ( '' !== $m_icon_url ) {
 				$m_open_tag .= sprintf( ' iconurl="%s"', esc_attr( $m_icon_url ) );

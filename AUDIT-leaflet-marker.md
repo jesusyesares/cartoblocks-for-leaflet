@@ -195,3 +195,141 @@ Implementation note: May be too niche for a standalone release. Consider bundlin
 6. **`visible` attribute naming in block.json**: The upstream attribute is `visible` (boolean flag). In block.json, boolean attributes for the map use the pattern `scrollWheelZoom`, `zoomControl`, etc. Suggest naming the block attribute `markerAutoOpen` or `popupOpen` to be more descriptive — but the shortcode key must still be `visible`.
 
 7. **Per-marker UI in the editor**: The current marker list has only lat/lng/title/content fields. Adding draggable, opacity, iconurl, etc. will significantly increase complexity. Consider a collapsible "Advanced" section per marker, or a separate sidebar panel, to avoid overwhelming the UI.
+
+---
+
+## v0.4.2 — SVG marker (audit findings)
+
+> Read-only audit conducted 2026-04-26 against Leaflet Map plugin v3.4.4.  
+> Source files examined: `class.marker-shortcode.php`, `leaflet-svg-icon.js`, `class.leaflet-map.php`, `default-filters.php` (WordPress core).  
+> No implementation code was written during this audit.
+
+### Per-attribute findings
+
+#### `svg`
+
+| Item | Detail |
+|---|---|
+| PHP variable | `$svg` |
+| Shortcode key | `svg` (all lowercase; WordPress normalises before dispatch) |
+| Sanitization | `FILTER_VALIDATE_BOOLEAN` — accepts `"true"`, `"1"`, `"yes"`, `"on"` (case-insensitive); assumed-boolean form `[leaflet-marker svg]` also works |
+| Default | Not set → evaluated as falsy → standard `L.marker` / `L.Icon` path is used |
+| Side effects | 1. Calls `wp_enqueue_script('leaflet_svg_icon_js')` unconditionally when truthy. 2. Sets `$default_marker = 'new L.SVGMarker'` instead of `'new L.marker'`. |
+| Interaction with `iconurl` | `L.SVGMarker.initialize()` creates its own `L.SVGIcon` unconditionally. The `getIconOptions()` path (which creates `L.Icon` from `iconurl`) is only triggered when `svg` is falsy. Setting both `svg=true` and `iconurl=…` means `svg` wins — the `iconurl` is silently ignored. |
+
+#### `background`
+
+| Item | Detail |
+|---|---|
+| PHP variable | `$background` |
+| Sanitization | `FILTER_SANITIZE_FULL_SPECIAL_CHARS` — HTML-encodes special chars; NOT `sanitize_hex_color`. Any CSS color string is accepted (named colors, `#rrggbb`, `rgb(…)`, `hsl(…)`). |
+| JS default | `'#2b82cb'` — defined in `L.SVGIcon.prototype.options` in `leaflet-svg-icon.js` |
+| Rendering | Passed to `L.SVGMarker` options → `L.SVGIcon` applies it as the `fill` attribute on the main SVG `<path>` element (the pin shape). |
+| Block attribute type | Should be `string`; no enum constraint — any valid CSS color. A color picker (`ColorPicker` / `ColorPalette` from `@wordpress/components`) would be the natural UI. |
+
+#### `iconclass`
+
+| Item | Detail |
+|---|---|
+| PHP variable | `$iconclass` (lowercase — WordPress normalises attribute names) |
+| JS options key | `iconClass` (camelCase) — PHP extracts `$iconclass` into the `$options` array as `'iconClass' => $iconclass` |
+| Sanitization | `FILTER_SANITIZE_FULL_SPECIAL_CHARS` |
+| JS default | `''` (empty string) |
+| Rendering | Applied as the `className` of an `<i>` element rendered inside the SVG pin. Intended for icon-font glyph classes such as `"fas fa-star"` or `"fab fa-wordpress-simple"`. |
+| Dependency | Requires an icon font CSS (e.g., Font Awesome) to be enqueued in the page. Leaflet Map does **not** enqueue any icon font. If the CSS is absent, the `<i>` element exists in the DOM but renders as a blank/invisible element. |
+| Block attribute type | `string`, free text input. A `TextControl` is sufficient. |
+
+#### `color`
+
+| Item | Detail |
+|---|---|
+| PHP variable | `$color` |
+| Sanitization | `FILTER_SANITIZE_FULL_SPECIAL_CHARS` |
+| JS default | `'white'` — defined in `L.SVGIcon.prototype.options` |
+| Rendering | Applied as the inline `color` CSS property on the `<i>` element inside the SVG pin. Controls the foreground/text color of the icon-font glyph. Only visually meaningful when `iconclass` is also set. |
+| Block attribute type | `string`; same CSS color string as `background`. A `ColorPicker` is appropriate. |
+
+---
+
+### `L.SVGIcon` defaults (from `leaflet-svg-icon.js`)
+
+These values apply when `svg=true` is set but the corresponding attribute is omitted:
+
+| Option | Default |
+|---|---|
+| `iconSize` | `[26, 42]` |
+| `popupAnchor` | `[1, -42]` |
+| `iconClass` | `''` |
+| `background` | `'#2b82cb'` |
+| `color` | `'white'` |
+
+`L.SVGIcon` does **not** accept `iconUrl`, `shadowUrl`, `iconAnchor`, `shadowAnchor`, `shadowSize` — those belong to the `L.Icon` path. Mixing them with `svg=true` has no effect.
+
+---
+
+### Asset enqueueing in the AJAX preview iframe
+
+The block's AJAX preview handler (`bflm_preview_map()`) follows the sequence:
+`wp_head()` → `do_shortcode($map_shortcode . $marker_shortcodes)` → `wp_footer()`
+
+**Question 1: Is `leaflet_svg_icon_js` registered by the time `do_shortcode` runs?**
+
+Yes. `enqueue_and_register()` is hooked to `wp_enqueue_scripts`. WordPress hooks `wp_enqueue_scripts` to `wp_head` at priority 1 (`add_action('wp_head','wp_enqueue_scripts',1)` — `wp-includes/default-filters.php` line 345). So calling `wp_head()` triggers `enqueue_and_register()`, which calls `wp_register_script('leaflet_svg_icon_js', …)`. By the time `do_shortcode()` runs, the handle exists and `wp_enqueue_script('leaflet_svg_icon_js')` inside the marker shortcode will succeed.
+
+**Question 2: When does the script actually print?**
+
+`leaflet_svg_icon_js` is registered with `$in_footer = false` (head placement requested). However, its dependency `leaflet_js` is registered with `$in_footer = true` (footer). WordPress propagates the footer constraint to all dependents — any script that depends on a footer script is also deferred to the footer regardless of its own `$in_footer` flag. Result: `leaflet_svg_icon_js` prints in the footer via `wp_footer()` → `print_footer_scripts()`.
+
+**Question 3: Does `wp_footer()` run after `do_shortcode()` in the AJAX handler?**
+
+Yes — the AJAX handler calls `do_shortcode()` before `wp_footer()`. Scripts enqueued during `do_shortcode()` (including `leaflet_svg_icon_js`) are therefore in the queue when `wp_footer()` flushes them.
+
+**Conclusion: iframe SVG asset risk is LOW.**  
+The normal `wp_head → do_shortcode → wp_footer` sequence in the AJAX handler means the SVG script will be present in the iframe. The risk is not structural — it follows the same path as `leaflet_js` itself, which already works. A runtime test with `svg=true` in the editor should confirm, but no special workaround is expected to be needed.
+
+---
+
+### Icon font dependency (NOT resolved automatically)
+
+`leaflet_svg_icon_js` reaches the iframe automatically. The icon font CSS does **not**.
+
+If a user sets `iconclass` to a Font Awesome class, the CSS must be enqueued by their theme or another plugin. The block has no way to know which icon font is in use, and Leaflet Map does not provide one. This means:
+
+- In the **frontend**: `iconclass` glyphs appear only if the theme/plugin enqueues the font.
+- In the **editor iframe preview**: The iframe's `wp_head()` output reflects whatever is enqueued on the site, so if Font Awesome is site-wide, it will appear in the preview too.
+- **No action needed in the block** — this is a user-side dependency. The block should document it (help text on the `iconclass` field: "Requires an icon font such as Font Awesome to be active on your site").
+
+---
+
+### Implementation plan (outline)
+
+1. **New block attributes** (in `block.json` marker items schema):
+   - `useSvgMarker`: `boolean`, default `false` — master toggle, mirrors the `useCustomIcon` pattern
+   - `svgBackground`: `string`, default `''` — omit from shortcode when empty; Leaflet uses `'#2b82cb'`
+   - `svgIconClass`: `string`, default `''`
+   - `svgColor`: `string`, default `''`
+
+2. **Shortcode emission** (`render.php` and `buildShortcode()` in `edit.js`):
+   - Emit `svg="true"` when `useSvgMarker` is true
+   - Emit `background="…"`, `iconclass="…"`, `color="…"` when non-empty and `useSvgMarker` is true
+   - `useSvgMarker` and `useCustomIcon` should be mutually exclusive at the UI level — the shortcode itself rejects the combination (SVG path ignores `iconurl`), so it is a user confusion risk
+
+3. **Editor UI**:
+   - Collapsible "SVG Marker" subsection (sibling to "Custom Icon"), appearing below the existing advanced fields
+   - Master `ToggleControl` for `useSvgMarker`; disabling it hides but does not clear the sub-fields (non-destructive, consistent with `useCustomIcon`)
+   - `ColorPicker` or `ColorPalette` for `svgBackground` and `svgColor`; prefill defaults `'#2b82cb'` / `'white'` as placeholder text so the user can see what they are overriding
+   - `TextControl` for `svgIconClass` with help text about icon font dependency
+   - When `useSvgMarker` is toggled on while `useCustomIcon` is also on: automatically disable `useCustomIcon` (or show a notice)
+
+4. **AJAX preview handler** (`blocks-for-leaflet-map.php`):
+   - Mirror the three new attributes in the PHP marker loop (same pattern as the custom icon block added in v0.4.1)
+   - No special script enqueue needed — `do_shortcode()` triggers it automatically
+
+5. **Runtime testing checklist**:
+   - [ ] `svg=true` marker renders correctly in the frontend
+   - [ ] `svg=true` marker renders correctly in the editor iframe preview
+   - [ ] `background` color change reflects immediately in the preview
+   - [ ] `iconclass` with a Font Awesome class shows the glyph when FA is available
+   - [ ] `color` changes the glyph foreground color
+   - [ ] Setting `useSvgMarker=true` when `useCustomIcon=true` produces correct shortcode (SVG attributes only; `iconurl` etc. suppressed)
+   - [ ] Disabling `useSvgMarker` restores the default blue pin without losing the entered color values
