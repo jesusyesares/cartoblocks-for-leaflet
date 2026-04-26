@@ -482,6 +482,39 @@ function buildPreviewUrl( attributes, clientId ) {
 }
 
 /**
+ * POST an address string to the bflm_geocode AJAX endpoint and return
+ * the parsed candidate list.
+ *
+ * @param {string} address Search query.
+ * @return {Promise<{ candidates: Array, error: string }>}
+ *   Resolves with candidates on success, or an error message on failure.
+ *   Never rejects — all network/parse errors are caught and returned as { candidates: [], error }.
+ */
+async function bflmGeocodeAddress( address ) {
+	const { previewUrl, geocodeNonce } = window.bflmEditor || {};
+	if ( ! previewUrl || ! geocodeNonce ) {
+		return { candidates: [], error: __( 'Geocoding is not available. Please reload the editor.', 'blocks-for-leaflet-map' ) };
+	}
+	try {
+		const response = await fetch( previewUrl, {
+			method: 'POST',
+			body: new URLSearchParams( {
+				action:      'bflm_geocode',
+				_ajax_nonce: geocodeNonce,
+				address,
+			} ),
+		} );
+		const data = await response.json();
+		if ( ! data.success ) {
+			return { candidates: [], error: data.data?.message || __( 'An unexpected error occurred. Please try again.', 'blocks-for-leaflet-map' ) };
+		}
+		return { candidates: data.data.candidates, error: '' };
+	} catch ( e ) {
+		return { candidates: [], error: __( 'Geocoding request failed. Please check your connection and try again.', 'blocks-for-leaflet-map' ) };
+	}
+}
+
+/**
  * Edit component for the Leaflet Map Block.
  *
  * @param {Object}   props               Component props.
@@ -850,45 +883,19 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		setCandidates( [] );
 		setGeocodeError( '' );
 
-		const { previewUrl, geocodeNonce } = window.bflmEditor || {};
-		if ( ! previewUrl || ! geocodeNonce ) {
+		const { candidates, error } = await bflmGeocodeAddress( addressInput );
+
+		if ( error ) {
 			setGeocodeStatus( 'error' );
-			setGeocodeError( __( 'Geocoding is not available. Please reload the editor.', 'blocks-for-leaflet-map' ) );
+			setGeocodeError( error );
 			return;
 		}
 
-		try {
-			const response = await fetch( previewUrl, {
-				method: 'POST',
-				body: new URLSearchParams( {
-					action:       'bflm_geocode',
-					_ajax_nonce:  geocodeNonce,
-					address:      addressInput,
-				} ),
-			} );
-
-			const data = await response.json();
-
-			if ( ! data.success ) {
-				setGeocodeStatus( 'error' );
-				setGeocodeError(
-					data.data?.message ||
-					__( 'An unexpected error occurred. Please try again.', 'blocks-for-leaflet-map' )
-				);
-				return;
-			}
-
-			const results = data.data.candidates;
-
-			if ( results.length === 1 ) {
-				applyCandidate( results[ 0 ] );
-			} else {
-				setCandidates( results );
-				setGeocodeStatus( 'candidates' );
-			}
-		} catch ( e ) {
-			setGeocodeStatus( 'error' );
-			setGeocodeError( __( 'Geocoding request failed. Please check your connection and try again.', 'blocks-for-leaflet-map' ) );
+		if ( candidates.length === 1 ) {
+			applyCandidate( candidates[ 0 ] );
+		} else {
+			setCandidates( candidates );
+			setGeocodeStatus( 'candidates' );
 		}
 	}
 
@@ -936,7 +943,8 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		setAttributes( {
 			markers: markers.filter( ( _, i ) => i !== index ),
 		} );
-		setMarkerSearch( ( prev ) => {
+		/** Shift keyed-by-index state: drop deleted entry, decrement keys above it. */
+		function shiftDown( prev ) {
 			const next = {};
 			for ( const [ k, v ] of Object.entries( prev ) ) {
 				const n = Number( k );
@@ -944,7 +952,9 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 				next[ n > index ? n - 1 : n ] = v;
 			}
 			return next;
-		} );
+		}
+		setMarkerSearch( shiftDown );
+		setConflictNotices( shiftDown );
 	}
 
 	/**
@@ -983,8 +993,8 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 	 * @param {number} index Marker index.
 	 */
 	async function handleMarkerGeocode( index ) {
-		const entry  = markerSearch[ index ] || {};
-		const query  = ( entry.input || '' ).trim();
+		const entry = markerSearch[ index ] || {};
+		const query = ( entry.input || '' ).trim();
 
 		if ( ! query ) {
 			return;
@@ -992,48 +1002,17 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 
 		updateMarkerSearch( index, { status: 'loading', candidates: [], error: '' } );
 
-		const { previewUrl, geocodeNonce } = window.bflmEditor || {};
-		if ( ! previewUrl || ! geocodeNonce ) {
-			updateMarkerSearch( index, {
-				status: 'error',
-				error:  __( 'Geocoding is not available. Please reload the editor.', 'blocks-for-leaflet-map' ),
-			} );
+		const { candidates, error } = await bflmGeocodeAddress( query );
+
+		if ( error ) {
+			updateMarkerSearch( index, { status: 'error', error } );
 			return;
 		}
 
-		try {
-			const response = await fetch( previewUrl, {
-				method: 'POST',
-				body: new URLSearchParams( {
-					action:      'bflm_geocode',
-					_ajax_nonce: geocodeNonce,
-					address:     query,
-				} ),
-			} );
-
-			const data = await response.json();
-
-			if ( ! data.success ) {
-				updateMarkerSearch( index, {
-					status: 'error',
-					error:  data.data?.message ||
-						__( 'An unexpected error occurred. Please try again.', 'blocks-for-leaflet-map' ),
-				} );
-				return;
-			}
-
-			const results = data.data.candidates;
-
-			if ( results.length === 1 ) {
-				applyMarkerCandidate( index, results[ 0 ] );
-			} else {
-				updateMarkerSearch( index, { status: 'candidates', candidates: results } );
-			}
-		} catch ( e ) {
-			updateMarkerSearch( index, {
-				status: 'error',
-				error:  __( 'Geocoding request failed. Please check your connection and try again.', 'blocks-for-leaflet-map' ),
-			} );
+		if ( candidates.length === 1 ) {
+			applyMarkerCandidate( index, candidates[ 0 ] );
+		} else {
+			updateMarkerSearch( index, { status: 'candidates', candidates } );
 		}
 	}
 
@@ -1591,9 +1570,10 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 						>
 							{ /* ── Per-marker address search ─────────────────── */ }
 							{ ( () => {
-								const ms      = markerSearch[ index ] || {};
-								const msInput = ms.input || '';
-								const msStatus = ms.status || 'idle';
+								const ms           = markerSearch[ index ] || {};
+								const msInput      = ms.input || '';
+								const msStatus     = ms.status || 'idle';
+								const msCandidates = ms.candidates || [];
 								return (
 									<>
 										<TextControl
@@ -1643,12 +1623,12 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 											</Notice>
 										) }
 
-										{ msStatus === 'candidates' && ( ms.candidates || [] ).length > 0 && (
+										{ msStatus === 'candidates' && msCandidates.length > 0 && (
 											<div style={ { marginTop: '8px' } }>
 												<p style={ { margin: '0 0 4px', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', color: '#1e1e1e' } }>
 													{ __( 'Select a location:', 'blocks-for-leaflet-map' ) }
 												</p>
-												{ ( ms.candidates || [] ).map( ( candidate, ci ) => (
+												{ msCandidates.map( ( candidate, ci ) => (
 													<Button
 														key={ ci }
 														variant="tertiary"
