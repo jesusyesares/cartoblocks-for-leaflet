@@ -160,13 +160,49 @@ const LEAFLET_MAP_DESCRIPTORS = [
 ];
 
 /**
+ * Build [leaflet-line] / [leaflet-polygon] shortcode strings from a lines array.
+ * Keep in sync with the lines section in render.php and bflm_preview_map().
+ *
+ * @param {Array} lines Block lines attribute.
+ * @return {string}
+ */
+function buildLineShortcodes( lines ) {
+	if ( ! lines || lines.length === 0 ) return '';
+	let out = '';
+	for ( const line of lines ) {
+		const points = line.points || [];
+		if ( points.length < 2 ) continue;
+		const tag     = line.type === 'polygon' ? 'leaflet-polygon' : 'leaflet-line';
+		const latlngs = points.map( ( p ) => `${ p.lat },${ p.lng }` ).join( '; ' );
+		let attrs = ` latlngs="${ latlngs }"`;
+		if ( line.fitbounds )                               attrs += ` fitbounds="true"`;
+		if ( line.color     && line.color.trim() )          attrs += ` color="${ line.color.trim() }"`;
+		if ( line.weight    != null )                       attrs += ` weight="${ line.weight }"`;
+		if ( line.opacity   != null )                       attrs += ` opacity="${ line.opacity }"`;
+		if ( line.dashArray && line.dashArray.trim() )      attrs += ` dasharray="${ line.dashArray.trim() }"`;
+		if ( line.classname && line.classname.trim() )      attrs += ` classname="${ line.classname.trim() }"`;
+		if ( line.fill )                                    attrs += ` fill="true"`;
+		if ( line.fillColor && line.fillColor.trim() )      attrs += ` fillcolor="${ line.fillColor.trim() }"`;
+		if ( line.fillOpacity != null )                     attrs += ` fillopacity="${ line.fillOpacity }"`;
+		const popup = line.popup || '';
+		if ( line.visible && popup )                        attrs += ` visible="1"`;
+		if ( popup ) {
+			out += `\n[${ tag }${ attrs }]${ popup }[/${ tag }]`;
+		} else {
+			out += `\n[${ tag }${ attrs } /]`;
+		}
+	}
+	return out;
+}
+
+/**
  * Build the [leaflet-map] and [leaflet-marker] shortcode string from block
  * attributes, exactly mirroring what render.php emits on the frontend.
  *
  * Keep in sync with render.php → "Build the [leaflet-map] shortcode" section.
  *
  * @param {Object} attributes Block attributes.
- * @return {string} Full shortcode string (map + zero or more markers).
+ * @return {string} Full shortcode string (map + zero or more markers + zero or more lines).
  */
 function buildShortcode( attributes ) {
 	const parts = [];
@@ -236,6 +272,8 @@ function buildShortcode( attributes ) {
 			shortcode += `\n${ mTag } /]`;
 		}
 	}
+
+	shortcode += buildLineShortcodes( attributes.lines );
 
 	return shortcode;
 }
@@ -428,7 +466,7 @@ function buildPreviewUrl( attributes, clientId ) {
 		closePopupOnClick, tap, inertia,
 		minZoom, maxZoom, maxBounds,
 		tileurl, tilesize, subdomains, mapid, accesstoken, zoomoffset, nowrap, detectretina,
-		markers,
+		markers, lines,
 	} = attributes;
 
 	const { previewUrl, previewNonce } = window.bflmEditor || {};
@@ -456,6 +494,7 @@ function buildPreviewUrl( attributes, clientId ) {
 		attribution:     attribution,
 		showScale:       showScale       ? 'true' : 'false',
 		markers:         JSON.stringify( markers ),
+		lines:           JSON.stringify( lines || [] ),
 	} );
 
 	// Only include interaction params when explicitly set (not "Default").
@@ -554,6 +593,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		detectretina,
 		address,
 		markers,
+		lines,
 	} = attributes;
 
 	// Local state for NumberControls that commit only on blur (Tile Size, Zoom Offset).
@@ -619,6 +659,12 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 	 * Each entry: { input: string, status: 'idle'|'loading'|'candidates'|'error', candidates: Array, error: string }
 	 */
 	const [ markerSearch, setMarkerSearch ] = useState( {} );
+
+	/**
+	 * Per-point geocode UI state for lines, keyed by "${lineIndex}_${pointIndex}".
+	 * Each entry: { input, status, candidates, error }
+	 */
+	const [ linePointSearch, setLinePointSearch ] = useState( {} );
 
 	/**
 	 * The shortcode string shown in the strip, recomputed on every render so
@@ -1013,6 +1059,166 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 			applyMarkerCandidate( index, candidates[ 0 ] );
 		} else {
 			updateMarkerSearch( index, { status: 'candidates', candidates } );
+		}
+	}
+
+	// ── Line / polygon attribute helpers ─────────────────────────────────────
+
+	/**
+	 * Append a new empty line or polygon shape.
+	 * @param {'line'|'polygon'} type
+	 */
+	function handleAddLine( type = 'line' ) {
+		setAttributes( {
+			lines: [
+				...( lines || [] ),
+				{
+					type,
+					points:      [],
+					fitbounds:   false,
+					color:       '',
+					weight:      null,
+					opacity:     null,
+					dashArray:   '',
+					classname:   '',
+					fill:        false,
+					fillColor:   '',
+					fillOpacity: null,
+					popup:       '',
+					visible:     false,
+				},
+			],
+		} );
+	}
+
+	/**
+	 * Remove a line by index and clean up linePointSearch state.
+	 * @param {number} index
+	 */
+	function handleRemoveLine( index ) {
+		setAttributes( { lines: ( lines || [] ).filter( ( _, i ) => i !== index ) } );
+		setLinePointSearch( ( prev ) => {
+			const next = {};
+			for ( const [ k, v ] of Object.entries( prev ) ) {
+				const [ li, pi ] = k.split( '_' ).map( Number );
+				if ( li === index ) continue;
+				next[ `${ li > index ? li - 1 : li }_${ pi }` ] = v;
+			}
+			return next;
+		} );
+	}
+
+	/**
+	 * Merge an update object into a single line by index.
+	 * @param {number} index
+	 * @param {Object} updates
+	 */
+	function handleUpdateLine( index, updates ) {
+		setAttributes( {
+			lines: ( lines || [] ).map( ( l, i ) => i === index ? { ...l, ...updates } : l ),
+		} );
+	}
+
+	/**
+	 * Append a new point to a line, seeded with the current map lat/lng.
+	 * @param {number} lineIndex
+	 */
+	function handleAddPoint( lineIndex ) {
+		const line = ( lines || [] )[ lineIndex ];
+		if ( ! line ) return;
+		handleUpdateLine( lineIndex, {
+			points: [
+				...( line.points || [] ),
+				{ lat: parseFloat( lat.toFixed( 6 ) ), lng: parseFloat( lng.toFixed( 6 ) ) },
+			],
+		} );
+	}
+
+	/**
+	 * Remove a point from a line and shift linePointSearch keys accordingly.
+	 * @param {number} lineIndex
+	 * @param {number} pointIndex
+	 */
+	function handleRemovePoint( lineIndex, pointIndex ) {
+		const line = ( lines || [] )[ lineIndex ];
+		if ( ! line ) return;
+		handleUpdateLine( lineIndex, {
+			points: ( line.points || [] ).filter( ( _, i ) => i !== pointIndex ),
+		} );
+		setLinePointSearch( ( prev ) => {
+			const next = {};
+			for ( const [ k, v ] of Object.entries( prev ) ) {
+				const [ li, pi ] = k.split( '_' ).map( Number );
+				if ( li !== lineIndex ) { next[ k ] = v; continue; }
+				if ( pi === pointIndex ) continue;
+				next[ `${ li }_${ pi > pointIndex ? pi - 1 : pi }` ] = v;
+			}
+			return next;
+		} );
+	}
+
+	/**
+	 * Merge updates into a single point.
+	 * @param {number} lineIndex
+	 * @param {number} pointIndex
+	 * @param {Object} updates
+	 */
+	function handleUpdatePoint( lineIndex, pointIndex, updates ) {
+		const line = ( lines || [] )[ lineIndex ];
+		if ( ! line ) return;
+		handleUpdateLine( lineIndex, {
+			points: ( line.points || [] ).map( ( p, i ) => i === pointIndex ? { ...p, ...updates } : p ),
+		} );
+	}
+
+	/**
+	 * Merge updates into the linePointSearch entry for a given line/point.
+	 * @param {number} lineIndex
+	 * @param {number} pointIndex
+	 * @param {Object} updates
+	 */
+	function updateLinePointSearch( lineIndex, pointIndex, updates ) {
+		const key = `${ lineIndex }_${ pointIndex }`;
+		setLinePointSearch( ( prev ) => ( {
+			...prev,
+			[ key ]: { input: '', status: 'idle', candidates: [], error: '', ...prev[ key ], ...updates },
+		} ) );
+	}
+
+	/**
+	 * Apply a geocode candidate to a specific line point.
+	 * @param {number} lineIndex
+	 * @param {number} pointIndex
+	 * @param {{ lat: number, lng: number }} candidate
+	 */
+	function applyLinePointCandidate( lineIndex, pointIndex, candidate ) {
+		handleUpdatePoint( lineIndex, pointIndex, {
+			lat: parseFloat( candidate.lat.toFixed( 6 ) ),
+			lng: parseFloat( candidate.lng.toFixed( 6 ) ),
+		} );
+		updateLinePointSearch( lineIndex, pointIndex, { status: 'idle', candidates: [] } );
+	}
+
+	/**
+	 * Run a Nominatim geocode search for a specific line point.
+	 * @param {number} lineIndex
+	 * @param {number} pointIndex
+	 */
+	async function handleLinePointGeocode( lineIndex, pointIndex ) {
+		const key   = `${ lineIndex }_${ pointIndex }`;
+		const entry = linePointSearch[ key ] || {};
+		const query = ( entry.input || '' ).trim();
+		if ( ! query ) return;
+		updateLinePointSearch( lineIndex, pointIndex, { status: 'loading', candidates: [], error: '' } );
+		const { candidates: found, error } = await bflmGeocodeAddress( query );
+		if ( error ) {
+			updateLinePointSearch( lineIndex, pointIndex, { status: 'error', error } );
+			return;
+		}
+		if ( found.length === 1 ) {
+			applyLinePointCandidate( lineIndex, pointIndex, found[ 0 ] );
+		} else {
+			updateLinePointSearch( lineIndex, pointIndex, { status: 'candidates', candidates: found } );
 		}
 	}
 
@@ -2318,6 +2524,277 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 								style={ { marginTop: '4px' } }
 							>
 								{ __( 'Remove Marker', 'blocks-for-leaflet-map' ) }
+							</Button>
+						</PanelBody>
+					) ) }
+				</PanelBody>
+
+				{ /* ── Lines & Polygons panel ────────────────────────────────────── */ }
+				<PanelBody
+					title={ sprintf(
+						/* translators: %d: number of shapes */
+						__( 'Lines & Polygons (%d)', 'blocks-for-leaflet-map' ),
+						( lines || [] ).length
+					) }
+					initialOpen={ false }
+				>
+					<div style={ { display: 'flex', gap: '8px', marginBottom: '12px' } }>
+						<Button
+							variant="secondary"
+							onClick={ () => handleAddLine( 'line' ) }
+							style={ { flex: 1, justifyContent: 'center' } }
+						>
+							{ __( '+ Line', 'blocks-for-leaflet-map' ) }
+						</Button>
+						<Button
+							variant="secondary"
+							onClick={ () => handleAddLine( 'polygon' ) }
+							style={ { flex: 1, justifyContent: 'center' } }
+						>
+							{ __( '+ Polygon', 'blocks-for-leaflet-map' ) }
+						</Button>
+					</div>
+
+					{ ( lines || [] ).map( ( line, lineIdx ) => (
+						<PanelBody
+							key={ lineIdx }
+							title={ sprintf(
+								line.type === 'polygon'
+									? /* translators: 1: index, 2: point count */ __( 'Polygon %1$d (%2$d pts)', 'blocks-for-leaflet-map' )
+									: /* translators: 1: index, 2: point count */ __( 'Line %1$d (%2$d pts)', 'blocks-for-leaflet-map' ),
+								lineIdx + 1,
+								( line.points || [] ).length
+							) }
+							initialOpen={ true }
+						>
+							<SelectControl
+								label={ __( 'Type', 'blocks-for-leaflet-map' ) }
+								value={ line.type || 'line' }
+								options={ [
+									{ value: 'line',    label: __( 'Line (polyline)', 'blocks-for-leaflet-map' ) },
+									{ value: 'polygon', label: __( 'Polygon',         'blocks-for-leaflet-map' ) },
+								] }
+								onChange={ ( v ) => handleUpdateLine( lineIdx, { type: v } ) }
+								__nextHasNoMarginBottom={ true }
+								__next40pxDefaultSize={ true }
+							/>
+
+							{ /* Points list */ }
+							<p style={ { margin: '12px 0 4px', fontWeight: 600, fontSize: '12px' } }>
+								{ __( 'Points', 'blocks-for-leaflet-map' ) }
+							</p>
+							{ ( line.points || [] ).length === 0 && (
+								<p style={ { margin: '0 0 8px', fontSize: '12px', color: '#757575' } }>
+									{ __( 'No points. Add at least 2 to draw the shape.', 'blocks-for-leaflet-map' ) }
+								</p>
+							) }
+							{ ( line.points || [] ).map( ( point, pi ) => {
+								const lpKey         = `${ lineIdx }_${ pi }`;
+								const lps           = linePointSearch[ lpKey ] || {};
+								const lpsInput      = lps.input || '';
+								const lpsStatus     = lps.status || 'idle';
+								const lpsCandidates = lps.candidates || [];
+								return (
+									<div
+										key={ pi }
+										style={ { borderLeft: '2px solid #ddd', paddingLeft: '8px', marginBottom: '12px' } }
+									>
+										<p style={ { margin: '0 0 4px', fontWeight: 600, fontSize: '11px', color: '#757575' } }>
+											{ sprintf( __( 'Point %d', 'blocks-for-leaflet-map' ), pi + 1 ) }
+										</p>
+										<NumberControl
+											label={ __( 'Latitude', 'blocks-for-leaflet-map' ) }
+											value={ point.lat }
+											step={ 0.000001 }
+											onChange={ ( v ) => handleUpdatePoint( lineIdx, pi, { lat: parseFloat( v ) || 0 } ) }
+											__next40pxDefaultSize={ true }
+										/>
+										<NumberControl
+											label={ __( 'Longitude', 'blocks-for-leaflet-map' ) }
+											value={ point.lng }
+											step={ 0.000001 }
+											onChange={ ( v ) => handleUpdatePoint( lineIdx, pi, { lng: parseFloat( v ) || 0 } ) }
+											__next40pxDefaultSize={ true }
+										/>
+										<div style={ { marginTop: '6px' } }>
+											<TextControl
+												label={ __( 'Search by address', 'blocks-for-leaflet-map' ) }
+												placeholder={ __( 'e.g. Paris, France', 'blocks-for-leaflet-map' ) }
+												value={ lpsInput }
+												onChange={ ( v ) => updateLinePointSearch( lineIdx, pi, { input: v } ) }
+												onKeyDown={ ( e ) => { if ( e.key === 'Enter' ) { e.preventDefault(); handleLinePointGeocode( lineIdx, pi ); } } }
+												__nextHasNoMarginBottom={ true }
+											/>
+											<Button
+												variant="secondary"
+												onClick={ () => handleLinePointGeocode( lineIdx, pi ) }
+												isBusy={ lpsStatus === 'loading' }
+												disabled={ lpsStatus === 'loading' || ! lpsInput.trim() }
+												style={ { marginTop: '4px', width: '100%', justifyContent: 'center' } }
+											>
+												{ lpsStatus === 'loading'
+													? __( 'Searching…', 'blocks-for-leaflet-map' )
+													: __( 'Search', 'blocks-for-leaflet-map' )
+												}
+											</Button>
+											{ lpsStatus === 'error' && lps.error && (
+												<Notice status="warning" isDismissible={ false } style={ { marginTop: '6px' } }>
+													{ lps.error }
+												</Notice>
+											) }
+											{ lpsStatus === 'candidates' && lpsCandidates.length > 0 && (
+												<div style={ { marginTop: '6px' } }>
+													<p style={ { margin: '0 0 4px', fontSize: '11px', color: '#757575' } }>
+														{ __( 'Select a result:', 'blocks-for-leaflet-map' ) }
+													</p>
+													{ lpsCandidates.map( ( candidate, ci ) => (
+														<Button
+															key={ ci }
+															variant="tertiary"
+															onClick={ () => applyLinePointCandidate( lineIdx, pi, candidate ) }
+															style={ { display: 'block', width: '100%', textAlign: 'left', marginBottom: '4px', whiteSpace: 'normal', height: 'auto', minHeight: '32px' } }
+														>
+															{ candidate.display_name }
+														</Button>
+													) ) }
+												</div>
+											) }
+										</div>
+										<Button
+											variant="link"
+											isDestructive
+											onClick={ () => handleRemovePoint( lineIdx, pi ) }
+											style={ { marginTop: '4px' } }
+										>
+											{ __( 'Remove Point', 'blocks-for-leaflet-map' ) }
+										</Button>
+									</div>
+								);
+							} ) }
+							<Button
+								variant="secondary"
+								onClick={ () => handleAddPoint( lineIdx ) }
+								style={ { width: '100%', justifyContent: 'center', marginBottom: '12px' } }
+							>
+								{ __( '+ Add Point', 'blocks-for-leaflet-map' ) }
+							</Button>
+
+							<ToggleControl
+								label={ __( 'Fit map to this shape', 'blocks-for-leaflet-map' ) }
+								checked={ !! line.fitbounds }
+								onChange={ ( v ) => handleUpdateLine( lineIdx, { fitbounds: v } ) }
+								__nextHasNoMarginBottom={ true }
+							/>
+
+							{ /* Style subsection */ }
+							<PanelBody title={ __( 'Style', 'blocks-for-leaflet-map' ) } initialOpen={ false }>
+								<p style={ { margin: '0 0 4px', fontSize: '12px' } }>
+									{ __( 'Stroke color', 'blocks-for-leaflet-map' ) }
+								</p>
+								<ColorPalette
+									value={ line.color || undefined }
+									onChange={ ( v ) => handleUpdateLine( lineIdx, { color: v || '' } ) }
+									enableAlpha={ false }
+								/>
+								<NumberControl
+									label={ __( 'Weight (px)', 'blocks-for-leaflet-map' ) }
+									value={ line.weight ?? '' }
+									min={ 0 }
+									step={ 1 }
+									placeholder="3"
+									onChange={ ( v ) => handleUpdateLine( lineIdx, { weight: v !== '' && v != null ? Number( v ) : null } ) }
+									__next40pxDefaultSize={ true }
+								/>
+								<RangeControl
+									label={ __( 'Opacity', 'blocks-for-leaflet-map' ) }
+									value={ line.opacity ?? 1 }
+									min={ 0 }
+									max={ 1 }
+									step={ 0.05 }
+									onChange={ ( v ) => handleUpdateLine( lineIdx, { opacity: v } ) }
+									allowReset={ true }
+									resetFallbackValue={ 1 }
+									__next40pxDefaultSize={ true }
+									__nextHasNoMarginBottom={ true }
+								/>
+								<TextControl
+									label={ __( 'Dash array', 'blocks-for-leaflet-map' ) }
+									value={ line.dashArray || '' }
+									placeholder="e.g. 5,10"
+									onChange={ ( v ) => handleUpdateLine( lineIdx, { dashArray: v } ) }
+									__nextHasNoMarginBottom={ true }
+								/>
+								<TextControl
+									label={ __( 'CSS class', 'blocks-for-leaflet-map' ) }
+									value={ line.classname || '' }
+									onChange={ ( v ) => handleUpdateLine( lineIdx, { classname: v } ) }
+									__nextHasNoMarginBottom={ true }
+								/>
+							</PanelBody>
+
+							{ /* Fill subsection */ }
+							<PanelBody title={ __( 'Fill', 'blocks-for-leaflet-map' ) } initialOpen={ false }>
+								<ToggleControl
+									label={ __( 'Fill shape', 'blocks-for-leaflet-map' ) }
+									checked={ !! line.fill }
+									onChange={ ( v ) => handleUpdateLine( lineIdx, { fill: v } ) }
+									__nextHasNoMarginBottom={ true }
+								/>
+								{ line.fill && (
+									<>
+										<p style={ { margin: '8px 0 4px', fontSize: '12px' } }>
+											{ __( 'Fill color', 'blocks-for-leaflet-map' ) }
+										</p>
+										<ColorPalette
+											value={ line.fillColor || undefined }
+											onChange={ ( v ) => handleUpdateLine( lineIdx, { fillColor: v || '' } ) }
+											enableAlpha={ false }
+										/>
+										<RangeControl
+											label={ __( 'Fill opacity', 'blocks-for-leaflet-map' ) }
+											value={ line.fillOpacity ?? 0.2 }
+											min={ 0 }
+											max={ 1 }
+											step={ 0.05 }
+											onChange={ ( v ) => handleUpdateLine( lineIdx, { fillOpacity: v } ) }
+											allowReset={ true }
+											resetFallbackValue={ 0.2 }
+											__next40pxDefaultSize={ true }
+											__nextHasNoMarginBottom={ true }
+										/>
+									</>
+								) }
+							</PanelBody>
+
+							{ /* Popup subsection */ }
+							<PanelBody title={ __( 'Popup', 'blocks-for-leaflet-map' ) } initialOpen={ false }>
+								<TextareaControl
+									label={ __( 'Popup content (HTML allowed)', 'blocks-for-leaflet-map' ) }
+									value={ line.popup || '' }
+									onChange={ ( v ) => handleUpdateLine( lineIdx, { popup: v } ) }
+									rows={ 3 }
+									__nextHasNoMarginBottom={ true }
+								/>
+								{ ( line.popup || '' ).trim() && (
+									<ToggleControl
+										label={ __( 'Open popup on load', 'blocks-for-leaflet-map' ) }
+										checked={ !! line.visible }
+										onChange={ ( v ) => handleUpdateLine( lineIdx, { visible: v } ) }
+										__nextHasNoMarginBottom={ true }
+									/>
+								) }
+							</PanelBody>
+
+							<Button
+								variant="link"
+								isDestructive
+								onClick={ () => handleRemoveLine( lineIdx ) }
+								style={ { marginTop: '8px' } }
+							>
+								{ line.type === 'polygon'
+									? __( 'Remove Polygon', 'blocks-for-leaflet-map' )
+									: __( 'Remove Line',    'blocks-for-leaflet-map' )
+								}
 							</Button>
 						</PanelBody>
 					) ) }

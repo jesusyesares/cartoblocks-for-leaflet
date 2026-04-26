@@ -128,6 +128,10 @@ function bflm_preview_map(): void {
 	$markers_raw     = isset( $_GET['markers'] ) ? wp_unslash( $_GET['markers'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON decoded and each field sanitised below.
 	$markers_decoded = json_decode( $markers_raw, true );
 	$markers         = is_array( $markers_decoded ) ? $markers_decoded : array();
+
+	$lines_raw     = isset( $_GET['lines'] ) ? wp_unslash( $_GET['lines'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON decoded and each field sanitised below.
+	$lines_decoded = json_decode( $lines_raw, true );
+	$lines         = is_array( $lines_decoded ) ? $lines_decoded : array();
 	$fit_markers     = ! empty( $_GET['fitMarkers'] ) && 'true' === $_GET['fitMarkers'] ? 'true' : 'false';
 	$show_scale      = ! empty( $_GET['showScale'] ) && 'true' === $_GET['showScale'] ? '1' : '0';
 	$attribution     = isset( $_GET['attribution'] ) ? wp_kses_post( wp_unslash( $_GET['attribution'] ) ) : '';
@@ -343,6 +347,63 @@ function bflm_preview_map(): void {
 		}
 	}
 
+	// Build [leaflet-line] / [leaflet-polygon] shortcodes. Keep in sync with
+	// buildLineShortcodes() in edit.js and the lines section in render.php.
+	$line_shortcodes = '';
+	foreach ( $lines as $line ) {
+		$l_points = isset( $line['points'] ) && is_array( $line['points'] ) ? $line['points'] : array();
+		if ( count( $l_points ) < 2 ) {
+			continue;
+		}
+
+		$l_tag = ( isset( $line['type'] ) && 'polygon' === $line['type'] ) ? 'leaflet-polygon' : 'leaflet-line';
+
+		$latlngs_parts = array();
+		foreach ( $l_points as $pt ) {
+			$latlngs_parts[] = ( (float) ( isset( $pt['lat'] ) ? $pt['lat'] : 0 ) ) . ',' . ( (float) ( isset( $pt['lng'] ) ? $pt['lng'] : 0 ) );
+		}
+		$l_open = sprintf( '[%s latlngs="%s"', $l_tag, esc_attr( implode( '; ', $latlngs_parts ) ) );
+
+		if ( ! empty( $line['fitbounds'] ) ) {
+			$l_open .= ' fitbounds="true"';
+		}
+		if ( isset( $line['color'] ) && '' !== trim( $line['color'] ) ) {
+			$l_open .= sprintf( ' color="%s"', esc_attr( trim( $line['color'] ) ) );
+		}
+		if ( isset( $line['weight'] ) && is_numeric( $line['weight'] ) ) {
+			$l_open .= sprintf( ' weight="%s"', esc_attr( (float) $line['weight'] ) );
+		}
+		if ( isset( $line['opacity'] ) && is_numeric( $line['opacity'] ) ) {
+			$l_open .= sprintf( ' opacity="%s"', esc_attr( (float) $line['opacity'] ) );
+		}
+		if ( isset( $line['dashArray'] ) && '' !== trim( $line['dashArray'] ) ) {
+			$l_open .= sprintf( ' dasharray="%s"', esc_attr( trim( $line['dashArray'] ) ) );
+		}
+		if ( isset( $line['classname'] ) && '' !== trim( $line['classname'] ) ) {
+			$l_open .= sprintf( ' classname="%s"', esc_attr( trim( $line['classname'] ) ) );
+		}
+		if ( ! empty( $line['fill'] ) ) {
+			$l_open .= ' fill="true"';
+		}
+		if ( isset( $line['fillColor'] ) && '' !== trim( $line['fillColor'] ) ) {
+			$l_open .= sprintf( ' fillcolor="%s"', esc_attr( trim( $line['fillColor'] ) ) );
+		}
+		if ( isset( $line['fillOpacity'] ) && is_numeric( $line['fillOpacity'] ) ) {
+			$l_open .= sprintf( ' fillopacity="%s"', esc_attr( (float) $line['fillOpacity'] ) );
+		}
+
+		$l_popup = isset( $line['popup'] ) ? wp_kses_post( $line['popup'] ) : '';
+		if ( ! empty( $line['visible'] ) && '' !== $l_popup ) {
+			$l_open .= ' visible="1"';
+		}
+
+		if ( '' !== $l_popup ) {
+			$line_shortcodes .= $l_open . ']' . $l_popup . '[/' . $l_tag . ']';
+		} else {
+			$line_shortcodes .= $l_open . ' /]';
+		}
+	}
+
 	// Render a complete, self-contained HTML page.
 	// wp_head() / wp_footer() let the Leaflet Map plugin load its own assets.
 	?>
@@ -363,7 +424,7 @@ function bflm_preview_map(): void {
 <div id="map-wrap">
 	<?php
 	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted shortcode output, same rationale as render.php.
-	echo do_shortcode( $map_shortcode . $marker_shortcodes );
+	echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes );
 	?>
 </div>
 <script>
