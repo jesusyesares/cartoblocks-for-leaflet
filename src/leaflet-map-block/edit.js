@@ -47,6 +47,7 @@ import { useBlockProps, BlockControls, InspectorControls, MediaUpload, MediaUplo
 import {
 	PanelBody,
 	Button,
+	ColorPalette,
 	Notice,
 	Popover,
 	RadioControl,
@@ -199,8 +200,14 @@ function buildShortcode( attributes ) {
 		if ( marker.opacity != null && Math.abs( marker.opacity - 1 ) > 0.001 ) mTag += ` opacity="${ marker.opacity }"`;
 		if ( marker.zIndexOffset != null && marker.zIndexOffset !== 0 ) mTag += ` zindexoffset="${ marker.zIndexOffset }"`;
 
-		// Custom icon: only emit when useCustomIcon is true.
-		if ( marker.useCustomIcon ) {
+		// SVG marker and custom image icon are mutually exclusive: SVG wins when both flags are set.
+		if ( marker.useSvgMarker ) {
+			mTag += ` svg="true"`;
+			if ( marker.svgBackground && marker.svgBackground.trim() ) mTag += ` background="${ marker.svgBackground.trim() }"`;
+			if ( marker.svgIconClass  && marker.svgIconClass.trim()  ) mTag += ` iconclass="${ marker.svgIconClass.trim() }"`;
+			if ( marker.svgColor      && marker.svgColor.trim()      ) mTag += ` color="${ marker.svgColor.trim() }"`;
+		} else if ( marker.useCustomIcon ) {
+			// Custom icon: only emit when useCustomIcon is true.
 			if ( marker.iconUrl ) mTag += ` iconurl="${ marker.iconUrl }"`;
 			if ( marker.iconWidth != null && marker.iconHeight != null && marker.iconWidth >= 1 && marker.iconHeight >= 1 ) {
 				mTag += ` iconsize="${ marker.iconWidth },${ marker.iconHeight }"`;
@@ -565,6 +572,14 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 
 	/** True for ~2 s after the user copies the shortcode, to show "Copied!" feedback. */
 	const [ isCopied, setIsCopied ] = useState( false );
+
+	/**
+	 * Tracks mutual-exclusion conflict notices per marker index.
+	 * 'customIconDisabled' — SVG mode was just enabled, custom icon auto-disabled.
+	 * 'svgDisabled'        — Custom icon mode was just enabled, SVG auto-disabled.
+	 * null / undefined     — no active conflict notice for that marker.
+	 */
+	const [ conflictNotices, setConflictNotices ] = useState( {} );
 
 	/**
 	 * The shortcode string shown in the strip, recomputed on every render so
@@ -1599,11 +1614,23 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 								<ToggleControl
 									label={ __( 'Use custom icon', 'blocks-for-leaflet-map' ) }
 									checked={ marker.useCustomIcon || false }
-									onChange={ ( value ) =>
-										handleUpdateMarker( index, { useCustomIcon: value } )
-									}
+									onChange={ ( value ) => {
+										const updates = { useCustomIcon: value };
+										if ( value && marker.useSvgMarker ) {
+											updates.useSvgMarker = false;
+											setConflictNotices( ( prev ) => ( { ...prev, [ index ]: 'svgDisabled' } ) );
+										} else if ( ! value ) {
+											setConflictNotices( ( prev ) => ( { ...prev, [ index ]: null } ) );
+										}
+										handleUpdateMarker( index, updates );
+									} }
 									__nextHasNoMarginBottom
 								/>
+								{ marker.useCustomIcon && conflictNotices[ index ] === 'svgDisabled' && (
+									<Notice status="info" isDismissible={ false }>
+										{ __( 'SVG marker mode was automatically disabled — SVG and custom-image markers cannot be combined. Your SVG settings have been preserved and will resume when you disable custom icon mode.', 'blocks-for-leaflet-map' ) }
+									</Notice>
+								) }
 								{ marker.useCustomIcon && (
 									<>
 										{ /* Icon URL */ }
@@ -2042,6 +2069,74 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 												</div>
 											</>
 										) }
+									</>
+								) }
+							</PanelBody>
+							{ /* SVG Marker options — collapsed by default. */ }
+							<PanelBody
+								title={ __( 'SVG Marker', 'blocks-for-leaflet-map' ) }
+								initialOpen={ false }
+							>
+								<ToggleControl
+									label={ __( 'Use SVG marker', 'blocks-for-leaflet-map' ) }
+									checked={ marker.useSvgMarker || false }
+									onChange={ ( value ) => {
+										const updates = { useSvgMarker: value };
+										if ( value && marker.useCustomIcon ) {
+											updates.useCustomIcon = false;
+											setConflictNotices( ( prev ) => ( { ...prev, [ index ]: 'customIconDisabled' } ) );
+										} else if ( ! value ) {
+											setConflictNotices( ( prev ) => ( { ...prev, [ index ]: null } ) );
+										}
+										handleUpdateMarker( index, updates );
+									} }
+									__nextHasNoMarginBottom
+								/>
+								{ marker.useSvgMarker && conflictNotices[ index ] === 'customIconDisabled' && (
+									<Notice status="info" isDismissible={ false }>
+										{ __( 'Custom icon mode was automatically disabled — SVG and custom-image markers cannot be combined. Your custom icon settings have been preserved and will resume when you disable SVG marker mode.', 'blocks-for-leaflet-map' ) }
+									</Notice>
+								) }
+								{ marker.useSvgMarker && (
+									<>
+										{ /* Background color */ }
+										<p style={ { margin: '12px 0 4px', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', color: '#1e1e1e' } }>
+											{ __( 'Background Color', 'blocks-for-leaflet-map' ) }
+										</p>
+										<p style={ { margin: '0 0 8px', fontSize: '11px', color: '#757575' } }>
+											{ __( 'Default: #2b82cb', 'blocks-for-leaflet-map' ) }
+										</p>
+										<ColorPalette
+											value={ marker.svgBackground || undefined }
+											onChange={ ( value ) =>
+												handleUpdateMarker( index, { svgBackground: value || '' } )
+											}
+											enableAlpha={ false }
+										/>
+										{ /* Icon CSS class */ }
+										<TextControl
+											label={ __( 'Icon CSS Class', 'blocks-for-leaflet-map' ) }
+											value={ marker.svgIconClass || '' }
+											onChange={ ( value ) =>
+												handleUpdateMarker( index, { svgIconClass: value } )
+											}
+											help={ __( "CSS class for an icon font glyph (e.g. 'fas fa-star' for Font Awesome). Requires the icon font to be enqueued by your theme or another plugin — Leaflet Map does not load any icon font.", 'blocks-for-leaflet-map' ) }
+											__nextHasNoMarginBottom
+										/>
+										{ /* Foreground color */ }
+										<p style={ { margin: '12px 0 4px', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', color: '#1e1e1e' } }>
+											{ __( 'Icon Color', 'blocks-for-leaflet-map' ) }
+										</p>
+										<p style={ { margin: '0 0 8px', fontSize: '11px', color: '#757575' } }>
+											{ __( 'Default: white', 'blocks-for-leaflet-map' ) }
+										</p>
+										<ColorPalette
+											value={ marker.svgColor || undefined }
+											onChange={ ( value ) =>
+												handleUpdateMarker( index, { svgColor: value || '' } )
+											}
+											enableAlpha={ false }
+										/>
 									</>
 								) }
 							</PanelBody>
