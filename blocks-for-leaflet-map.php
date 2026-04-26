@@ -283,8 +283,21 @@ function bflm_preview_map(): void {
 			}
 		}
 
-		// Custom icon: mirror buildShortcode() logic in edit.js.
-		if ( ! empty( $marker['useCustomIcon'] ) ) {
+		// SVG marker and custom image icon are mutually exclusive: SVG wins when both flags are set.
+		// Mirror buildShortcode() logic in edit.js and render.php.
+		if ( ! empty( $marker['useSvgMarker'] ) ) {
+			$m_open_tag .= ' svg="true"';
+			if ( isset( $marker['svgBackground'] ) && '' !== trim( $marker['svgBackground'] ) ) {
+				$m_open_tag .= sprintf( ' background="%s"', esc_attr( trim( $marker['svgBackground'] ) ) );
+			}
+			if ( isset( $marker['svgIconClass'] ) && '' !== trim( $marker['svgIconClass'] ) ) {
+				$m_open_tag .= sprintf( ' iconclass="%s"', esc_attr( trim( $marker['svgIconClass'] ) ) );
+			}
+			if ( isset( $marker['svgColor'] ) && '' !== trim( $marker['svgColor'] ) ) {
+				$m_open_tag .= sprintf( ' color="%s"', esc_attr( trim( $marker['svgColor'] ) ) );
+			}
+		} elseif ( ! empty( $marker['useCustomIcon'] ) ) {
+			// Custom icon: mirror buildShortcode() logic in edit.js.
 			$m_icon_url = isset( $marker['iconUrl'] ) ? sanitize_text_field( $marker['iconUrl'] ) : '';
 			if ( '' !== $m_icon_url ) {
 				$m_open_tag .= sprintf( ' iconurl="%s"', esc_attr( $m_icon_url ) );
