@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.0
 Tested up to:      6.9
-Stable tag:        0.4.1
+Stable tag:        0.4.2
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -61,6 +61,11 @@ Whatever you have configured in the Leaflet Map plugin settings. By default, Ope
 3. Frontend rendering with Leaflet Map shortcodes.
 
 == Changelog ==
+
+= 0.4.2 =
+* Added: SVG marker support for each marker in a new collapsible "SVG Marker" subsection. Master "Use SVG marker" toggle with non-destructive behaviour — disabling the toggle hides the fields but preserves the entered values. Background color and icon color are exposed via Gutenberg's standard ColorPalette (with the full theme palette plus a custom color picker). An icon CSS class field accepts any icon-font glyph class (e.g. Font Awesome's `fas fa-star`).
+* Added: Mutual-exclusion guard between SVG marker mode and the v0.4.1 custom icon mode — Leaflet Map silently ignores `iconurl` when `svg=true` is set, so enabling either mode automatically disables the other. An informational Notice appears inside the just-activated subsection. The settings of the auto-disabled mode are preserved (non-destructive), so the user can toggle back without losing their values.
+* Added: Help text on the icon CSS class field clarifying that the icon font (Font Awesome or similar) must be enqueued by the user's theme or another plugin — Leaflet Map and this block do not load any icon font.
 
 = 0.4.1 =
 * Added: Custom icon support for each marker in a new collapsible "Custom Icon" subsection. Master "Use custom icon" toggle with non-destructive behaviour — disabling the toggle hides the fields but preserves the entered values. Icon image selected via the WordPress Media Library, with icon size (width/height) and icon anchor (X/Y) fields, plus a popup anchor (X/Y) field. Optional shadow via an "Add shadow" sub-toggle (also non-destructive) with its own image selector, size, and anchor fields.
