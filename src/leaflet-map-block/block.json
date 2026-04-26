@@ -171,7 +171,11 @@
 					"lockIconAspectRatio":   { "type": "boolean", "default": true },
 					"shadowOriginalWidth":   { "type": ["number", "null"] },
 					"shadowOriginalHeight":  { "type": ["number", "null"] },
-					"lockShadowAspectRatio": { "type": "boolean", "default": true }
+					"lockShadowAspectRatio": { "type": "boolean", "default": true },
+					"useSvgMarker":  { "type": "boolean", "default": false },
+					"svgBackground": { "type": "string",  "default": "" },
+					"svgIconClass":  { "type": "string",  "default": "" },
+					"svgColor":      { "type": "string",  "default": "" }
 				}
 			}
 		}
