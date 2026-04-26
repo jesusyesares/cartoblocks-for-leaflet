@@ -349,12 +349,16 @@ function bflm_preview_map(): void {
 		}
 	}
 
-	// Editor-only: add a numbered draggable marker at each line point so the user
-	// can see and drag points directly on the map. These are NOT added by render.php.
+	// Editor-only: show a draggable pin for each point only when the line is not yet
+	// drawn (< 2 points). Once the line is rendered the pins are visual noise.
+	// These are NOT added by render.php.
 	$line_point_meta        = array();
 	$line_point_shortcodes  = '';
 	foreach ( $lines as $l_idx => $line ) {
 		$l_points = isset( $line['points'] ) && is_array( $line['points'] ) ? $line['points'] : array();
+		if ( count( $l_points ) >= 2 ) {
+			continue; // line is drawn; skip helper markers.
+		}
 		foreach ( $l_points as $p_idx => $pt ) {
 			$pt_lat = (float) ( isset( $pt['lat'] ) ? $pt['lat'] : 0 );
 			$pt_lng = (float) ( isset( $pt['lng'] ) ? $pt['lng'] : 0 );

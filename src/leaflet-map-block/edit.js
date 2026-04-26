@@ -668,6 +668,12 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 	const [ linePointSearch, setLinePointSearch ] = useState( {} );
 
 	/**
+	 * Tracks which point rows are expanded in the Lines panel.
+	 * Keyed by "${lineIndex}_${pointIndex}". Default collapsed.
+	 */
+	const [ openPoints, setOpenPoints ] = useState( {} );
+
+	/**
 	 * The shortcode string shown in the strip, recomputed on every render so
 	 * it always reflects the current block attributes.
 	 */
@@ -2628,14 +2634,33 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 								const lpsInput      = lps.input || '';
 								const lpsStatus     = lps.status || 'idle';
 								const lpsCandidates = lps.candidates || [];
+								const isOpen        = !! openPoints[ lpKey ];
+								const isOrphan      = ( line.points || [] ).length < 2;
 								return (
 									<div
 										key={ pi }
-										style={ { borderLeft: '2px solid #ddd', paddingLeft: '8px', marginBottom: '12px' } }
+										style={ { borderLeft: '2px solid #ddd', paddingLeft: '8px', marginBottom: '8px' } }
 									>
-										<p style={ { margin: '0 0 4px', fontWeight: 600, fontSize: '11px', color: '#757575' } }>
-											{ sprintf( __( 'Point %d', 'blocks-for-leaflet-map' ), pi + 1 ) }
-										</p>
+										<div
+											role="button"
+											tabIndex={ 0 }
+											style={ { display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '2px 0 4px' } }
+											onClick={ () => setOpenPoints( ( prev ) => ( { ...prev, [ lpKey ]: ! prev[ lpKey ] } ) ) }
+											onKeyDown={ ( e ) => { if ( e.key === 'Enter' || e.key === ' ' ) setOpenPoints( ( prev ) => ( { ...prev, [ lpKey ]: ! prev[ lpKey ] } ) ); } }
+										>
+											<span style={ { fontWeight: 600, fontSize: '11px', color: '#757575' } }>
+												{ isOrphan && '📍 ' }
+												{ sprintf( __( 'Point %d', 'blocks-for-leaflet-map' ), pi + 1 ) }
+												{ ! isOpen && (
+													<span style={ { fontWeight: 400, marginLeft: '4px' } }>
+														{ `(${ point.lat }, ${ point.lng })` }
+													</span>
+												) }
+											</span>
+											<span style={ { fontSize: '10px', color: '#757575' } }>{ isOpen ? '▲' : '▼' }</span>
+										</div>
+										{ isOpen && (
+										<>
 										<NumberControl
 											label={ __( 'Latitude', 'blocks-for-leaflet-map' ) }
 											value={ point.lat }
@@ -2701,6 +2726,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 												</div>
 											) }
 										</div>
+										</> ) }
 										<Button
 											variant="link"
 											isDestructive
