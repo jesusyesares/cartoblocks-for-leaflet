@@ -143,7 +143,7 @@ Implementation note: UI could offer a grouped "Custom icon" panel that collapses
 
 ---
 
-### v0.4.3 — SVG marker
+### v0.4.3 — SVG marker ✅ Shipped in v0.4.2
 
 The SVG marker group: all three attributes only make sense together with `svg=true`.
 
@@ -158,7 +158,7 @@ Implementation note: `svg` requires the `leaflet_svg_icon_js` script to be enque
 
 ---
 
-### v0.4.4 — Address geocoding for markers
+### v0.4.4 — Address geocoding for markers ✅ Shipped in v0.4.3 (transient search helper)
 
 Extend the per-marker object to accept an address that is geocoded at render time.
 
@@ -195,6 +195,226 @@ Implementation note: May be too niche for a standalone release. Consider bundlin
 6. **`visible` attribute naming in block.json**: The upstream attribute is `visible` (boolean flag). In block.json, boolean attributes for the map use the pattern `scrollWheelZoom`, `zoomControl`, etc. Suggest naming the block attribute `markerAutoOpen` or `popupOpen` to be more descriptive — but the shortcode key must still be `visible`.
 
 7. **Per-marker UI in the editor**: The current marker list has only lat/lng/title/content fields. Adding draggable, opacity, iconurl, etc. will significantly increase complexity. Consider a collapsible "Advanced" section per marker, or a separate sidebar panel, to avoid overwhelming the UI.
+
+---
+
+## v0.4.3 — Per-marker address search (audit findings)
+
+> Read-only audit conducted 2026-04-26 against current `main` (v0.4.2).  
+> Scope decision: transient "Search by address" helper only. No `address=` shortcode attribute. No per-marker address metadata persisted in block attributes. Emitted shortcode remains `[leaflet-marker lat="..." lng="..."]`.
+
+---
+
+### Part A — Existing geocoding endpoint and reusability
+
+#### PHP AJAX handler (`bflm_geocode_address`)
+
+| Item | Detail |
+|---|---|
+| File | `blocks-for-leaflet-map.php` |
+| Line range | 534–621; registered at line 622 via `add_action('wp_ajax_bflm_geocode', 'bflm_geocode_address')` |
+| Nonce field | `_ajax_nonce`; nonce name `bflm_geocode_nonce`; verified via `check_ajax_referer()` |
+| Capability check | `current_user_can('edit_posts')` — returns 403 on failure |
+| Plugin guard | `bflm_is_leaflet_map_active()` — returns generic error if Leaflet Map is not active |
+| HTTP method | POST (`$_POST['address']`) |
+| Input sanitisation | `sanitize_text_field(wp_unslash($_POST['address']))` |
+| Nominatim URL | `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&q={rawurlencode($address)}` |
+| User-Agent | `"Nominatim query for {site_url}; contact {admin_email}"` — email overridable via `leaflet_map_nominatim_contact_email` filter; mirrors Leaflet Map's `osm_geocode()` conventions |
+| Accept-Language | WordPress locale converted to BCP 47 (e.g. `es-ES`) |
+| Timeout | `wp_remote_get()` with no explicit `timeout` argument — inherits WordPress default (5 seconds) |
+| Rate limiting | **None** |
+| Caching | **None** — every request hits Nominatim live |
+| Max candidates | 5 (hardcoded in the `limit=5` query param and enforced by `limit=5`) |
+
+**Successful response shape** (`wp_send_json_success`):
+```json
+{
+  "success": true,
+  "data": {
+    "candidates": [
+      { "display_name": "Granada, Andalusia, Spain", "lat": 37.1773, "lng": -3.5986 },
+      ...
+    ]
+  }
+}
+```
+
+**Error response shape** (`wp_send_json_error`):
+```json
+{ "success": false, "data": { "message": "No results found for that address." } }
+```
+HTTP 403 is sent for capability failures; other errors use the default 200 status with `success: false`.
+
+#### Nonce lifecycle
+
+A single nonce token (`bflm_geocode_nonce`) is created once at page load by `bflm_localise_editor_script()` (`enqueue_block_editor_assets` hook, line 505) and injected as `window.bflmEditor.geocodeNonce`. WordPress nonces are valid for 24 hours; `check_ajax_referer()` grants the full window. The same token is safely reused for every geocode request in the editor session — no rotation needed.
+
+#### JS implementation (edit.js)
+
+**State variables** (all top-level `useState` in the Edit component, lines 536–560):
+
+| Variable | Initial value | Purpose |
+|---|---|---|
+| `locationMode` | `'address'` if `address` attr is set, else `'coordinates'` | Toggles coordinate vs. address input mode for the **map** |
+| `addressInput` | `attributes.address` | Controlled text field value |
+| `geocodeStatus` | `'idle'` | Four-state machine: `'idle'` / `'loading'` / `'candidates'` / `'error'` |
+| `candidates` | `[]` | Array of `{display_name, lat, lng}` from last successful search |
+| `geocodeError` | `''` | Human-readable error message |
+
+There is also a `useEffect` at line 563 that syncs `addressInput` from the `address` attribute on undo/redo.
+
+**`handleGeocode()` flow** (lines 838–887):
+1. Guard: `if (!addressInput.trim()) return` — no request on empty input.
+2. Set `geocodeStatus = 'loading'`, clear `candidates` and `geocodeError`.
+3. POST to `admin-ajax.php` with `action: 'bflm_geocode'`, `_ajax_nonce`, `address`.
+4. On success: if exactly 1 result → call `applyCandidate(results[0])` directly (auto-apply); if >1 → `setCandidates(results)`, `geocodeStatus = 'candidates'`.
+5. On error: set `geocodeStatus = 'error'`, set `geocodeError`.
+6. No debounce. Triggered by explicit Search button click OR Enter key in the text field.
+7. No `AbortController`. In-flight requests are not cancelled when a new one is fired (the Search button is disabled while loading, preventing same-field races by UX rather than by API).
+
+**`applyCandidate()` flow** (lines 803–831):
+- Rounds `lat`/`lng` to 6 decimal places.
+- Sets `isIframeUpdateRef.current = true` to suppress the view postMessage echo.
+- Calls `setAttributes({lat, lng, address: addressInput})` — saves the address text as **map-level** editor-only metadata.
+- Directly rebuilds iframe src with resolved coords.
+- Resets `geocodeStatus = 'idle'`, `candidates = []`.
+
+**Candidate list rendering** (lines 1075–1099):
+- Rendered as `<Button variant="tertiary">` elements inside a `<div>`, one per candidate.
+- No keyboard navigation beyond standard button Tab/Enter behaviour.
+- No `<ul>`/`<li>` markup — not semantically a list (accessibility gap, see Part C).
+
+#### Reusability verdict
+
+**The endpoint is fully reusable as-is.** It takes a plain address string and returns generic `{display_name, lat, lng}` candidates. It has no state coupled to "the map" or "the block" — it knows nothing about which block made the request. The nonce is a single shared token that works for any number of requests in the same session. No PHP changes are needed.
+
+The only client-side adaptation required is:
+- Per-marker transient state replacing the top-level `geocodeStatus`/`candidates`/etc.
+- `applyMarkerCandidate(index, candidate)` calls `handleUpdateMarker(index, {lat, lng})` instead of `setAttributes({lat, lng, address})` — no address attribute is persisted for markers (per scope decision).
+- No iframe-rebuild logic in the marker apply path: `handleUpdateMarker` triggers the debounced iframe rebuild automatically (same as editing lat/lng directly).
+
+---
+
+### Part B — Per-marker UI integration points
+
+#### Where in edit.js the per-marker controls are rendered
+
+| Section | Lines |
+|---|---|
+| Markers PanelBody open | 1458–1465 |
+| `markers.map((marker, index) => ...)` | 1475–2152 |
+| Per-marker PanelBody open | 1476–1484 |
+| Latitude / Longitude NumberControls | 1485–1505 |
+| Title, Content, Advanced PanelBody | 1507–1608 |
+| Custom Icon PanelBody | 1609–2074 |
+| SVG Marker PanelBody | 2075–2142 |
+| Remove Marker button + per-marker close | 2143–2152 |
+| Markers PanelBody close | 2153 |
+
+#### Best insertion point
+
+**Above the Latitude and Longitude NumberControls (before line 1485)**, as an inline search UI (no extra PanelBody wrapper needed). This mirrors the map-level Location panel where "Address" and "Coordinates" are alternative input modes, and positions the search helper as the entry point for setting the marker's position.
+
+A light-weight UI: `TextControl` for the search query + `Button` (Search) on the same row + loading indicator + error Notice + candidate list below — all inline within the per-marker PanelBody. The lat/lng fields remain visible and editable beneath it, so the user can see the resolved coordinates and fine-tune them manually.
+
+A collapsible subsection wrapper (another `PanelBody`) is **not recommended** — it adds an extra expand step for a utility that should be immediately accessible when placing a new marker.
+
+#### Per-marker state management
+
+The map-level flow uses five separate top-level `useState` calls, each holding a scalar. For markers, the equivalent state must be per-marker and cannot be declared in a loop (React rules of hooks). The correct pattern is a single `useState` at the Edit level holding a plain object keyed by marker index.
+
+**Recommended shape:**
+```
+markerSearch: {
+  [index]: {
+    input:      string,  // text in the search field
+    status:     'idle' | 'loading' | 'candidates' | 'error',
+    candidates: Array<{ display_name, lat, lng }>,
+    error:      string,
+  }
+}
+```
+
+This is the **same pattern already used for `conflictNotices` in v0.4.2** (`const [conflictNotices, setConflictNotices] = useState({})`), making it a natural fit for the codebase. When a marker index does not have an entry in the object, all fields are treated as defaults (`input: ''`, `status: 'idle'`, `candidates: []`, `error: ''`).
+
+Updates use the functional setter pattern with spread to avoid overwriting other markers:
+```
+setMarkerSearch(prev => ({
+    ...prev,
+    [index]: { ...(prev[index] ?? defaultEntry), status: 'loading', ... }
+}))
+```
+
+**Why not per-field useState arrays?** Hook calls cannot vary between renders; the number of markers changes at runtime. This rules out `useState` per marker per field. A single object-keyed state is the standard React solution for "unknown number of independent state slots".
+
+#### React 18 batching risk
+
+The v0.4.0 blur-commit incident (z-index-offset) arose because `onBlur` fired, setting a `pendingValue` state, and the actual `handleUpdateMarker` call immediately following it read the stale pre-batch value. The per-marker search uses an **explicit button click** to trigger the AJAX request — the same pattern as the map-level Search button (`handleGeocode` is called from `onClick`). Button click handlers fire synchronously and read the current input value directly from the input state. There is no blur-commit involved. **Batching risk: none.**
+
+#### Cross-marker concurrency
+
+A single `markerSearch` state object keyed by marker index means marker A's state (`markerSearch[A]`) and marker B's state (`markerSearch[B]`) are entirely independent. A response for marker A writing `{...prev, [A]: ...}` does not touch `markerSearch[B]`. **Cross-marker race: not possible.**
+
+The within-marker race (user searches "London", then searches "Paris" for the same marker before "London" responds) is mitigated by the existing UX pattern: **the Search button is disabled while `status === 'loading'`**, preventing a second request from being fired while the first is in flight. This is the same mitigation used at the map level (line 1053: `disabled={ geocodeStatus === 'loading' }`) and is sufficient without needing AbortController or request-ID tokens.
+
+---
+
+### Part C — Open questions and risks
+
+1. **Empty search guard**: `handleGeocode()` returns early on empty input (`!addressInput.trim()`). The same guard must apply to the marker search handler. The Search button must be `disabled` when the marker's `input.trim()` is empty and when `status === 'loading'` — identical to the map-level button at line 1053.
+
+2. **Debounce vs. explicit Search button**: The map-level flow uses an explicit Search button with Enter-key support — no auto-search on input change. The per-marker helper should match this pattern for consistency and to avoid unnecessary Nominatim load from partial keystrokes.
+
+3. **Behaviour after picking a candidate**: Per spec, the search input keeps its typed text — it is NOT cleared when the user picks a candidate. The candidate list disappears (reset to `[]`, `status = 'idle'`) and the lat/lng fields update immediately. No additional action required.
+
+4. **New marker search state**: When a new marker is added via `handleAddMarker()`, no entry exists in `markerSearch` for the new index. The per-marker JSX must read `markerSearch[index]` with a fallback default `{ input: '', status: 'idle', candidates: [], error: '' }`. This is automatic with the object-keyed pattern and requires no special initialization.
+
+5. **Manual lat/lng edit after search**: If the user searches, picks a candidate, then manually edits the lat/lng NumberControls, the search state (`input`, stale candidates) is decoupled from the lat/lng attributes and does not need to be cleared — they are independent UI state vs. block attribute. This matches the map-level pattern.
+
+6. **Marker index drift on reorder**: The `markerSearch` state is keyed by array index. If markers were ever reorderable (no such UI exists in v0.4.x), deleting marker 0 would shift all indices and the search state would point to the wrong markers. For now this is a non-issue — markers are add-only or individually removed. Document as a known limitation if reordering is ever added.
+
+7. **Accessibility of the candidate list**: The current map-level candidate list renders as `<Button variant="tertiary">` elements with no `<ul>`/`<li>` wrapper and no ARIA `role="listbox"` or `role="option"`. Screen readers will announce them as buttons, not as a pick-list. This is a pre-existing gap — acceptable for now but should be noted for a future a11y pass on both the map-level and marker-level UIs.
+
+8. **Narrow inspector panel**: Gutenberg's inspector sidebar is ~280 px wide. The search input and Search button must stack vertically (full-width button below the text input) to avoid overflow. The map-level implementation already does this at line 1054 (`width: '100%'`).
+
+9. **Nominatim rate limiting**: Nominatim's usage policy limits automated high-frequency queries. The per-search explicit button pattern limits load naturally, but if a user has many markers and hammers Search, multiple concurrent in-flight requests could be sent. With the Search button disabled during loading, only one request per marker can be in flight at a time — keeping the per-block request rate to at most `N_markers_open_at_once` simultaneous requests. This is acceptable.
+
+10. **No caching**: The endpoint has no server-side caching. Repeated identical searches from multiple markers (e.g., two markers at "Paris") each make a live Nominatim request. Adding a short-lived transient cache keyed by address string would be a future optimisation, not a blocker.
+
+---
+
+### Proposed implementation plan
+
+**1. New state in Edit (one line):**
+Add `const [markerSearch, setMarkerSearch] = useState({})` alongside `conflictNotices` in the existing state block. No new imports needed; the same `useState` from `@wordpress/element` is already imported.
+
+**2. `getMarkerSearch(index)` accessor:**
+A small inline helper that returns `markerSearch[index] ?? { input: '', status: 'idle', candidates: [], error: '' }`. Used everywhere the per-marker search state is read to avoid repetitive null-coalescence in JSX.
+
+**3. `handleMarkerGeocode(index)` function:**
+Mirrors `handleGeocode()` structurally. Reads `getMarkerSearch(index).input` for the address. Sets `markerSearch[index].status = 'loading'` before the POST, parses the same response shape, and:
+- On 1 result: calls `applyMarkerCandidate(index, results[0])` directly.
+- On >1 results: sets `markerSearch[index] = { ..., status: 'candidates', candidates: results }`.
+- On error: sets `markerSearch[index] = { ..., status: 'error', error: message }`.
+The endpoint, nonce, and fetch pattern are copied verbatim from `handleGeocode()` — no changes to the PHP side.
+
+**4. `applyMarkerCandidate(index, candidate)` function:**
+Rounds `lat`/`lng` to 6 decimal places. Calls `handleUpdateMarker(index, { lat: newLat, lng: newLng })`. Resets `markerSearch[index]` to `{ input: getMarkerSearch(index).input, status: 'idle', candidates: [], error: '' }` — preserving the typed text but clearing the list. No `isIframeUpdateRef` manipulation needed: `handleUpdateMarker` triggers the debounced iframe rebuild automatically.
+
+**5. Inspector JSX (per-marker PanelBody, before line 1485):**
+Inline search helper (no PanelBody wrapper):
+- `TextControl` with label "Search address", value from `getMarkerSearch(index).input`, `onChange` updates `markerSearch[index].input` and clears stale candidates/error, `onKeyDown` fires `handleMarkerGeocode(index)` on Enter.
+- Full-width `Button variant="secondary"` labelled "Search", `onClick` → `handleMarkerGeocode(index)`, `disabled` when `status === 'loading' || !input.trim()`, `isBusy` when `status === 'loading'`.
+- `Spinner` shown inline when `status === 'loading'`.
+- `Notice status="error" isDismissible={false}` shown when `status === 'error'`.
+- Candidate list (same `<Button variant="tertiary">` pattern as map-level) shown when `status === 'candidates' && candidates.length > 0`; each click calls `applyMarkerCandidate(index, candidate)`.
+- A horizontal rule or `<hr />` between the search helper and the Latitude field provides visual separation.
+
+**6. No changes to:**
+- `block.json` (no new block attributes — address is transient state only)
+- `render.php` (shortcode emits only `lat`/`lng` as today)
+- `blocks-for-leaflet-map.php` (endpoint reused unchanged)
+- `buildShortcode()` (no `address=` attribute to emit)
 
 ---
 

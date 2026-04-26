@@ -582,6 +582,12 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 	const [ conflictNotices, setConflictNotices ] = useState( {} );
 
 	/**
+	 * Per-marker geocode UI state keyed by marker index.
+	 * Each entry: { input: string, status: 'idle'|'loading'|'candidates'|'error', candidates: Array, error: string }
+	 */
+	const [ markerSearch, setMarkerSearch ] = useState( {} );
+
+	/**
 	 * The shortcode string shown in the strip, recomputed on every render so
 	 * it always reflects the current block attributes.
 	 */
@@ -920,7 +926,9 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 	}
 
 	/**
-	 * Remove a marker by index.
+	 * Remove a marker by index. Also cleans up markerSearch state:
+	 * drops the deleted index and decrements keys > index so they
+	 * stay aligned with the new markers array.
 	 *
 	 * @param {number} index Marker index.
 	 */
@@ -928,6 +936,105 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		setAttributes( {
 			markers: markers.filter( ( _, i ) => i !== index ),
 		} );
+		setMarkerSearch( ( prev ) => {
+			const next = {};
+			for ( const [ k, v ] of Object.entries( prev ) ) {
+				const n = Number( k );
+				if ( n === index ) continue;
+				next[ n > index ? n - 1 : n ] = v;
+			}
+			return next;
+		} );
+	}
+
+	/**
+	 * Update one field of the markerSearch entry for a given marker index.
+	 *
+	 * @param {number} index   Marker index.
+	 * @param {Object} updates Partial state to merge.
+	 */
+	function updateMarkerSearch( index, updates ) {
+		setMarkerSearch( ( prev ) => ( {
+			...prev,
+			[ index ]: { input: '', status: 'idle', candidates: [], error: '', ...prev[ index ], ...updates },
+		} ) );
+	}
+
+	/**
+	 * Apply a geocode candidate to a specific marker: update its lat/lng and
+	 * collapse the candidate list. The search input text is kept as-is.
+	 *
+	 * @param {number} index     Marker index.
+	 * @param {{ lat: number, lng: number }} candidate
+	 */
+	function applyMarkerCandidate( index, candidate ) {
+		const newLat = parseFloat( candidate.lat.toFixed( 6 ) );
+		const newLng = parseFloat( candidate.lng.toFixed( 6 ) );
+
+		handleUpdateMarker( index, { lat: newLat, lng: newLng } );
+		updateMarkerSearch( index, { status: 'idle', candidates: [] } );
+	}
+
+	/**
+	 * Run a Nominatim geocode search for the address currently in a marker's
+	 * search input. On a single result, applies it immediately. On multiple
+	 * results, shows the candidate list. On failure, shows an error message.
+	 *
+	 * @param {number} index Marker index.
+	 */
+	async function handleMarkerGeocode( index ) {
+		const entry  = markerSearch[ index ] || {};
+		const query  = ( entry.input || '' ).trim();
+
+		if ( ! query ) {
+			return;
+		}
+
+		updateMarkerSearch( index, { status: 'loading', candidates: [], error: '' } );
+
+		const { previewUrl, geocodeNonce } = window.bflmEditor || {};
+		if ( ! previewUrl || ! geocodeNonce ) {
+			updateMarkerSearch( index, {
+				status: 'error',
+				error:  __( 'Geocoding is not available. Please reload the editor.', 'blocks-for-leaflet-map' ),
+			} );
+			return;
+		}
+
+		try {
+			const response = await fetch( previewUrl, {
+				method: 'POST',
+				body: new URLSearchParams( {
+					action:      'bflm_geocode',
+					_ajax_nonce: geocodeNonce,
+					address:     query,
+				} ),
+			} );
+
+			const data = await response.json();
+
+			if ( ! data.success ) {
+				updateMarkerSearch( index, {
+					status: 'error',
+					error:  data.data?.message ||
+						__( 'An unexpected error occurred. Please try again.', 'blocks-for-leaflet-map' ),
+				} );
+				return;
+			}
+
+			const results = data.data.candidates;
+
+			if ( results.length === 1 ) {
+				applyMarkerCandidate( index, results[ 0 ] );
+			} else {
+				updateMarkerSearch( index, { status: 'candidates', candidates: results } );
+			}
+		} catch ( e ) {
+			updateMarkerSearch( index, {
+				status: 'error',
+				error:  __( 'Geocoding request failed. Please check your connection and try again.', 'blocks-for-leaflet-map' ),
+			} );
+		}
 	}
 
 	// ── Render ────────────────────────────────────────────────────────────────
@@ -1482,6 +1589,90 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 							) }
 							initialOpen={ false }
 						>
+							{ /* ── Per-marker address search ─────────────────── */ }
+							{ ( () => {
+								const ms      = markerSearch[ index ] || {};
+								const msInput = ms.input || '';
+								const msStatus = ms.status || 'idle';
+								return (
+									<>
+										<TextControl
+											label={ __( 'Search by address', 'blocks-for-leaflet-map' ) }
+											value={ msInput }
+											placeholder={ __( 'Enter an address…', 'blocks-for-leaflet-map' ) }
+											onChange={ ( value ) => {
+												updateMarkerSearch( index, {
+													input:      value,
+													status:     'idle',
+													candidates: [],
+													error:      '',
+												} );
+											} }
+											onKeyDown={ ( e ) => {
+												if ( e.key === 'Enter' ) {
+													e.preventDefault();
+													handleMarkerGeocode( index );
+												}
+											} }
+											__next40pxDefaultSize
+											__nextHasNoMarginBottom
+										/>
+										<Button
+											variant="secondary"
+											onClick={ () => handleMarkerGeocode( index ) }
+											isBusy={ msStatus === 'loading' }
+											disabled={ msStatus === 'loading' || ! msInput.trim() }
+											style={ { width: '100%', justifyContent: 'center', marginTop: '8px' } }
+										>
+											{ __( 'Search', 'blocks-for-leaflet-map' ) }
+										</Button>
+
+										{ msStatus === 'loading' && (
+											<div style={ { display: 'flex', justifyContent: 'center', marginTop: '8px' } }>
+												<Spinner />
+											</div>
+										) }
+
+										{ msStatus === 'error' && (
+											<Notice
+												status="error"
+												isDismissible={ false }
+												style={ { marginTop: '8px' } }
+											>
+												{ ms.error }
+											</Notice>
+										) }
+
+										{ msStatus === 'candidates' && ( ms.candidates || [] ).length > 0 && (
+											<div style={ { marginTop: '8px' } }>
+												<p style={ { margin: '0 0 4px', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', color: '#1e1e1e' } }>
+													{ __( 'Select a location:', 'blocks-for-leaflet-map' ) }
+												</p>
+												{ ( ms.candidates || [] ).map( ( candidate, ci ) => (
+													<Button
+														key={ ci }
+														variant="tertiary"
+														onClick={ () => applyMarkerCandidate( index, candidate ) }
+														style={ {
+															display:      'block',
+															width:        '100%',
+															textAlign:    'left',
+															marginBottom: '4px',
+															whiteSpace:   'normal',
+															height:       'auto',
+															padding:      '6px 8px',
+															wordBreak:    'break-word',
+														} }
+													>
+														{ candidate.display_name }
+													</Button>
+												) ) }
+											</div>
+										) }
+									</>
+								);
+							} )() }
+
 							<NumberControl
 								label={ __( 'Latitude', 'blocks-for-leaflet-map' ) }
 								value={ marker.lat }
