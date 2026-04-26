@@ -244,11 +244,13 @@ function bflm_preview_map(): void {
 
 	$map_shortcode .= ']';
 
+	$real_marker_count = 0;
 	$marker_shortcodes = '';
 	foreach ( $markers as $marker ) {
 		if ( ! isset( $marker['lat'], $marker['lng'] ) ) {
 			continue;
 		}
+		++$real_marker_count;
 		$m_lat     = (float) $marker['lat'];
 		$m_lng     = (float) $marker['lng'];
 		$m_title   = isset( $marker['title'] ) ? sanitize_text_field( $marker['title'] ) : '';
@@ -347,6 +349,26 @@ function bflm_preview_map(): void {
 		}
 	}
 
+	// Editor-only: add a numbered draggable marker at each line point so the user
+	// can see and drag points directly on the map. These are NOT added by render.php.
+	$line_point_meta        = array();
+	$line_point_shortcodes  = '';
+	foreach ( $lines as $l_idx => $line ) {
+		$l_points = isset( $line['points'] ) && is_array( $line['points'] ) ? $line['points'] : array();
+		foreach ( $l_points as $p_idx => $pt ) {
+			$pt_lat = (float) ( isset( $pt['lat'] ) ? $pt['lat'] : 0 );
+			$pt_lng = (float) ( isset( $pt['lng'] ) ? $pt['lng'] : 0 );
+			$label  = sprintf( 'L%d·P%d', $l_idx + 1, $p_idx + 1 );
+			$line_point_shortcodes .= sprintf(
+				'[leaflet-marker lat="%s" lng="%s" title="%s" draggable="1" /]',
+				esc_attr( $pt_lat ),
+				esc_attr( $pt_lng ),
+				esc_attr( $label )
+			);
+			$line_point_meta[] = array( 'lineIndex' => $l_idx, 'pointIndex' => $p_idx );
+		}
+	}
+
 	// Build [leaflet-line] / [leaflet-polygon] shortcodes. Keep in sync with
 	// buildLineShortcodes() in edit.js and the lines section in render.php.
 	$line_shortcodes = '';
@@ -424,7 +446,7 @@ function bflm_preview_map(): void {
 <div id="map-wrap">
 	<?php
 	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted shortcode output, same rationale as render.php.
-	echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes );
+	echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes . $line_point_shortcodes );
 	?>
 </div>
 <script>
@@ -433,6 +455,8 @@ function bflm_preview_map(): void {
 	var minZoom            = <?php echo wp_json_encode( '' !== $min_zoom && is_numeric( $min_zoom ) ? (float) $min_zoom : null ); ?>;
 	var maxZoom            = <?php echo wp_json_encode( '' !== $max_zoom && is_numeric( $max_zoom ) ? (float) $max_zoom : null ); ?>;
 	var maxBoundsRaw       = <?php echo wp_json_encode( $max_bounds ); ?>;
+	var realMarkerCount    = <?php echo wp_json_encode( $real_marker_count ); ?>;
+	var linePointMeta      = <?php echo wp_json_encode( $line_point_meta ); ?>;
 	var attempts           = 0;
 	var MAX_ATTEMPTS       = 50;
 	var isProgrammaticMove = false;
@@ -497,8 +521,8 @@ function bflm_preview_map(): void {
 			);
 		} );
 
-		// Make each marker draggable and relay dragend to the editor.
-		markers.forEach( function ( marker, i ) {
+		// Make each real marker draggable and relay dragend to the editor.
+		markers.slice( 0, realMarkerCount ).forEach( function ( marker, i ) {
 			if ( marker.dragging && ! marker.dragging.enabled() ) {
 				marker.dragging.enable();
 			}
@@ -506,6 +530,22 @@ function bflm_preview_map(): void {
 				var pos = e.target.getLatLng();
 				window.top.postMessage(
 					{ type: 'bflm_marker_update', blockId: blockId, index: i, lat: pos.lat, lng: pos.lng },
+					'*'
+				);
+			} );
+		} );
+
+		// Make each line-point helper marker draggable and relay dragend.
+		markers.slice( realMarkerCount ).forEach( function ( marker, i ) {
+			var meta = linePointMeta[ i ];
+			if ( ! meta ) return;
+			if ( marker.dragging && ! marker.dragging.enabled() ) {
+				marker.dragging.enable();
+			}
+			marker.on( 'dragend', function ( e ) {
+				var pos = e.target.getLatLng();
+				window.top.postMessage(
+					{ type: 'bflm_linepoint_update', blockId: blockId, lineIndex: meta.lineIndex, pointIndex: meta.pointIndex, lat: pos.lat, lng: pos.lng },
 					'*'
 				);
 			} );

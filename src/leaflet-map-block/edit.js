@@ -21,8 +21,9 @@
  *     type: 'bflm_set_view'  — sidebar lat/lng/zoom change → map.setView()
  *
  *   Preview → Outer  (window.top.postMessage, received on window here)
- *     type: 'bflm_map_update'    — user pan/zoom → update lat/lng/zoom attrs
- *     type: 'bflm_marker_update' — marker drag  → update marker lat/lng attr
+ *     type: 'bflm_map_update'       — user pan/zoom → update lat/lng/zoom attrs
+ *     type: 'bflm_marker_update'    — marker drag   → update marker lat/lng attr
+ *     type: 'bflm_linepoint_update' — line-point drag → update line point lat/lng
  *
  * SRC REBUILD vs. postMessage
  * ───────────────────────────
@@ -866,6 +867,25 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 							: m
 					),
 				} );
+				return;
+			}
+
+			if ( msg.type === 'bflm_linepoint_update' ) {
+				const currentLines = attributesRef.current.lines || [];
+				const li = msg.lineIndex;
+				const pi = msg.pointIndex;
+				const updatedLines = currentLines.map( ( l, i ) => {
+					if ( i !== li ) return l;
+					return {
+						...l,
+						points: ( l.points || [] ).map( ( p, j ) =>
+							j === pi
+								? { ...p, lat: parseFloat( msg.lat.toFixed( 6 ) ), lng: parseFloat( msg.lng.toFixed( 6 ) ) }
+								: p
+						),
+					};
+				} );
+				setAttributes( { lines: updatedLines } );
 			}
 		}
 
@@ -1186,17 +1206,31 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 	}
 
 	/**
-	 * Apply a geocode candidate to a specific line point.
+	 * Pan the preview iframe to show a specific lat/lng without rebuilding it.
+	 * @param {number} pointLat
+	 * @param {number} pointLng
+	 */
+	function handleLocatePoint( pointLat, pointLng ) {
+		const iframe = iframeRef.current;
+		if ( ! iframe || ! iframe.contentWindow ) return;
+		iframe.contentWindow.postMessage(
+			{ type: 'bflm_set_view', blockId: clientId, lat: pointLat, lng: pointLng, zoom: attributes.zoom },
+			'*'
+		);
+	}
+
+	/**
+	 * Apply a geocode candidate to a specific line point and pan to it.
 	 * @param {number} lineIndex
 	 * @param {number} pointIndex
 	 * @param {{ lat: number, lng: number }} candidate
 	 */
 	function applyLinePointCandidate( lineIndex, pointIndex, candidate ) {
-		handleUpdatePoint( lineIndex, pointIndex, {
-			lat: parseFloat( candidate.lat.toFixed( 6 ) ),
-			lng: parseFloat( candidate.lng.toFixed( 6 ) ),
-		} );
+		const newLat = parseFloat( candidate.lat.toFixed( 6 ) );
+		const newLng = parseFloat( candidate.lng.toFixed( 6 ) );
+		handleUpdatePoint( lineIndex, pointIndex, { lat: newLat, lng: newLng } );
 		updateLinePointSearch( lineIndex, pointIndex, { status: 'idle', candidates: [] } );
+		handleLocatePoint( newLat, newLng );
 	}
 
 	/**
@@ -2616,6 +2650,13 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 											onChange={ ( v ) => handleUpdatePoint( lineIdx, pi, { lng: parseFloat( v ) || 0 } ) }
 											__next40pxDefaultSize={ true }
 										/>
+										<Button
+											variant="tertiary"
+											onClick={ () => handleLocatePoint( point.lat, point.lng ) }
+											style={ { marginTop: '4px', width: '100%', justifyContent: 'center' } }
+										>
+											{ __( '📍 Locate on map', 'blocks-for-leaflet-map' ) }
+										</Button>
 										<div style={ { marginTop: '6px' } }>
 											<TextControl
 												label={ __( 'Search by address', 'blocks-for-leaflet-map' ) }
