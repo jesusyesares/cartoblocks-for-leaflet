@@ -2872,6 +2872,41 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 							} }
 						/>
 					) }
+					{ ( lines || [] ).length > 0 && (
+						<div
+							style={ {
+								position:      'absolute',
+								top:           '50%',
+								left:          '50%',
+								transform:     'translate(-50%, -50%)',
+								pointerEvents: 'none',
+								zIndex:        3,
+							} }
+						>
+							<svg
+								width="40"
+								height="40"
+								viewBox="0 0 40 40"
+								style={ { filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.6))' } }
+								aria-hidden="true"
+							>
+								{ /* Outer ring */ }
+								<circle cx="20" cy="20" r="9" fill="none" stroke="#fff" strokeWidth="3" />
+								<circle cx="20" cy="20" r="9" fill="none" stroke="#c0392b" strokeWidth="1.5" />
+								{ /* Crosshair lines */ }
+								<line x1="20" y1="2"  x2="20" y2="11" stroke="#fff"    strokeWidth="3" strokeLinecap="round" />
+								<line x1="20" y1="2"  x2="20" y2="11" stroke="#c0392b" strokeWidth="1.5" strokeLinecap="round" />
+								<line x1="20" y1="29" x2="20" y2="38" stroke="#fff"    strokeWidth="3" strokeLinecap="round" />
+								<line x1="20" y1="29" x2="20" y2="38" stroke="#c0392b" strokeWidth="1.5" strokeLinecap="round" />
+								<line x1="2"  y1="20" x2="11" y2="20" stroke="#fff"    strokeWidth="3" strokeLinecap="round" />
+								<line x1="2"  y1="20" x2="11" y2="20" stroke="#c0392b" strokeWidth="1.5" strokeLinecap="round" />
+								<line x1="29" y1="20" x2="38" y2="20" stroke="#fff"    strokeWidth="3" strokeLinecap="round" />
+								<line x1="29" y1="20" x2="38" y2="20" stroke="#c0392b" strokeWidth="1.5" strokeLinecap="round" />
+								{ /* Center dot */ }
+								<circle cx="20" cy="20" r="2" fill="#c0392b" />
+							</svg>
+						</div>
+					) }
 				</div>
 
 			</div>
