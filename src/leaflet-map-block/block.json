@@ -7,7 +7,7 @@
 	"category": "embed",
 	"icon": "location-alt",
 	"description": "Embed an interactive Leaflet map using the Leaflet Map plugin shortcodes.",
-	"keywords": ["map", "leaflet", "location", "embed"],
+	"keywords": [ "map", "leaflet", "location", "embed" ],
 	"example": {
 		"attributes": {
 			"lat": 37.1773,
@@ -18,7 +18,7 @@
 	},
 	"supports": {
 		"html": false,
-		"align": ["wide", "full"]
+		"align": [ "wide", "full" ]
 	},
 	"attributes": {
 		"lat": {
@@ -143,39 +143,45 @@
 			"items": {
 				"type": "object",
 				"properties": {
-					"lat":          { "type": "number" },
-					"lng":          { "type": "number" },
-					"title":        { "type": "string" },
-					"content":      { "type": "string" },
-					"alt":          { "type": "string" },
-					"visible":      { "type": "boolean" },
-					"draggable":    { "type": "boolean" },
-					"opacity":      { "type": "number" },
+					"lat": { "type": "number" },
+					"lng": { "type": "number" },
+					"title": { "type": "string" },
+					"content": { "type": "string" },
+					"alt": { "type": "string" },
+					"visible": { "type": "boolean" },
+					"draggable": { "type": "boolean" },
+					"opacity": { "type": "number" },
 					"zIndexOffset": { "type": "integer" },
 					"useCustomIcon": { "type": "boolean", "default": false },
-					"iconUrl":       { "type": "string",  "default": "" },
-					"iconWidth":     { "type": ["number", "null"] },
-					"iconHeight":    { "type": ["number", "null"] },
-					"iconAnchorX":   { "type": ["number", "null"] },
-					"iconAnchorY":   { "type": ["number", "null"] },
-					"popupAnchorX":  { "type": ["number", "null"] },
-					"popupAnchorY":  { "type": ["number", "null"] },
-					"useShadow":     { "type": "boolean", "default": false },
-					"shadowUrl":     { "type": "string",  "default": "" },
-					"shadowWidth":   { "type": ["number", "null"] },
-					"shadowHeight":  { "type": ["number", "null"] },
-					"shadowAnchorX": { "type": ["number", "null"] },
-					"shadowAnchorY": { "type": ["number", "null"] },
-					"iconOriginalWidth":     { "type": ["number", "null"] },
-					"iconOriginalHeight":    { "type": ["number", "null"] },
-					"lockIconAspectRatio":   { "type": "boolean", "default": true },
-					"shadowOriginalWidth":   { "type": ["number", "null"] },
-					"shadowOriginalHeight":  { "type": ["number", "null"] },
-					"lockShadowAspectRatio": { "type": "boolean", "default": true },
-					"useSvgMarker":  { "type": "boolean", "default": false },
-					"svgBackground": { "type": "string",  "default": "" },
-					"svgIconClass":  { "type": "string",  "default": "" },
-					"svgColor":      { "type": "string",  "default": "" }
+					"iconUrl": { "type": "string", "default": "" },
+					"iconWidth": { "type": [ "number", "null" ] },
+					"iconHeight": { "type": [ "number", "null" ] },
+					"iconAnchorX": { "type": [ "number", "null" ] },
+					"iconAnchorY": { "type": [ "number", "null" ] },
+					"popupAnchorX": { "type": [ "number", "null" ] },
+					"popupAnchorY": { "type": [ "number", "null" ] },
+					"useShadow": { "type": "boolean", "default": false },
+					"shadowUrl": { "type": "string", "default": "" },
+					"shadowWidth": { "type": [ "number", "null" ] },
+					"shadowHeight": { "type": [ "number", "null" ] },
+					"shadowAnchorX": { "type": [ "number", "null" ] },
+					"shadowAnchorY": { "type": [ "number", "null" ] },
+					"iconOriginalWidth": { "type": [ "number", "null" ] },
+					"iconOriginalHeight": { "type": [ "number", "null" ] },
+					"lockIconAspectRatio": {
+						"type": "boolean",
+						"default": true
+					},
+					"shadowOriginalWidth": { "type": [ "number", "null" ] },
+					"shadowOriginalHeight": { "type": [ "number", "null" ] },
+					"lockShadowAspectRatio": {
+						"type": "boolean",
+						"default": true
+					},
+					"useSvgMarker": { "type": "boolean", "default": false },
+					"svgBackground": { "type": "string", "default": "" },
+					"svgIconClass": { "type": "string", "default": "" },
+					"svgColor": { "type": "string", "default": "" }
 				}
 			}
 		},
@@ -185,23 +191,35 @@
 			"items": {
 				"type": "object",
 				"properties": {
-					"type":        { "type": "string",           "default": "line" },
-					"points":      { "type": "array",            "default": [],
-					                 "items": { "type": "object", "properties": {
-					                     "lat": { "type": "number", "default": 0 },
-					                     "lng": { "type": "number", "default": 0 }
-					                 } } },
-					"fitbounds":   { "type": "boolean",          "default": false },
-					"color":       { "type": "string",           "default": "" },
-					"weight":      { "type": ["number", "null"], "default": null },
-					"opacity":     { "type": ["number", "null"], "default": null },
-					"dashArray":   { "type": "string",           "default": "" },
-					"classname":   { "type": "string",           "default": "" },
-					"fill":        { "type": "boolean",          "default": false },
-					"fillColor":   { "type": "string",           "default": "" },
-					"fillOpacity": { "type": ["number", "null"], "default": null },
-					"popup":       { "type": "string",           "default": "" },
-					"visible":     { "type": "boolean",          "default": false }
+					"type": { "type": "string", "default": "line" },
+					"points": {
+						"type": "array",
+						"default": [],
+						"items": {
+							"type": "object",
+							"properties": {
+								"lat": { "type": "number", "default": 0 },
+								"lng": { "type": "number", "default": 0 }
+							}
+						}
+					},
+					"fitbounds": { "type": "boolean", "default": false },
+					"color": { "type": "string", "default": "" },
+					"weight": { "type": [ "number", "null" ], "default": null },
+					"opacity": {
+						"type": [ "number", "null" ],
+						"default": null
+					},
+					"dashArray": { "type": "string", "default": "" },
+					"classname": { "type": "string", "default": "" },
+					"fill": { "type": "boolean", "default": false },
+					"fillColor": { "type": "string", "default": "" },
+					"fillOpacity": {
+						"type": [ "number", "null" ],
+						"default": null
+					},
+					"popup": { "type": "string", "default": "" },
+					"visible": { "type": "boolean", "default": false }
 				}
 			}
 		}
