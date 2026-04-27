@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.0
 Tested up to:      6.9
-Stable tag:        0.5.0
+Stable tag:        0.6.0
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -61,6 +61,22 @@ Whatever you have configured in the Leaflet Map plugin settings. By default, Ope
 3. Frontend rendering with Leaflet Map shortcodes.
 
 == Changelog ==
+
+= 0.6.0 =
+* Added: `[leaflet-circle]` shortcode support with full attribute parity (lat/lng, radius, fitbounds, color, weight, opacity, dasharray, classname, fill, fillcolor, fillopacity, popup, visible).
+* Added: 2-click draw mode in the editor iframe — 1st click places center pin, 2nd click fixes radius. No iframe flash; drawn shape stays on the Leaflet layer without reloading the iframe.
+* Added: Live radius guide line and live `L.circle.setRadius()` on mousemove during radius phase.
+* Added: Draggable center pin post-draw — drag to reposition circle; new coordinates update the editor in real time.
+* Added: m/km unit toggle in the panel UI (stored attribute is always meters).
+* Added: Per-circle address geocoder (Nominatim endpoint).
+
+= 0.5.0 =
+* Added: `[leaflet-line]` shortcode support with full attribute parity.
+* Added: `[leaflet-polygon]` shortcode support.
+* Added: Click-to-draw mode for lines and polygons in the editor iframe (click to add points, double-click to finish). No iframe flash on stop-draw.
+* Added: Per-point address geocoder.
+* Added: Crosshair map overlay while draw mode is active.
+* Added: GitHub Actions CI (PHPStan + PHPCS + Jest).
 
 = 0.4.3 =
 * Added: Per-marker "Search by address" helper in the editor. Each marker in the Markers panel gains a search field and Search button; results from Nominatim geocoding are listed as selectable candidates that update the marker's lat/lng coordinates. Transient UI only — no `address=` attribute is persisted in the block or emitted in the shortcode.

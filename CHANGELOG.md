@@ -5,6 +5,49 @@ All notable changes to the Blocks for Leaflet Map plugin will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-04-27
+
+### Added
+- `[leaflet-circle]` shortcode support with full attribute parity (lat/lng, radius, fitbounds, color, weight, opacity, dasharray, classname, fill, fillcolor, fillopacity, popup, visible).
+- **2-click draw mode** in the editor iframe: 1st click places center pin, 2nd click fixes radius. No iframe flash — drawn shape stays on the Leaflet map layer; no `iframe.src` reload.
+- **Live radius guide**: dashed guide line + live `L.circle.setRadius()` on `mousemove` during radius phase.
+- **Draggable center**: after drawing, the center pin can be dragged to reposition the circle; new coordinates are posted back to the editor in real time.
+- **m/km unit toggle** in the panel UI — stored attribute is always meters, display value scales with the selected unit.
+- Per-circle address geocoder (same Nominatim endpoint as markers and line points).
+- Mutual exclusion between line draw mode and circle draw mode.
+- `circles` array attribute in `block.json` with full per-item schema.
+- 9 new Jest unit tests for `buildCircleShortcodes` (20 total passing).
+
+## [0.5.0] - 2026-04-26
+
+### Added
+- `[leaflet-line]` shortcode support with full attribute parity (latlngs, fitbounds, color, weight, opacity, dasharray, classname, fill, fillcolor, fillopacity, popup, visible).
+- `[leaflet-polygon]` shortcode support (same attributes as line; emits `[leaflet-polygon]` tag).
+- **Click-to-draw mode** for lines and polygons in the editor iframe: click to add points, double-click to finish. No iframe flash — shape stays on the Leaflet map layer via Leaflet API; no `iframe.src` reload on stop-draw.
+- Red pin draw markers for each added point; cleared on stop without removing the drawn polyline/polygon.
+- Per-point address geocoder (same Nominatim endpoint).
+- Crosshair map overlay indicator while draw mode is active.
+- `lines` array attribute in `block.json`.
+- Jest unit tests for `buildLineShortcodes`.
+- GitHub Actions CI (PHPStan + PHPCS + Jest).
+
+## [0.4.3] - 2026-04-20
+
+### Added
+- Per-marker **address geocoding** in the editor: type an address in the "Find address" field, hit Search, pick a candidate — the marker lat/lng updates and the iframe pans to the new location.
+- Reuses the existing `wp_ajax_bflm_geocode` Nominatim endpoint established at the map level (v0.3.7).
+- Geocoded coordinates are stored as `lat`/`lng` on the marker object and emitted in the shortcode; the address string is editor-only metadata and never appears in the rendered shortcode.
+
+## [0.4.2] - 2026-04-20
+
+### Added
+- **SVG Marker** subsection per marker (contributes to [#14](https://github.com/jesusyesares/blocks-for-leaflet-map/issues/14)):
+  - Master **"Use SVG marker"** toggle (`useSvgMarker`). Mutually exclusive with "Use custom icon" — enabling one disables the other.
+  - `ColorPicker` for `svgBackground` (circle fill color, default `#2b82cb`).
+  - `TextControl` for `svgIconClass` (CSS icon class, e.g. Font Awesome; requires icon font active on the site).
+  - `ColorPicker` for `svgColor` (icon foreground color, default `white`).
+- Emits `svg="true" background="…" iconclass="…" color="…"` in `render.php`, `bflm_preview_map()`, and `buildShortcode()` when `useSvgMarker` is true.
+
 ## [0.4.1] - 2026-04-20
 
 ### Added
