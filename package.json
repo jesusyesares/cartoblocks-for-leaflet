@@ -1,6 +1,6 @@
 {
 	"name": "blocks-for-leaflet-map",
-	"version": "0.4.3",
+	"version": "0.5.0",
 	"description": "A dynamic block that renders Leaflet Map shortcodes from block attributes.",
 	"author": "The WordPress Contributors",
 	"license": "GPL-2.0-or-later",
@@ -12,7 +12,8 @@
 		"lint:js": "wp-scripts lint-js",
 		"packages-update": "wp-scripts packages-update",
 		"plugin-zip": "wp-scripts plugin-zip",
-		"start": "wp-scripts start --webpack-copy-php --blocks-manifest"
+		"start": "wp-scripts start --webpack-copy-php --blocks-manifest",
+		"test": "wp-scripts test-unit-js"
 	},
 	"dependencies": {
 		"@wordpress/block-editor": "latest",

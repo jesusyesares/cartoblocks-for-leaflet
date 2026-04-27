@@ -88,8 +88,8 @@ $markers = isset( $attributes['markers'] ) && is_array( $attributes['markers'] )
 // so the Leaflet Map shortcode always renders at 100% of its container.
 $map_shortcode = sprintf(
 	'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" scrollwheel="%5$s" zoomcontrol="%6$s" fitbounds="%7$s" show_scale="%8$s"',
-	esc_attr( $lat ),
-	esc_attr( $lng ),
+	esc_attr( (string) $lat ),
+	esc_attr( (string) $lng ),
 	$zoom,
 	esc_attr( $height ),
 	$scroll_wheel_zoom,
@@ -172,8 +172,8 @@ foreach ( $markers as $marker ) {
 	// Build the open tag incrementally; include optional attrs only when set.
 	$m_open_tag = sprintf(
 		'[leaflet-marker lat="%1$s" lng="%2$s"',
-		esc_attr( $m_lat ),
-		esc_attr( $m_lng )
+		esc_attr( (string) $m_lat ),
+		esc_attr( (string) $m_lng )
 	);
 
 	// title: emit only when non-empty.
@@ -200,7 +200,7 @@ foreach ( $markers as $marker ) {
 	if ( isset( $marker['opacity'] ) ) {
 		$m_opacity = (float) $marker['opacity'];
 		if ( abs( $m_opacity - 1.0 ) > 0.001 ) {
-			$m_open_tag .= sprintf( ' opacity="%s"', esc_attr( $m_opacity ) );
+			$m_open_tag .= sprintf( ' opacity="%s"', esc_attr( (string) $m_opacity ) );
 		}
 	}
 
@@ -269,6 +269,67 @@ foreach ( $markers as $marker ) {
 	}
 }
 
+// Build [leaflet-line] / [leaflet-polygon] shortcodes. Keep in sync with
+// buildLineShortcodes() in edit.js and the lines section in bflm_preview_map().
+$lines = isset( $attributes['lines'] ) && is_array( $attributes['lines'] )
+	? $attributes['lines']
+	: array();
+
+$line_shortcodes = '';
+foreach ( $lines as $line ) {
+	$l_points = isset( $line['points'] ) && is_array( $line['points'] ) ? $line['points'] : array();
+	if ( count( $l_points ) < 2 ) {
+		continue;
+	}
+
+	$l_tag = ( isset( $line['type'] ) && 'polygon' === $line['type'] ) ? 'leaflet-polygon' : 'leaflet-line';
+
+	$latlngs_parts = array();
+	foreach ( $l_points as $pt ) {
+		$latlngs_parts[] = ( (float) ( isset( $pt['lat'] ) ? $pt['lat'] : 0 ) ) . ',' . ( (float) ( isset( $pt['lng'] ) ? $pt['lng'] : 0 ) );
+	}
+	$l_open = sprintf( '[%s latlngs="%s"', $l_tag, esc_attr( implode( '; ', $latlngs_parts ) ) );
+
+	if ( ! empty( $line['fitbounds'] ) ) {
+		$l_open .= ' fitbounds="true"';
+	}
+	if ( isset( $line['color'] ) && '' !== trim( $line['color'] ) ) {
+		$l_open .= sprintf( ' color="%s"', esc_attr( trim( $line['color'] ) ) );
+	}
+	if ( isset( $line['weight'] ) && is_numeric( $line['weight'] ) ) {
+		$l_open .= sprintf( ' weight="%s"', esc_attr( (string) (float) $line['weight'] ) );
+	}
+	if ( isset( $line['opacity'] ) && is_numeric( $line['opacity'] ) ) {
+		$l_open .= sprintf( ' opacity="%s"', esc_attr( (string) (float) $line['opacity'] ) );
+	}
+	if ( isset( $line['dashArray'] ) && '' !== trim( $line['dashArray'] ) ) {
+		$l_open .= sprintf( ' dasharray="%s"', esc_attr( trim( $line['dashArray'] ) ) );
+	}
+	if ( isset( $line['classname'] ) && '' !== trim( $line['classname'] ) ) {
+		$l_open .= sprintf( ' classname="%s"', esc_attr( trim( $line['classname'] ) ) );
+	}
+	if ( ! empty( $line['fill'] ) ) {
+		$l_open .= ' fill="true"';
+	}
+	if ( isset( $line['fillColor'] ) && '' !== trim( $line['fillColor'] ) ) {
+		$l_open .= sprintf( ' fillcolor="%s"', esc_attr( trim( $line['fillColor'] ) ) );
+	}
+	if ( isset( $line['fillOpacity'] ) && is_numeric( $line['fillOpacity'] ) ) {
+		$l_open .= sprintf( ' fillopacity="%s"', esc_attr( (string) (float) $line['fillOpacity'] ) );
+	}
+
+	$l_popup = isset( $line['popup'] ) ? wp_kses_post( $line['popup'] ) : '';
+	if ( ! empty( $line['visible'] ) && '' !== $l_popup ) {
+		$l_open .= ' visible="1"';
+	}
+
+	if ( '' !== $l_popup ) {
+		$line_shortcodes .= $l_open . ']' . $l_popup . '[/' . $l_tag . ']';
+	} else {
+		$line_shortcodes .= $l_open . ' /]';
+	}
+}
+
 $wrapper_attributes = get_block_wrapper_attributes(
 	array(
 		'class' => 'bflm-leaflet-map-block',
@@ -279,5 +340,5 @@ $wrapper_attributes = get_block_wrapper_attributes(
 // Render: wrapper div → shortcode output (Leaflet Map plugin handles the rest).
 ?>
 <div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitized by get_block_wrapper_attributes(). ?>>
-	<?php echo do_shortcode( $map_shortcode . $marker_shortcodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted output from registered shortcodes; escaping would corrupt the map HTML and inline scripts. ?>
+	<?php echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted output from registered shortcodes; escaping would corrupt the map HTML and inline scripts. ?>
 </div>

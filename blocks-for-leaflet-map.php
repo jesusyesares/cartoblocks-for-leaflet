@@ -3,7 +3,7 @@
  * Plugin Name:       Blocks for Leaflet Map
  * Plugin URI:        https://github.com/jesusyesares/blocks-for-leaflet-map
  * Description:       A dynamic Gutenberg block that wraps the Leaflet Map plugin shortcodes. Requires the "Leaflet Map" plugin to be installed and active.
- * Version:           0.4.3
+ * Version:           0.5.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Jesús Yesares García
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-define( 'BFLM_VERSION', '0.4.3' );
+define( 'BFLM_VERSION', '0.5.0' );
 define( 'BFLM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BFLM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BFLM_LEAFLET_MAP_PLUGIN', 'leaflet-map/leaflet-map.php' );
@@ -128,9 +128,13 @@ function bflm_preview_map(): void {
 	$markers_raw     = isset( $_GET['markers'] ) ? wp_unslash( $_GET['markers'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON decoded and each field sanitised below.
 	$markers_decoded = json_decode( $markers_raw, true );
 	$markers         = is_array( $markers_decoded ) ? $markers_decoded : array();
-	$fit_markers     = ! empty( $_GET['fitMarkers'] ) && 'true' === $_GET['fitMarkers'] ? 'true' : 'false';
-	$show_scale      = ! empty( $_GET['showScale'] ) && 'true' === $_GET['showScale'] ? '1' : '0';
-	$attribution     = isset( $_GET['attribution'] ) ? wp_kses_post( wp_unslash( $_GET['attribution'] ) ) : '';
+
+	$lines_raw     = isset( $_GET['lines'] ) ? wp_unslash( $_GET['lines'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON decoded and each field sanitised below.
+	$lines_decoded = json_decode( $lines_raw, true );
+	$lines         = is_array( $lines_decoded ) ? $lines_decoded : array();
+	$fit_markers   = ! empty( $_GET['fitMarkers'] ) && 'true' === $_GET['fitMarkers'] ? 'true' : 'false';
+	$show_scale    = ! empty( $_GET['showScale'] ) && 'true' === $_GET['showScale'] ? '1' : '0';
+	$attribution   = isset( $_GET['attribution'] ) ? wp_kses_post( wp_unslash( $_GET['attribution'] ) ) : '';
 
 	// Interaction attributes: only include when explicitly set.
 	$interaction_keys = array(
@@ -171,8 +175,8 @@ function bflm_preview_map(): void {
 	// Width is applied to the editor block container, not the shortcode.
 	$map_shortcode = sprintf(
 		'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" scrollwheel="%5$s" zoomcontrol="%6$s" fitbounds="%7$s" show_scale="%8$s"',
-		esc_attr( $lat ),
-		esc_attr( $lng ),
+		esc_attr( (string) $lat ),
+		esc_attr( (string) $lng ),
 		$zoom,
 		esc_attr( $height ),
 		$scroll_wheel,
@@ -240,11 +244,13 @@ function bflm_preview_map(): void {
 
 	$map_shortcode .= ']';
 
+	$real_marker_count = 0;
 	$marker_shortcodes = '';
 	foreach ( $markers as $marker ) {
 		if ( ! isset( $marker['lat'], $marker['lng'] ) ) {
 			continue;
 		}
+		++$real_marker_count;
 		$m_lat     = (float) $marker['lat'];
 		$m_lng     = (float) $marker['lng'];
 		$m_title   = isset( $marker['title'] ) ? sanitize_text_field( $marker['title'] ) : '';
@@ -254,8 +260,8 @@ function bflm_preview_map(): void {
 		// Build open tag incrementally; include optional attrs only when set.
 		$m_open_tag = sprintf(
 			'[leaflet-marker lat="%1$s" lng="%2$s"',
-			esc_attr( $m_lat ),
-			esc_attr( $m_lng )
+			esc_attr( (string) $m_lat ),
+			esc_attr( (string) $m_lng )
 		);
 
 		if ( '' !== $m_title ) {
@@ -273,7 +279,7 @@ function bflm_preview_map(): void {
 		if ( isset( $marker['opacity'] ) ) {
 			$m_opacity = (float) $marker['opacity'];
 			if ( abs( $m_opacity - 1.0 ) > 0.001 ) {
-				$m_open_tag .= sprintf( ' opacity="%s"', esc_attr( $m_opacity ) );
+				$m_open_tag .= sprintf( ' opacity="%s"', esc_attr( (string) $m_opacity ) );
 			}
 		}
 		if ( isset( $marker['zIndexOffset'] ) ) {
@@ -302,7 +308,7 @@ function bflm_preview_map(): void {
 			if ( '' !== $m_icon_url ) {
 				$m_open_tag .= sprintf( ' iconurl="%s"', esc_attr( $m_icon_url ) );
 			}
-			$m_icon_w = isset( $marker['iconWidth'] )  ? (int) $marker['iconWidth']  : 0;
+			$m_icon_w = isset( $marker['iconWidth'] ) ? (int) $marker['iconWidth'] : 0;
 			$m_icon_h = isset( $marker['iconHeight'] ) ? (int) $marker['iconHeight'] : 0;
 			if ( $m_icon_w >= 1 && $m_icon_h >= 1 ) {
 				$m_open_tag .= sprintf( ' iconsize="%d,%d"', $m_icon_w, $m_icon_h );
@@ -323,7 +329,7 @@ function bflm_preview_map(): void {
 				if ( '' !== $m_shadow_url ) {
 					$m_open_tag .= sprintf( ' shadowurl="%s"', esc_attr( $m_shadow_url ) );
 				}
-				$m_shadow_w = isset( $marker['shadowWidth'] )  ? (int) $marker['shadowWidth']  : 0;
+				$m_shadow_w = isset( $marker['shadowWidth'] ) ? (int) $marker['shadowWidth'] : 0;
 				$m_shadow_h = isset( $marker['shadowHeight'] ) ? (int) $marker['shadowHeight'] : 0;
 				if ( $m_shadow_w >= 1 && $m_shadow_h >= 1 ) {
 					$m_open_tag .= sprintf( ' shadowsize="%d,%d"', $m_shadow_w, $m_shadow_h );
@@ -343,6 +349,90 @@ function bflm_preview_map(): void {
 		}
 	}
 
+	// Editor-only: show a draggable pin for each point only when the line is not yet
+	// drawn (< 2 points). Once the line is rendered the pins are visual noise.
+	// These are NOT added by render.php.
+	$line_point_meta       = array();
+	$line_point_shortcodes = '';
+	foreach ( $lines as $l_idx => $line ) {
+		$l_points = isset( $line['points'] ) && is_array( $line['points'] ) ? $line['points'] : array();
+		if ( count( $l_points ) >= 2 ) {
+			continue; // line is drawn; skip helper markers.
+		}
+		foreach ( $l_points as $p_idx => $pt ) {
+			$pt_lat                 = (float) ( isset( $pt['lat'] ) ? $pt['lat'] : 0 );
+			$pt_lng                 = (float) ( isset( $pt['lng'] ) ? $pt['lng'] : 0 );
+			$label                  = sprintf( 'L%d·P%d', $l_idx + 1, $p_idx + 1 );
+			$line_point_shortcodes .= sprintf(
+				'[leaflet-marker lat="%s" lng="%s" title="%s" draggable="1" /]',
+				esc_attr( (string) $pt_lat ),
+				esc_attr( (string) $pt_lng ),
+				esc_attr( $label )
+			);
+			$line_point_meta[]      = array(
+				'lineIndex'  => $l_idx,
+				'pointIndex' => $p_idx,
+			);
+		}
+	}
+
+	// Build [leaflet-line] / [leaflet-polygon] shortcodes. Keep in sync with
+	// buildLineShortcodes() in edit.js and the lines section in render.php.
+	$line_shortcodes = '';
+	foreach ( $lines as $line ) {
+		$l_points = isset( $line['points'] ) && is_array( $line['points'] ) ? $line['points'] : array();
+		if ( count( $l_points ) < 2 ) {
+			continue;
+		}
+
+		$l_tag = ( isset( $line['type'] ) && 'polygon' === $line['type'] ) ? 'leaflet-polygon' : 'leaflet-line';
+
+		$latlngs_parts = array();
+		foreach ( $l_points as $pt ) {
+			$latlngs_parts[] = ( (float) ( isset( $pt['lat'] ) ? $pt['lat'] : 0 ) ) . ',' . ( (float) ( isset( $pt['lng'] ) ? $pt['lng'] : 0 ) );
+		}
+		$l_open = sprintf( '[%s latlngs="%s"', $l_tag, esc_attr( implode( '; ', $latlngs_parts ) ) );
+
+		if ( ! empty( $line['fitbounds'] ) ) {
+			$l_open .= ' fitbounds="true"';
+		}
+		if ( isset( $line['color'] ) && '' !== trim( $line['color'] ) ) {
+			$l_open .= sprintf( ' color="%s"', esc_attr( trim( $line['color'] ) ) );
+		}
+		if ( isset( $line['weight'] ) && is_numeric( $line['weight'] ) ) {
+			$l_open .= sprintf( ' weight="%s"', esc_attr( (string) (float) $line['weight'] ) );
+		}
+		if ( isset( $line['opacity'] ) && is_numeric( $line['opacity'] ) ) {
+			$l_open .= sprintf( ' opacity="%s"', esc_attr( (string) (float) $line['opacity'] ) );
+		}
+		if ( isset( $line['dashArray'] ) && '' !== trim( $line['dashArray'] ) ) {
+			$l_open .= sprintf( ' dasharray="%s"', esc_attr( trim( $line['dashArray'] ) ) );
+		}
+		if ( isset( $line['classname'] ) && '' !== trim( $line['classname'] ) ) {
+			$l_open .= sprintf( ' classname="%s"', esc_attr( trim( $line['classname'] ) ) );
+		}
+		if ( ! empty( $line['fill'] ) ) {
+			$l_open .= ' fill="true"';
+		}
+		if ( isset( $line['fillColor'] ) && '' !== trim( $line['fillColor'] ) ) {
+			$l_open .= sprintf( ' fillcolor="%s"', esc_attr( trim( $line['fillColor'] ) ) );
+		}
+		if ( isset( $line['fillOpacity'] ) && is_numeric( $line['fillOpacity'] ) ) {
+			$l_open .= sprintf( ' fillopacity="%s"', esc_attr( (string) (float) $line['fillOpacity'] ) );
+		}
+
+		$l_popup = isset( $line['popup'] ) ? wp_kses_post( $line['popup'] ) : '';
+		if ( ! empty( $line['visible'] ) && '' !== $l_popup ) {
+			$l_open .= ' visible="1"';
+		}
+
+		if ( '' !== $l_popup ) {
+			$line_shortcodes .= $l_open . ']' . $l_popup . '[/' . $l_tag . ']';
+		} else {
+			$line_shortcodes .= $l_open . ' /]';
+		}
+	}
+
 	// Render a complete, self-contained HTML page.
 	// wp_head() / wp_footer() let the Leaflet Map plugin load its own assets.
 	?>
@@ -356,6 +446,8 @@ function bflm_preview_map(): void {
 	* { box-sizing: border-box; }
 	html, body { margin: 0; padding: 0; background: #fff; overflow: hidden; }
 	#map-wrap { width: 100%; }
+	/* Draw-mode pin — reset Leaflet's default marker background/shadow */
+	.bflm-draw-pin { background: none; border: none; }
 </style>
 	<?php wp_head(); ?>
 </head>
@@ -363,7 +455,7 @@ function bflm_preview_map(): void {
 <div id="map-wrap">
 	<?php
 	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted shortcode output, same rationale as render.php.
-	echo do_shortcode( $map_shortcode . $marker_shortcodes );
+	echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes . $line_point_shortcodes );
 	?>
 </div>
 <script>
@@ -372,9 +464,111 @@ function bflm_preview_map(): void {
 	var minZoom            = <?php echo wp_json_encode( '' !== $min_zoom && is_numeric( $min_zoom ) ? (float) $min_zoom : null ); ?>;
 	var maxZoom            = <?php echo wp_json_encode( '' !== $max_zoom && is_numeric( $max_zoom ) ? (float) $max_zoom : null ); ?>;
 	var maxBoundsRaw       = <?php echo wp_json_encode( $max_bounds ); ?>;
+	var realMarkerCount    = <?php echo wp_json_encode( $real_marker_count ); ?>;
+	var linePointMeta      = <?php echo wp_json_encode( $line_point_meta ); ?>;
 	var attempts           = 0;
 	var MAX_ATTEMPTS       = 50;
 	var isProgrammaticMove = false;
+
+	// ── Draw mode state ───────────────────────────────────────────────────────
+	// Holds the in-progress drawing overlays for click-to-draw mode.
+	// All drawing happens client-side; each click also posts bflm_draw_point
+	// to the editor so it can update block attributes (and thus undo history).
+	var drawState = {
+		active:    false,
+		lineIndex: null,
+		lineType:  'line',
+		points:    [],
+		pins:      [],
+		shape:     null,
+	};
+
+	// Inline red pin icon used for draw-mode points (L.divIcon, no asset file).
+	var DRAW_PIN_ICON = null;
+	function getDrawPinIcon() {
+		if ( DRAW_PIN_ICON ) return DRAW_PIN_ICON;
+		var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 36" width="28" height="36">' +
+			'<circle cx="14" cy="12" r="11" fill="#e53e3e" stroke="#fff" stroke-width="2"/>' +
+			'<circle cx="10" cy="9" r="3" fill="rgba(255,255,255,0.35)"/>' +
+			'<path d="M14 22 L9 36 L14 30 L19 36 Z" fill="#4a4a4a"/>' +
+			'</svg>';
+		DRAW_PIN_ICON = L.divIcon( {
+			html:      svg,
+			className: 'bflm-draw-pin',
+			iconSize:    [ 28, 36 ],
+			iconAnchor:  [ 14, 34 ],
+		} );
+		return DRAW_PIN_ICON;
+	}
+
+	function clearDrawPins() {
+		drawState.pins.forEach( function ( pin ) { pin.remove(); } );
+		drawState.pins = [];
+	}
+
+	function clearDrawOverlays( map ) {
+		clearDrawPins();
+		if ( drawState.shape ) {
+			drawState.shape.remove();
+			drawState.shape = null;
+		}
+		map.getContainer().style.cursor = '';
+	}
+
+	function startDraw( map, msg ) {
+		clearDrawOverlays( map );
+		drawState.active    = true;
+		drawState.lineIndex = msg.lineIndex;
+		drawState.lineType  = msg.lineType || 'line';
+		drawState.points    = ( msg.existingPoints || [] ).map( function ( p ) {
+			return [ p.lat, p.lng ];
+		} );
+
+		var strokeColor  = msg.color       || '#3388ff';
+		var fillColor    = msg.fillColor   || '#3388ff';
+		var fillOpacity  = msg.fillOpacity != null ? msg.fillOpacity : 0.2;
+
+		// Render existing points as pins.
+		drawState.points.forEach( function ( ll ) {
+			var pin = L.marker( ll, { icon: getDrawPinIcon(), zIndexOffset: 1000 } ).addTo( map );
+			drawState.pins.push( pin );
+		} );
+
+		// Create the live shape overlay.
+		if ( drawState.lineType === 'polygon' ) {
+			drawState.shape = L.polygon( drawState.points.length ? drawState.points : [ [ 0, 0 ] ], {
+				color:       strokeColor,
+				fillColor:   fillColor,
+				fillOpacity: fillOpacity,
+				weight:      2,
+				interactive: false,
+			} ).addTo( map );
+		} else {
+			drawState.shape = L.polyline( drawState.points.length ? drawState.points : [ [ 0, 0 ] ], {
+				color:       strokeColor,
+				weight:      2,
+				interactive: false,
+			} ).addTo( map );
+		}
+		if ( drawState.points.length < 1 ) {
+			drawState.shape.setLatLngs( [] );
+		}
+
+		map.doubleClickZoom.disable();
+		map.getContainer().style.cursor = 'crosshair';
+	}
+
+	function stopDraw( map ) {
+		// Keep drawState.shape on the map so the line/polygon remains visible
+		// without an iframe reload. Only remove the temporary draw pins.
+		clearDrawPins();
+		map.getContainer().style.cursor = '';
+		drawState.active    = false;
+		drawState.lineIndex = null;
+		drawState.points    = [];
+		drawState.shape     = null; // shape stays on map; we just drop the ref
+		map.doubleClickZoom.enable();
+	}
 
 	/**
 	 * Poll for the Leaflet Map plugin's map instance, then wire up
@@ -436,8 +630,8 @@ function bflm_preview_map(): void {
 			);
 		} );
 
-		// Make each marker draggable and relay dragend to the editor.
-		markers.forEach( function ( marker, i ) {
+		// Make each real marker draggable and relay dragend to the editor.
+		markers.slice( 0, realMarkerCount ).forEach( function ( marker, i ) {
 			if ( marker.dragging && ! marker.dragging.enabled() ) {
 				marker.dragging.enable();
 			}
@@ -445,6 +639,22 @@ function bflm_preview_map(): void {
 				var pos = e.target.getLatLng();
 				window.top.postMessage(
 					{ type: 'bflm_marker_update', blockId: blockId, index: i, lat: pos.lat, lng: pos.lng },
+					'*'
+				);
+			} );
+		} );
+
+		// Make each line-point helper marker draggable and relay dragend.
+		markers.slice( realMarkerCount ).forEach( function ( marker, i ) {
+			var meta = linePointMeta[ i ];
+			if ( ! meta ) return;
+			if ( marker.dragging && ! marker.dragging.enabled() ) {
+				marker.dragging.enable();
+			}
+			marker.on( 'dragend', function ( e ) {
+				var pos = e.target.getLatLng();
+				window.top.postMessage(
+					{ type: 'bflm_linepoint_update', blockId: blockId, lineIndex: meta.lineIndex, pointIndex: meta.pointIndex, lat: pos.lat, lng: pos.lng },
 					'*'
 				);
 			} );
@@ -466,20 +676,86 @@ function bflm_preview_map(): void {
 			}
 		}
 
-		// Receive setView commands sent by the editor.
-		// Guard with blockId so only the matching block's message is acted on.
+		// ── Click-to-draw handlers ────────────────────────────────────────────
+		// map.on('click') fires for single clicks; map.on('dblclick') for double.
+		// Leaflet fires 'click' twice before 'dblclick' — use a small timeout to
+		// suppress the spurious single-click that precedes a double-click.
+		var clickTimer = null;
+		map.on( 'click', function ( e ) {
+			if ( ! drawState.active ) return;
+			// Defer by 250ms; dblclick will clear this timer so only one point
+			// is added per double-click (the dblclick ends drawing instead).
+			clearTimeout( clickTimer );
+			clickTimer = setTimeout( function () {
+				var lat = e.latlng.lat;
+				var lng = e.latlng.lng;
+				drawState.points.push( [ lat, lng ] );
+
+				// Add a red pin at this point.
+				var pin = L.marker( [ lat, lng ], { icon: getDrawPinIcon(), zIndexOffset: 1000 } ).addTo( map );
+				drawState.pins.push( pin );
+
+				// Update live shape preview.
+				if ( drawState.shape ) {
+					drawState.shape.setLatLngs( drawState.points );
+				}
+
+				// Notify the editor so it can update block attributes + undo history.
+				window.top.postMessage(
+					{ type: 'bflm_draw_point', blockId: blockId, lineIndex: drawState.lineIndex, lat: lat, lng: lng },
+					'*'
+				);
+			}, 250 );
+		} );
+
+		map.on( 'dblclick', function ( e ) {
+			if ( ! drawState.active ) return;
+			// Cancel the pending single-click so no extra point is added.
+			clearTimeout( clickTimer );
+			// Leaflet's default dblclick zoom is already disabled in draw mode.
+			L.DomEvent.stopPropagation( e );
+			var li = drawState.lineIndex;
+			stopDraw( map );
+			window.top.postMessage(
+				{ type: 'bflm_draw_end_request', blockId: blockId, lineIndex: li },
+				'*'
+			);
+		} );
+
+		// ── Inbound messages from the editor ─────────────────────────────────
 		window.addEventListener( 'message', function ( e ) {
-			if ( ! e.data || e.data.type !== 'bflm_set_view' || e.data.blockId !== blockId ) {
+			if ( ! e.data || typeof e.data.type !== 'string' || e.data.blockId !== blockId ) {
 				return;
 			}
-			// Clear the guard flag only after the (animated) move ends, not
-			// immediately, so moveend does not echo during the transition.
-			isProgrammaticMove = true;
-			map.once( 'moveend', function () {
-				isProgrammaticMove = false;
-			} );
-			map.setView( [ e.data.lat, e.data.lng ], e.data.zoom, { animate: true } );
+			var msg = e.data;
+
+			if ( msg.type === 'bflm_set_view' ) {
+				isProgrammaticMove = true;
+				map.once( 'moveend', function () {
+					isProgrammaticMove = false;
+				} );
+				map.setView( [ msg.lat, msg.lng ], msg.zoom, { animate: true } );
+				return;
+			}
+
+			if ( msg.type === 'bflm_draw_start' ) {
+				startDraw( map, msg );
+				return;
+			}
+
+			if ( msg.type === 'bflm_draw_end' ) {
+				stopDraw( map );
+				return;
+			}
 		} );
+
+		// Signal the editor that this iframe is ready (or has rebuilt).
+		// The editor uses this to re-send bflm_draw_start if a line was in draw
+		// mode when an attribute change triggered a full iframe reload.
+		window.top.postMessage(
+			{ type: 'bflm_iframe_ready', blockId: blockId },
+			'*'
+		);
 	}
 
 	init();

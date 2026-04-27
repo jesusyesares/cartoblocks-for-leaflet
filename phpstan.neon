@@ -1,0 +1,14 @@
+includes:
+    - vendor/szepeviktor/phpstan-wordpress/extension.neon
+
+parameters:
+    level: 5
+    paths:
+        - blocks-for-leaflet-map.php
+        - src/leaflet-map-block/render.php
+    excludePaths:
+        - vendor
+        - node_modules
+        - build
+    bootstrapFiles:
+        - vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
