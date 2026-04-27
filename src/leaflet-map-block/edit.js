@@ -275,13 +275,54 @@ function buildLineShortcodes( lines ) {
 }
 
 /**
+ * Build [leaflet-circle] shortcode strings from the circles attribute.
+ * Skips circles where lat/lng is null or radius is ≤ 0.
+ * Keep in sync with render.php and bflm_preview_map() in blocks-for-leaflet-map.php.
+ *
+ * @param {Array} circles
+ * @return {string}
+ */
+function buildCircleShortcodes( circles ) {
+	if ( ! circles || circles.length === 0 ) return '';
+	let out = '';
+	for ( const circle of circles ) {
+		if ( circle.lat == null || circle.lng == null ) continue;
+		const r = circle.radius != null ? Number( circle.radius ) : 1000;
+		if ( r <= 0 ) continue;
+		let attrs = ` lat="${ circle.lat }" lng="${ circle.lng }" radius="${ r }"`;
+		if ( circle.fitbounds ) attrs += ` fitbounds="true"`;
+		if ( circle.color && circle.color.trim() )
+			attrs += ` color="${ circle.color.trim() }"`;
+		if ( circle.weight != null ) attrs += ` weight="${ circle.weight }"`;
+		if ( circle.opacity != null ) attrs += ` opacity="${ circle.opacity }"`;
+		if ( circle.dashArray && circle.dashArray.trim() )
+			attrs += ` dasharray="${ circle.dashArray.trim() }"`;
+		if ( circle.classname && circle.classname.trim() )
+			attrs += ` classname="${ circle.classname.trim() }"`;
+		if ( circle.fill ) attrs += ` fill="true"`;
+		if ( circle.fillColor && circle.fillColor.trim() )
+			attrs += ` fillcolor="${ circle.fillColor.trim() }"`;
+		if ( circle.fillOpacity != null )
+			attrs += ` fillopacity="${ circle.fillOpacity }"`;
+		const popup = circle.popup || '';
+		if ( circle.visible && popup ) attrs += ` visible="1"`;
+		if ( popup ) {
+			out += `\n[leaflet-circle${ attrs }]${ popup }[/leaflet-circle]`;
+		} else {
+			out += `\n[leaflet-circle${ attrs } /]`;
+		}
+	}
+	return out;
+}
+
+/**
  * Build the [leaflet-map] and [leaflet-marker] shortcode string from block
  * attributes, exactly mirroring what render.php emits on the frontend.
  *
  * Keep in sync with render.php → "Build the [leaflet-map] shortcode" section.
  *
  * @param {Object} attributes Block attributes.
- * @return {string} Full shortcode string (map + zero or more markers + zero or more lines).
+ * @return {string} Full shortcode string (map + zero or more markers + zero or more lines + circles).
  */
 function buildShortcode( attributes ) {
 	const parts = [];
@@ -377,6 +418,7 @@ function buildShortcode( attributes ) {
 	}
 
 	shortcode += buildLineShortcodes( attributes.lines );
+	shortcode += buildCircleShortcodes( attributes.circles );
 
 	return shortcode;
 }
@@ -623,6 +665,7 @@ function buildPreviewUrl( attributes, clientId ) {
 		detectretina,
 		markers,
 		lines,
+		circles,
 	} = attributes;
 
 	const { previewUrl, previewNonce } = window.bflmEditor || {};
@@ -653,6 +696,7 @@ function buildPreviewUrl( attributes, clientId ) {
 		showScale: showScale ? 'true' : 'false',
 		markers: JSON.stringify( markers ),
 		lines: JSON.stringify( lines || [] ),
+		circles: JSON.stringify( circles || [] ),
 	} );
 
 	// Only include interaction params when explicitly set (not "Default").
@@ -881,6 +925,21 @@ export default function Edit( {
 	 */
 	const [ expandedLineIndex, setExpandedLineIndex ] = useState( null );
 
+	/** Index of the circle currently in draw mode, or null. Mutually exclusive with drawingLineIndex. */
+	const [ drawingCircleIndex, setDrawingCircleIndex ] = useState( null );
+
+	/** Ref mirror of drawingCircleIndex — read inside postMessage handlers without stale closure issues. */
+	const drawingCircleIndexRef = useRef( null );
+
+	/** Index of the per-circle PanelBody that is currently expanded (controlled). */
+	const [ expandedCircleIndex, setExpandedCircleIndex ] = useState( null );
+
+	/** Per-circle geocode UI state keyed by circle index. { input, status, candidates, error } */
+	const [ circleSearch, setCircleSearch ] = useState( {} );
+
+	/** Per-circle radius unit UI state ('m' | 'km'), keyed by circle index. NOT a block attribute. */
+	const [ circleRadiusUnit, setCircleRadiusUnit ] = useState( {} );
+
 	/**
 	 * The shortcode string shown in the strip, recomputed on every render so
 	 * it always reflects the current block attributes.
@@ -959,6 +1018,11 @@ export default function Edit( {
 		drawingLineIndexRef.current = drawingLineIndex;
 	}, [ drawingLineIndex ] );
 
+	// Keep drawingCircleIndexRef in sync with state.
+	useEffect( () => {
+		drawingCircleIndexRef.current = drawingCircleIndex;
+	}, [ drawingCircleIndex ] );
+
 	/** setTimeout handle for the 500 ms structural-change src-rebuild debounce. */
 	const srcDebounceRef = useRef( null );
 
@@ -1032,6 +1096,9 @@ export default function Edit( {
 		}
 		// Skip rebuild mid-draw — iframe overlay handles live preview.
 		if ( drawingLineIndexRef.current !== null ) {
+			return;
+		}
+		if ( drawingCircleIndexRef.current !== null ) {
 			return;
 		}
 		clearTimeout( srcDebounceRef.current );
@@ -1201,28 +1268,96 @@ export default function Edit( {
 			}
 
 			// Iframe finished initialising (or re-initialising after a rebuild).
-			// Re-send bflm_draw_start if a line is still in draw mode.
+			// Re-send bflm_draw_start / bflm_draw_circle_start if still in draw mode.
 			if ( msg.type === 'bflm_iframe_ready' ) {
-				const activeIdx = drawingLineIndexRef.current;
-				if ( activeIdx === null ) return;
 				const iframe = iframeRef.current;
 				if ( ! iframe || ! iframe.contentWindow ) return;
-				const currentLines = attributesRef.current.lines || [];
-				const activeLine = currentLines[ activeIdx ];
-				if ( ! activeLine ) return;
-				iframe.contentWindow.postMessage(
-					{
-						type: 'bflm_draw_start',
-						blockId: clientIdRef.current,
-						lineIndex: activeIdx,
-						lineType: activeLine.type || 'line',
-						existingPoints: activeLine.points || [],
-						color: activeLine.color || '#3388ff',
-						fillColor: activeLine.fillColor || '#3388ff',
-						fillOpacity: activeLine.fillOpacity ?? 0.2,
-					},
-					'*'
-				);
+				const activeLineIdx = drawingLineIndexRef.current;
+				if ( activeLineIdx !== null ) {
+					const currentLines = attributesRef.current.lines || [];
+					const activeLine = currentLines[ activeLineIdx ];
+					if ( activeLine ) {
+						iframe.contentWindow.postMessage(
+							{
+								type: 'bflm_draw_start',
+								blockId: clientIdRef.current,
+								lineIndex: activeLineIdx,
+								lineType: activeLine.type || 'line',
+								existingPoints: activeLine.points || [],
+								color: activeLine.color || '#3388ff',
+								fillColor: activeLine.fillColor || '#3388ff',
+								fillOpacity: activeLine.fillOpacity ?? 0.2,
+							},
+							'*'
+						);
+					}
+				}
+				const activeCircleIdx = drawingCircleIndexRef.current;
+				if ( activeCircleIdx !== null ) {
+					const currentCircles = attributesRef.current.circles || [];
+					const activeCircle = currentCircles[ activeCircleIdx ];
+					if ( activeCircle ) {
+						iframe.contentWindow.postMessage(
+							{
+								type: 'bflm_draw_circle_start',
+								blockId: clientIdRef.current,
+								circleIndex: activeCircleIdx,
+								lat: activeCircle.lat,
+								lng: activeCircle.lng,
+								radius: activeCircle.radius ?? 1000,
+								color: activeCircle.color || '#3388ff',
+								fillColor: activeCircle.fillColor || '#3388ff',
+								fillOpacity: activeCircle.fillOpacity ?? 0.2,
+							},
+							'*'
+						);
+					}
+				}
+				return;
+			}
+
+			// Circle draw: editor receives center from iframe (phase 'center' done).
+			if ( msg.type === 'bflm_draw_circle_center' ) {
+				const ci = msg.circleIndex;
+				const currentCircles = attributesRef.current.circles || [];
+				if ( ! currentCircles[ ci ] ) return;
+				isIframeUpdateRef.current = true;
+				setAttributes( {
+					circles: currentCircles.map( ( c, i ) =>
+						i !== ci
+							? c
+							: {
+									...c,
+									lat: parseFloat( msg.lat.toFixed( 6 ) ),
+									lng: parseFloat( msg.lng.toFixed( 6 ) ),
+							  }
+					),
+				} );
+				return;
+			}
+
+			// Circle draw: editor receives radius from iframe (phase 'edge' done).
+			if ( msg.type === 'bflm_draw_circle_radius' ) {
+				const ci = msg.circleIndex;
+				const currentCircles = attributesRef.current.circles || [];
+				if ( ! currentCircles[ ci ] ) return;
+				isIframeUpdateRef.current = true;
+				setAttributes( {
+					circles: currentCircles.map( ( c, i ) =>
+						i !== ci
+							? c
+							: { ...c, radius: Math.round( msg.radius ) }
+					),
+				} );
+				return;
+			}
+
+			// Circle draw complete (2nd click in iframe) — no iframe.src reload.
+			if ( msg.type === 'bflm_draw_circle_end_request' ) {
+				if ( drawingCircleIndexRef.current === msg.circleIndex ) {
+					drawingCircleIndexRef.current = null;
+					setDrawingCircleIndex( null );
+				}
 				return;
 			}
 		}
@@ -1616,6 +1751,10 @@ export default function Edit( {
 	 * @param {number} lineIndex
 	 */
 	function handleStartDrawing( lineIndex ) {
+		// Mutual exclusion: stop circle draw if active.
+		if ( drawingCircleIndexRef.current !== null ) {
+			handleStopDrawingCircle();
+		}
 		setDrawingLineIndex( lineIndex );
 		drawingLineIndexRef.current = lineIndex;
 		const iframe = iframeRef.current;
@@ -1707,6 +1846,203 @@ export default function Edit( {
 				status: 'candidates',
 				candidates: found,
 			} );
+		}
+	}
+
+	// ── Circle handlers ──────────────────────────────────────────────────────
+
+	/** Append a new circle with default values. Seeds lat/lng from current map center. */
+	function handleAddCircle() {
+		// Stop any active draw mode first (mutual exclusion).
+		if ( drawingLineIndexRef.current !== null ) {
+			handleStopDrawing();
+		}
+		if ( drawingCircleIndexRef.current !== null ) {
+			handleStopDrawingCircle();
+		}
+		const newIndex = ( attributes.circles || [] ).length;
+		setAttributes( {
+			circles: [
+				...( attributes.circles || [] ),
+				{
+					lat: parseFloat( lat.toFixed( 6 ) ),
+					lng: parseFloat( lng.toFixed( 6 ) ),
+					radius: 1000,
+					fitbounds: false,
+					color: '',
+					weight: null,
+					opacity: null,
+					dashArray: '',
+					classname: '',
+					fill: false,
+					fillColor: '',
+					fillOpacity: null,
+					popup: '',
+					visible: false,
+				},
+			],
+		} );
+		setExpandedCircleIndex( newIndex );
+	}
+
+	/**
+	 * Remove a circle by index and clean up state.
+	 * @param {number} index
+	 */
+	function handleRemoveCircle( index ) {
+		if ( drawingCircleIndexRef.current === index ) {
+			handleStopDrawingCircle();
+		}
+		setAttributes( {
+			circles: ( attributes.circles || [] ).filter( ( _, i ) => i !== index ),
+		} );
+		setCircleSearch( ( prev ) => {
+			const next = {};
+			for ( const [ k, v ] of Object.entries( prev ) ) {
+				const ki = Number( k );
+				if ( ki === index ) continue;
+				next[ String( ki > index ? ki - 1 : ki ) ] = v;
+			}
+			return next;
+		} );
+		setCircleRadiusUnit( ( prev ) => {
+			const next = {};
+			for ( const [ k, v ] of Object.entries( prev ) ) {
+				const ki = Number( k );
+				if ( ki === index ) continue;
+				next[ String( ki > index ? ki - 1 : ki ) ] = v;
+			}
+			return next;
+		} );
+		setExpandedCircleIndex( ( prev ) => {
+			if ( prev === null ) return null;
+			if ( prev === index ) return null;
+			return prev > index ? prev - 1 : prev;
+		} );
+		setDrawingCircleIndex( ( prev ) => {
+			if ( prev === null ) return null;
+			if ( prev === index ) return null;
+			return prev > index ? prev - 1 : prev;
+		} );
+	}
+
+	/**
+	 * Shallow-merge updates into a single circle by index.
+	 * @param {number} index
+	 * @param {Object} updates
+	 */
+	function handleUpdateCircle( index, updates ) {
+		setAttributes( {
+			circles: ( attributes.circles || [] ).map( ( c, i ) =>
+				i === index ? { ...c, ...updates } : c
+			),
+		} );
+	}
+
+	/**
+	 * Enter circle draw mode (2-click: center then edge).
+	 * Stops any active line draw first (mutual exclusion).
+	 * @param {number} circleIndex
+	 */
+	function handleStartDrawingCircle( circleIndex ) {
+		if ( drawingLineIndexRef.current !== null ) {
+			handleStopDrawing();
+		}
+		setDrawingCircleIndex( circleIndex );
+		drawingCircleIndexRef.current = circleIndex;
+		const iframe = iframeRef.current;
+		if ( ! iframe || ! iframe.contentWindow ) return;
+		const circle = ( attributesRef.current.circles || [] )[ circleIndex ];
+		if ( ! circle ) return;
+		iframe.contentWindow.postMessage(
+			{
+				type: 'bflm_draw_circle_start',
+				blockId: clientId,
+				circleIndex,
+				lat: circle.lat,
+				lng: circle.lng,
+				radius: circle.radius ?? 1000,
+				color: circle.color || '#3388ff',
+				fillColor: circle.fillColor || '#3388ff',
+				fillOpacity: circle.fillOpacity ?? 0.2,
+			},
+			'*'
+		);
+	}
+
+	/**
+	 * Exit circle draw mode. Sends bflm_draw_circle_end — iframe removes the
+	 * preview center pin but keeps the L.circle shape on the map (no reload).
+	 */
+	function handleStopDrawingCircle() {
+		setDrawingCircleIndex( null );
+		drawingCircleIndexRef.current = null;
+		const iframe = iframeRef.current;
+		if ( ! iframe ) return;
+		if ( iframe.contentWindow ) {
+			iframe.contentWindow.postMessage(
+				{ type: 'bflm_draw_circle_end', blockId: clientId },
+				'*'
+			);
+		}
+	}
+
+	/**
+	 * Update circleSearch state for a given circle index.
+	 * @param {number} index
+	 * @param {Object} updates
+	 */
+	function updateCircleSearch( index, updates ) {
+		const key = String( index );
+		setCircleSearch( ( prev ) => ( {
+			...prev,
+			[ key ]: {
+				input: '',
+				status: 'idle',
+				candidates: [],
+				error: '',
+				...prev[ key ],
+				...updates,
+			},
+		} ) );
+	}
+
+	/**
+	 * Apply a geocode candidate to a specific circle (sets lat/lng, pans map).
+	 * @param {number} index
+	 * @param {{ lat: number, lng: number }} candidate
+	 */
+	function applyCircleCandidate( index, candidate ) {
+		const newLat = parseFloat( candidate.lat.toFixed( 6 ) );
+		const newLng = parseFloat( candidate.lng.toFixed( 6 ) );
+		handleUpdateCircle( index, { lat: newLat, lng: newLng } );
+		updateCircleSearch( index, { status: 'idle', candidates: [] } );
+		handleLocatePoint( newLat, newLng );
+	}
+
+	/**
+	 * Run a Nominatim geocode search for a circle center.
+	 * @param {number} index
+	 */
+	async function handleCircleGeocode( index ) {
+		const key = String( index );
+		const entry = circleSearch[ key ] || {};
+		const query = ( entry.input || '' ).trim();
+		if ( ! query ) return;
+		updateCircleSearch( index, {
+			status: 'loading',
+			candidates: [],
+			error: '',
+		} );
+		const { candidates: found, error } = await bflmGeocodeAddress( query );
+		if ( error ) {
+			updateCircleSearch( index, { status: 'error', error } );
+			return;
+		}
+		if ( found.length === 1 ) {
+			applyCircleCandidate( index, found[ 0 ] );
+		} else {
+			updateCircleSearch( index, { status: 'candidates', candidates: found } );
 		}
 	}
 
@@ -4882,6 +5218,333 @@ export default function Edit( {
 							</Button>
 						</PanelBody>
 					) ) }
+				</PanelBody>
+
+				{ /* ── Circles panel ──────────────────────────────────── */ }
+				<PanelBody
+					title={ __( 'Circles', 'blocks-for-leaflet-map' ) }
+					initialOpen={ false }
+				>
+					<Button
+						variant="secondary"
+						onClick={ handleAddCircle }
+						style={ { width: '100%', justifyContent: 'center', marginBottom: '8px' } }
+					>
+						{ __( '+ Circle', 'blocks-for-leaflet-map' ) }
+					</Button>
+
+					{ ( attributes.circles || [] ).map( ( circle, circleIdx ) => {
+						const csKey = String( circleIdx );
+						const cs = circleSearch[ csKey ] || {};
+						const csStatus = cs.status || 'idle';
+						const csInput = cs.input || '';
+						const csCandidates = cs.candidates || [];
+						const radiusUnit = circleRadiusUnit[ csKey ] || 'm';
+						const displayRadius = radiusUnit === 'km'
+							? parseFloat( ( ( circle.radius ?? 1000 ) / 1000 ).toFixed( 3 ) )
+							: ( circle.radius ?? 1000 );
+
+						return (
+							<PanelBody
+								key={ circleIdx }
+								title={ `${ __( 'Circle', 'blocks-for-leaflet-map' ) } ${ circleIdx + 1 }` }
+								opened={ expandedCircleIndex === circleIdx }
+								onToggle={ () =>
+									setExpandedCircleIndex( ( prev ) =>
+										prev === circleIdx ? null : circleIdx
+									)
+								}
+							>
+								<p style={ { margin: '0 0 8px', fontSize: '11px', color: '#757575' } }>
+									{ __(
+										'Click "Draw on map" to set center + radius by clicking on the map, or enter coordinates manually.',
+										'blocks-for-leaflet-map'
+									) }
+								</p>
+
+								<NumberControl
+									label={ __( 'Latitude', 'blocks-for-leaflet-map' ) }
+									value={ circle.lat ?? '' }
+									step={ 0.000001 }
+									onChange={ ( v ) =>
+										handleUpdateCircle( circleIdx, { lat: parseFloat( v ) || 0 } )
+									}
+									__next40pxDefaultSize={ true }
+								/>
+								<NumberControl
+									label={ __( 'Longitude', 'blocks-for-leaflet-map' ) }
+									value={ circle.lng ?? '' }
+									step={ 0.000001 }
+									onChange={ ( v ) =>
+										handleUpdateCircle( circleIdx, { lng: parseFloat( v ) || 0 } )
+									}
+									__next40pxDefaultSize={ true }
+								/>
+								<Button
+									variant="tertiary"
+									onClick={ () =>
+										handleLocatePoint( circle.lat ?? lat, circle.lng ?? lng )
+									}
+									style={ { marginTop: '4px', width: '100%', justifyContent: 'center' } }
+								>
+									{ __( '📍 Locate on map', 'blocks-for-leaflet-map' ) }
+								</Button>
+
+								{ /* Geocoder */ }
+								<div style={ { marginTop: '6px' } }>
+									<TextControl
+										label={ __( 'Search by address', 'blocks-for-leaflet-map' ) }
+										placeholder={ __( 'e.g. Paris, France', 'blocks-for-leaflet-map' ) }
+										value={ csInput }
+										onChange={ ( v ) => updateCircleSearch( circleIdx, { input: v } ) }
+										onKeyDown={ ( e ) => {
+											if ( e.key === 'Enter' ) {
+												e.preventDefault();
+												handleCircleGeocode( circleIdx );
+											}
+										} }
+										__nextHasNoMarginBottom={ true }
+									/>
+									<Button
+										variant="secondary"
+										onClick={ () => handleCircleGeocode( circleIdx ) }
+										isBusy={ csStatus === 'loading' }
+										disabled={ csStatus === 'loading' || ! csInput.trim() }
+										style={ { marginTop: '4px', width: '100%', justifyContent: 'center' } }
+									>
+										{ csStatus === 'loading'
+											? __( 'Searching…', 'blocks-for-leaflet-map' )
+											: __( 'Search', 'blocks-for-leaflet-map' ) }
+									</Button>
+									{ csStatus === 'error' && cs.error && (
+										<Notice
+											status="warning"
+											isDismissible={ false }
+											style={ { marginTop: '6px' } }
+										>
+											{ cs.error }
+										</Notice>
+									) }
+									{ csStatus === 'candidates' && csCandidates.length > 0 && (
+										<div style={ { marginTop: '6px' } }>
+											<p style={ { margin: '0 0 4px', fontSize: '11px', color: '#757575' } }>
+												{ __( 'Select a result:', 'blocks-for-leaflet-map' ) }
+											</p>
+											{ csCandidates.map( ( candidate, cIdx ) => (
+												<Button
+													key={ cIdx }
+													variant="tertiary"
+													onClick={ () => applyCircleCandidate( circleIdx, candidate ) }
+													style={ {
+														display: 'block',
+														width: '100%',
+														textAlign: 'left',
+														marginBottom: '4px',
+														whiteSpace: 'normal',
+														height: 'auto',
+														minHeight: '32px',
+													} }
+												>
+													{ candidate.display_name }
+												</Button>
+											) ) }
+										</div>
+									) }
+								</div>
+
+								{ /* Radius + unit toggle */ }
+								<div style={ { marginTop: '12px', display: 'flex', gap: '6px', alignItems: 'flex-end' } }>
+									<div style={ { flex: 1 } }>
+										<NumberControl
+											label={ __( 'Radius', 'blocks-for-leaflet-map' ) }
+											value={ displayRadius }
+											step={ radiusUnit === 'km' ? 0.001 : 1 }
+											min={ 0 }
+											onChange={ ( v ) => {
+												const meters = radiusUnit === 'km'
+													? Math.round( ( parseFloat( v ) || 0 ) * 1000 )
+													: Math.round( parseFloat( v ) || 0 );
+												handleUpdateCircle( circleIdx, { radius: meters } );
+											} }
+											__next40pxDefaultSize={ true }
+										/>
+									</div>
+									<div>
+										<p style={ { margin: '0 0 2px', fontSize: '11px', color: '#1e1e1e' } }>
+											{ __( 'Unit', 'blocks-for-leaflet-map' ) }
+										</p>
+										<SelectControl
+											value={ radiusUnit }
+											options={ [
+												{ label: 'm', value: 'm' },
+												{ label: 'km', value: 'km' },
+											] }
+											onChange={ ( v ) =>
+												setCircleRadiusUnit( ( prev ) => ( { ...prev, [ csKey ]: v } ) )
+											}
+											__nextHasNoMarginBottom={ true }
+										/>
+									</div>
+								</div>
+
+								{ /* Draw on map / Stop drawing */ }
+								<div style={ { display: 'flex', gap: '6px', marginTop: '10px', marginBottom: '12px' } }>
+									{ drawingCircleIndex === circleIdx ? (
+										<Button
+											variant="primary"
+											onClick={ handleStopDrawingCircle }
+											style={ { flex: 1, justifyContent: 'center' } }
+										>
+											{ __( '⏹ Stop drawing', 'blocks-for-leaflet-map' ) }
+										</Button>
+									) : (
+										<Button
+											variant="secondary"
+											onClick={ () => handleStartDrawingCircle( circleIdx ) }
+											style={ { flex: 1, justifyContent: 'center' } }
+										>
+											{ __( '✏ Draw on map', 'blocks-for-leaflet-map' ) }
+										</Button>
+									) }
+								</div>
+								{ drawingCircleIndex === circleIdx && (
+									<p style={ { margin: '-4px 0 12px', fontSize: '11px', color: '#1d4ed8', fontWeight: 600 } }>
+										{ __( '🖱 Click map to set center, then click again to set radius.', 'blocks-for-leaflet-map' ) }
+									</p>
+								) }
+
+								<ToggleControl
+									label={ __( 'Fit map to this circle', 'blocks-for-leaflet-map' ) }
+									checked={ !! circle.fitbounds }
+									onChange={ ( v ) => handleUpdateCircle( circleIdx, { fitbounds: v } ) }
+									__nextHasNoMarginBottom={ true }
+								/>
+
+								<PanelBody
+									title={ __( 'Style', 'blocks-for-leaflet-map' ) }
+									initialOpen={ false }
+								>
+									<p style={ { margin: '0 0 4px', fontSize: '12px' } }>
+										{ __( 'Stroke color', 'blocks-for-leaflet-map' ) }
+									</p>
+									<ColorPalette
+										value={ circle.color || undefined }
+										onChange={ ( v ) => handleUpdateCircle( circleIdx, { color: v || '' } ) }
+										enableAlpha={ false }
+									/>
+									<RangeControl
+										label={ __( 'Weight (px)', 'blocks-for-leaflet-map' ) }
+										value={ circle.weight ?? 3 }
+										min={ 0 }
+										max={ 20 }
+										step={ 1 }
+										onChange={ ( v ) => handleUpdateCircle( circleIdx, { weight: v } ) }
+										allowReset={ true }
+										resetFallbackValue={ 3 }
+										__next40pxDefaultSize={ true }
+										__nextHasNoMarginBottom={ true }
+									/>
+									<RangeControl
+										label={ __( 'Opacity', 'blocks-for-leaflet-map' ) }
+										value={ circle.opacity ?? 1 }
+										min={ 0 }
+										max={ 1 }
+										step={ 0.05 }
+										onChange={ ( v ) => handleUpdateCircle( circleIdx, { opacity: v } ) }
+										allowReset={ true }
+										resetFallbackValue={ 1 }
+										__next40pxDefaultSize={ true }
+										__nextHasNoMarginBottom={ true }
+									/>
+									<TextControl
+										label={ __( 'Dash array', 'blocks-for-leaflet-map' ) }
+										value={ circle.dashArray || '' }
+										placeholder="e.g. 5,10"
+										onChange={ ( v ) => handleUpdateCircle( circleIdx, { dashArray: v } ) }
+										__nextHasNoMarginBottom={ true }
+									/>
+									<TextControl
+										label={ __( 'CSS class', 'blocks-for-leaflet-map' ) }
+										value={ circle.classname || '' }
+										onChange={ ( v ) => handleUpdateCircle( circleIdx, { classname: v } ) }
+										__nextHasNoMarginBottom={ true }
+									/>
+								</PanelBody>
+
+								<PanelBody
+									title={ __( 'Fill', 'blocks-for-leaflet-map' ) }
+									initialOpen={ false }
+								>
+									<ToggleControl
+										label={ __( 'Fill circle', 'blocks-for-leaflet-map' ) }
+										checked={ !! circle.fill }
+										onChange={ ( v ) => handleUpdateCircle( circleIdx, { fill: v } ) }
+										__nextHasNoMarginBottom={ true }
+									/>
+									{ circle.fill && (
+										<>
+											<p style={ { margin: '8px 0 4px', fontSize: '12px' } }>
+												{ __( 'Fill color', 'blocks-for-leaflet-map' ) }
+											</p>
+											<ColorPalette
+												value={ circle.fillColor || undefined }
+												onChange={ ( v ) =>
+													handleUpdateCircle( circleIdx, { fillColor: v || '' } )
+												}
+												enableAlpha={ false }
+											/>
+											<RangeControl
+												label={ __( 'Fill opacity', 'blocks-for-leaflet-map' ) }
+												value={ circle.fillOpacity ?? 0.2 }
+												min={ 0 }
+												max={ 1 }
+												step={ 0.05 }
+												onChange={ ( v ) =>
+													handleUpdateCircle( circleIdx, { fillOpacity: v } )
+												}
+												allowReset={ true }
+												resetFallbackValue={ 0.2 }
+												__next40pxDefaultSize={ true }
+												__nextHasNoMarginBottom={ true }
+											/>
+										</>
+									) }
+								</PanelBody>
+
+								<PanelBody
+									title={ __( 'Popup', 'blocks-for-leaflet-map' ) }
+									initialOpen={ false }
+								>
+									<TextareaControl
+										label={ __( 'Popup content (HTML allowed)', 'blocks-for-leaflet-map' ) }
+										value={ circle.popup || '' }
+										onChange={ ( v ) => handleUpdateCircle( circleIdx, { popup: v } ) }
+										rows={ 3 }
+										__nextHasNoMarginBottom={ true }
+									/>
+									{ ( circle.popup || '' ).trim() && (
+										<ToggleControl
+											label={ __( 'Open popup on load', 'blocks-for-leaflet-map' ) }
+											checked={ !! circle.visible }
+											onChange={ ( v ) =>
+												handleUpdateCircle( circleIdx, { visible: v } )
+											}
+											__nextHasNoMarginBottom={ true }
+										/>
+									) }
+								</PanelBody>
+
+								<Button
+									variant="link"
+									isDestructive
+									onClick={ () => handleRemoveCircle( circleIdx ) }
+									style={ { marginTop: '8px' } }
+								>
+									{ __( 'Remove Circle', 'blocks-for-leaflet-map' ) }
+								</Button>
+							</PanelBody>
+						);
+					} ) }
 				</PanelBody>
 			</InspectorControls>
 

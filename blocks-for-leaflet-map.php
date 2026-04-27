@@ -132,9 +132,13 @@ function bflm_preview_map(): void {
 	$lines_raw     = isset( $_GET['lines'] ) ? wp_unslash( $_GET['lines'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON decoded and each field sanitised below.
 	$lines_decoded = json_decode( $lines_raw, true );
 	$lines         = is_array( $lines_decoded ) ? $lines_decoded : array();
-	$fit_markers   = ! empty( $_GET['fitMarkers'] ) && 'true' === $_GET['fitMarkers'] ? 'true' : 'false';
-	$show_scale    = ! empty( $_GET['showScale'] ) && 'true' === $_GET['showScale'] ? '1' : '0';
-	$attribution   = isset( $_GET['attribution'] ) ? wp_kses_post( wp_unslash( $_GET['attribution'] ) ) : '';
+
+	$circles_raw     = isset( $_GET['circles'] ) ? wp_unslash( $_GET['circles'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON decoded and each field sanitised below.
+	$circles_decoded = json_decode( $circles_raw, true );
+	$circles         = is_array( $circles_decoded ) ? $circles_decoded : array();
+	$fit_markers     = ! empty( $_GET['fitMarkers'] ) && 'true' === $_GET['fitMarkers'] ? 'true' : 'false';
+	$show_scale      = ! empty( $_GET['showScale'] ) && 'true' === $_GET['showScale'] ? '1' : '0';
+	$attribution     = isset( $_GET['attribution'] ) ? wp_kses_post( wp_unslash( $_GET['attribution'] ) ) : '';
 
 	// Interaction attributes: only include when explicitly set.
 	$interaction_keys = array(
@@ -433,6 +437,57 @@ function bflm_preview_map(): void {
 		}
 	}
 
+	// Build [leaflet-circle] shortcodes. Keep in sync with buildCircleShortcodes() in edit.js and render.php.
+	$circle_shortcodes = '';
+	foreach ( $circles as $circle ) {
+		$c_lat = isset( $circle['lat'] ) ? (float) $circle['lat'] : null;
+		$c_lng = isset( $circle['lng'] ) ? (float) $circle['lng'] : null;
+		if ( null === $c_lat || null === $c_lng ) {
+			continue;
+		}
+		$c_radius = isset( $circle['radius'] ) && is_numeric( $circle['radius'] ) ? (float) $circle['radius'] : 1000.0;
+		if ( $c_radius <= 0 ) {
+			continue;
+		}
+		$c_open = sprintf( '[leaflet-circle lat="%s" lng="%s" radius="%s"', esc_attr( (string) $c_lat ), esc_attr( (string) $c_lng ), esc_attr( (string) $c_radius ) );
+		if ( ! empty( $circle['fitbounds'] ) ) {
+			$c_open .= ' fitbounds="true"';
+		}
+		if ( isset( $circle['color'] ) && '' !== trim( $circle['color'] ) ) {
+			$c_open .= sprintf( ' color="%s"', esc_attr( trim( $circle['color'] ) ) );
+		}
+		if ( isset( $circle['weight'] ) && is_numeric( $circle['weight'] ) ) {
+			$c_open .= sprintf( ' weight="%s"', esc_attr( (string) (float) $circle['weight'] ) );
+		}
+		if ( isset( $circle['opacity'] ) && is_numeric( $circle['opacity'] ) ) {
+			$c_open .= sprintf( ' opacity="%s"', esc_attr( (string) (float) $circle['opacity'] ) );
+		}
+		if ( isset( $circle['dashArray'] ) && '' !== trim( $circle['dashArray'] ) ) {
+			$c_open .= sprintf( ' dasharray="%s"', esc_attr( trim( $circle['dashArray'] ) ) );
+		}
+		if ( isset( $circle['classname'] ) && '' !== trim( $circle['classname'] ) ) {
+			$c_open .= sprintf( ' classname="%s"', esc_attr( trim( $circle['classname'] ) ) );
+		}
+		if ( ! empty( $circle['fill'] ) ) {
+			$c_open .= ' fill="true"';
+		}
+		if ( isset( $circle['fillColor'] ) && '' !== trim( $circle['fillColor'] ) ) {
+			$c_open .= sprintf( ' fillcolor="%s"', esc_attr( trim( $circle['fillColor'] ) ) );
+		}
+		if ( isset( $circle['fillOpacity'] ) && is_numeric( $circle['fillOpacity'] ) ) {
+			$c_open .= sprintf( ' fillopacity="%s"', esc_attr( (string) (float) $circle['fillOpacity'] ) );
+		}
+		$c_popup = isset( $circle['popup'] ) ? wp_kses_post( $circle['popup'] ) : '';
+		if ( ! empty( $circle['visible'] ) && '' !== $c_popup ) {
+			$c_open .= ' visible="1"';
+		}
+		if ( '' !== $c_popup ) {
+			$circle_shortcodes .= $c_open . ']' . $c_popup . '[/leaflet-circle]';
+		} else {
+			$circle_shortcodes .= $c_open . ' /]';
+		}
+	}
+
 	// Render a complete, self-contained HTML page.
 	// wp_head() / wp_footer() let the Leaflet Map plugin load its own assets.
 	?>
@@ -455,7 +510,7 @@ function bflm_preview_map(): void {
 <div id="map-wrap">
 	<?php
 	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted shortcode output, same rationale as render.php.
-	echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes . $line_point_shortcodes );
+	echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes . $line_point_shortcodes . $circle_shortcodes );
 	?>
 </div>
 <script>
@@ -567,6 +622,81 @@ function bflm_preview_map(): void {
 		drawState.lineIndex = null;
 		drawState.points    = [];
 		drawState.shape     = null; // shape stays on map; we just drop the ref
+		map.doubleClickZoom.enable();
+	}
+
+	// ── Circle draw mode state ────────────────────────────────────────────────
+	// Two-click flow: phase 'center' (1st click) then phase 'edge' (2nd click).
+	var circleDrawState = {
+		active:      false,
+		circleIndex: null,
+		phase:       'center', // 'center' | 'edge'
+		center:      null,     // [lat, lng]
+		color:       '#3388ff',
+		fillColor:   '#3388ff',
+		fillOpacity: 0.2,
+		shape:       null,     // L.circle — kept on map after draw ends
+		preview:     null,     // L.marker (center pin) — removed after draw ends
+	};
+
+	function clearCirclePreview() {
+		if ( circleDrawState.preview ) {
+			circleDrawState.preview.remove();
+			circleDrawState.preview = null;
+		}
+	}
+
+	function startCircleDraw( map, msg ) {
+		// Clear any previous circle draw overlays for this slot.
+		clearCirclePreview();
+		if ( circleDrawState.shape ) {
+			circleDrawState.shape.remove();
+			circleDrawState.shape = null;
+		}
+
+		circleDrawState.active      = true;
+		circleDrawState.circleIndex = msg.circleIndex;
+		circleDrawState.color       = msg.color       || '#3388ff';
+		circleDrawState.fillColor   = msg.fillColor   || '#3388ff';
+		circleDrawState.fillOpacity = msg.fillOpacity != null ? msg.fillOpacity : 0.2;
+
+		// If an existing center is provided, go straight to 'edge' phase and
+		// show the current circle so the user can re-draw to resize.
+		if ( msg.lat != null && msg.lng != null ) {
+			circleDrawState.phase  = 'edge';
+			circleDrawState.center = [ msg.lat, msg.lng ];
+			circleDrawState.preview = L.marker(
+				[ msg.lat, msg.lng ],
+				{ icon: getDrawPinIcon(), zIndexOffset: 1000 }
+			).addTo( map );
+			var r = ( msg.radius && msg.radius > 0 ) ? msg.radius : 1;
+			circleDrawState.shape = L.circle( [ msg.lat, msg.lng ], {
+				radius:      r,
+				color:       circleDrawState.color,
+				fillColor:   circleDrawState.fillColor,
+				fillOpacity: circleDrawState.fillOpacity,
+				weight:      2,
+				interactive: false,
+			} ).addTo( map );
+		} else {
+			circleDrawState.phase  = 'center';
+			circleDrawState.center = null;
+		}
+
+		map.doubleClickZoom.disable();
+		map.getContainer().style.cursor = 'crosshair';
+	}
+
+	function stopCircleDraw( map ) {
+		// Keep circleDrawState.shape on the map (no reload needed).
+		// Only remove the temporary center pin.
+		clearCirclePreview();
+		map.getContainer().style.cursor = '';
+		circleDrawState.active      = false;
+		circleDrawState.circleIndex = null;
+		circleDrawState.phase       = 'center';
+		circleDrawState.center      = null;
+		circleDrawState.shape       = null; // shape stays on map; drop ref
 		map.doubleClickZoom.enable();
 	}
 
@@ -682,6 +812,51 @@ function bflm_preview_map(): void {
 		// suppress the spurious single-click that precedes a double-click.
 		var clickTimer = null;
 		map.on( 'click', function ( e ) {
+			// ── Circle draw (2-click: center then edge) ───────────────────────
+			if ( circleDrawState.active ) {
+				var clat = e.latlng.lat;
+				var clng = e.latlng.lng;
+				if ( circleDrawState.phase === 'center' ) {
+					// First click: place center pin and start the L.circle shape.
+					circleDrawState.center  = [ clat, clng ];
+					circleDrawState.phase   = 'edge';
+					circleDrawState.preview = L.marker(
+						[ clat, clng ],
+						{ icon: getDrawPinIcon(), zIndexOffset: 1000 }
+					).addTo( map );
+					circleDrawState.shape = L.circle( [ clat, clng ], {
+						radius:      1,
+						color:       circleDrawState.color,
+						fillColor:   circleDrawState.fillColor,
+						fillOpacity: circleDrawState.fillOpacity,
+						weight:      2,
+						interactive: false,
+					} ).addTo( map );
+					window.top.postMessage(
+						{ type: 'bflm_draw_circle_center', blockId: blockId, circleIndex: circleDrawState.circleIndex, lat: clat, lng: clng },
+						'*'
+					);
+				} else {
+					// Second click: compute radius and finish draw.
+					var radius = map.distance( circleDrawState.center, [ clat, clng ] );
+					if ( circleDrawState.shape ) {
+						circleDrawState.shape.setRadius( radius );
+					}
+					window.top.postMessage(
+						{ type: 'bflm_draw_circle_radius', blockId: blockId, circleIndex: circleDrawState.circleIndex, radius: radius },
+						'*'
+					);
+					var ci = circleDrawState.circleIndex;
+					stopCircleDraw( map );
+					window.top.postMessage(
+						{ type: 'bflm_draw_circle_end_request', blockId: blockId, circleIndex: ci },
+						'*'
+					);
+				}
+				return;
+			}
+
+			// ── Line/polygon draw ─────────────────────────────────────────────
 			if ( ! drawState.active ) return;
 			// Defer by 250ms; dblclick will clear this timer so only one point
 			// is added per double-click (the dblclick ends drawing instead).
@@ -745,6 +920,16 @@ function bflm_preview_map(): void {
 
 			if ( msg.type === 'bflm_draw_end' ) {
 				stopDraw( map );
+				return;
+			}
+
+			if ( msg.type === 'bflm_draw_circle_start' ) {
+				startCircleDraw( map, msg );
+				return;
+			}
+
+			if ( msg.type === 'bflm_draw_circle_end' ) {
+				stopCircleDraw( map );
 				return;
 			}
 		} );

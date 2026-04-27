@@ -153,3 +153,104 @@ describe( 'buildLineShortcodes', () => {
 		expect( result ).toContain( 'opacity="0.8"' );
 	} );
 } );
+
+// ── buildCircleShortcodes ─────────────────────────────────────────────────────
+
+function buildCircleShortcodes( circles ) {
+	if ( ! circles || circles.length === 0 ) return '';
+	let out = '';
+	for ( const circle of circles ) {
+		if ( circle.lat == null || circle.lng == null ) continue;
+		const r = circle.radius != null ? Number( circle.radius ) : 1000;
+		if ( r <= 0 ) continue;
+		let attrs = ` lat="${ circle.lat }" lng="${ circle.lng }" radius="${ r }"`;
+		if ( circle.fitbounds ) attrs += ` fitbounds="true"`;
+		if ( circle.color && circle.color.trim() )
+			attrs += ` color="${ circle.color.trim() }"`;
+		if ( circle.weight != null ) attrs += ` weight="${ circle.weight }"`;
+		if ( circle.opacity != null ) attrs += ` opacity="${ circle.opacity }"`;
+		if ( circle.dashArray && circle.dashArray.trim() )
+			attrs += ` dasharray="${ circle.dashArray.trim() }"`;
+		if ( circle.classname && circle.classname.trim() )
+			attrs += ` classname="${ circle.classname.trim() }"`;
+		if ( circle.fill ) attrs += ` fill="true"`;
+		if ( circle.fillColor && circle.fillColor.trim() )
+			attrs += ` fillcolor="${ circle.fillColor.trim() }"`;
+		if ( circle.fillOpacity != null )
+			attrs += ` fillopacity="${ circle.fillOpacity }"`;
+		const popup = circle.popup || '';
+		if ( circle.visible && popup ) attrs += ` visible="1"`;
+		if ( popup ) {
+			out += `\n[leaflet-circle${ attrs }]${ popup }[/leaflet-circle]`;
+		} else {
+			out += `\n[leaflet-circle${ attrs } /]`;
+		}
+	}
+	return out;
+}
+
+describe( 'buildCircleShortcodes', () => {
+	test( 'empty array returns empty string', () => {
+		expect( buildCircleShortcodes( [] ) ).toBe( '' );
+	} );
+
+	test( 'null/undefined lat skipped', () => {
+		expect( buildCircleShortcodes( [ { lat: null, lng: 1, radius: 500 } ] ) ).toBe( '' );
+		expect( buildCircleShortcodes( [ { lat: 1, lng: undefined, radius: 500 } ] ) ).toBe( '' );
+	} );
+
+	test( 'zero or negative radius skipped', () => {
+		expect( buildCircleShortcodes( [ { lat: 1, lng: 1, radius: 0 } ] ) ).toBe( '' );
+		expect( buildCircleShortcodes( [ { lat: 1, lng: 1, radius: -100 } ] ) ).toBe( '' );
+	} );
+
+	test( 'basic circle emits self-closing shortcode', () => {
+		const result = buildCircleShortcodes( [ { lat: 48.8566, lng: 2.3522, radius: 1000 } ] );
+		expect( result ).toContain( '[leaflet-circle lat="48.8566"' );
+		expect( result ).toContain( 'lng="2.3522"' );
+		expect( result ).toContain( 'radius="1000"' );
+		expect( result ).toContain( ' /]' );
+	} );
+
+	test( 'popup emits open/close tags', () => {
+		const result = buildCircleShortcodes( [ { lat: 1, lng: 2, radius: 500, popup: 'Hi there' } ] );
+		expect( result ).toContain( ']Hi there[/leaflet-circle]' );
+	} );
+
+	test( 'attributes are lowercase (fillcolor, fillopacity, dasharray)', () => {
+		const result = buildCircleShortcodes( [ {
+			lat: 1, lng: 2, radius: 500,
+			fillColor: '#abc', fillOpacity: 0.3, dashArray: '5,10',
+		} ] );
+		expect( result ).toContain( 'fillcolor="#abc"' );
+		expect( result ).toContain( 'fillopacity="0.3"' );
+		expect( result ).toContain( 'dasharray="5,10"' );
+	} );
+
+	test( 'fill + fitbounds flags emitted', () => {
+		const result = buildCircleShortcodes( [ { lat: 1, lng: 2, radius: 500, fill: true, fitbounds: true } ] );
+		expect( result ).toContain( 'fill="true"' );
+		expect( result ).toContain( 'fitbounds="true"' );
+	} );
+
+	test( 'visible only emitted when popup present', () => {
+		const withPopup = buildCircleShortcodes( [ { lat: 1, lng: 2, radius: 500, visible: true, popup: 'x' } ] );
+		const noPopup   = buildCircleShortcodes( [ { lat: 1, lng: 2, radius: 500, visible: true } ] );
+		expect( withPopup ).toContain( 'visible="1"' );
+		expect( noPopup ).not.toContain( 'visible' );
+	} );
+
+	test( 'multiple circles concatenated', () => {
+		const circles = [
+			{ lat: 0, lng: 0, radius: 100 },
+			{ lat: 1, lng: 1, radius: 200 },
+		];
+		const result = buildCircleShortcodes( circles );
+		expect( result.match( /\[leaflet-circle/g ) ).toHaveLength( 2 );
+	} );
+
+	test( 'default radius 1000 when radius property absent', () => {
+		const result = buildCircleShortcodes( [ { lat: 1, lng: 2 } ] );
+		expect( result ).toContain( 'radius="1000"' );
+	} );
+} );
