@@ -446,6 +446,8 @@ function bflm_preview_map(): void {
 	* { box-sizing: border-box; }
 	html, body { margin: 0; padding: 0; background: #fff; overflow: hidden; }
 	#map-wrap { width: 100%; }
+	/* Draw-mode pin — reset Leaflet's default marker background/shadow */
+	.bflm-draw-pin { background: none; border: none; }
 </style>
 	<?php wp_head(); ?>
 </head>
@@ -467,6 +469,98 @@ function bflm_preview_map(): void {
 	var attempts           = 0;
 	var MAX_ATTEMPTS       = 50;
 	var isProgrammaticMove = false;
+
+	// ── Draw mode state ───────────────────────────────────────────────────────
+	// Holds the in-progress drawing overlays for click-to-draw mode.
+	// All drawing happens client-side; each click also posts bflm_draw_point
+	// to the editor so it can update block attributes (and thus undo history).
+	var drawState = {
+		active:    false,
+		lineIndex: null,
+		lineType:  'line',
+		points:    [],
+		pins:      [],
+		shape:     null,
+	};
+
+	// Inline red pin icon used for draw-mode points (L.divIcon, no asset file).
+	var DRAW_PIN_ICON = null;
+	function getDrawPinIcon() {
+		if ( DRAW_PIN_ICON ) return DRAW_PIN_ICON;
+		var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 36" width="28" height="36">' +
+			'<circle cx="14" cy="12" r="11" fill="#e53e3e" stroke="#fff" stroke-width="2"/>' +
+			'<circle cx="10" cy="9" r="3" fill="rgba(255,255,255,0.35)"/>' +
+			'<path d="M14 22 L9 36 L14 30 L19 36 Z" fill="#4a4a4a"/>' +
+			'</svg>';
+		DRAW_PIN_ICON = L.divIcon( {
+			html:      svg,
+			className: 'bflm-draw-pin',
+			iconSize:    [ 28, 36 ],
+			iconAnchor:  [ 14, 34 ],
+		} );
+		return DRAW_PIN_ICON;
+	}
+
+	function clearDrawOverlays( map ) {
+		drawState.pins.forEach( function ( pin ) { pin.remove(); } );
+		drawState.pins = [];
+		if ( drawState.shape ) {
+			drawState.shape.remove();
+			drawState.shape = null;
+		}
+		map.getContainer().style.cursor = '';
+	}
+
+	function startDraw( map, msg ) {
+		clearDrawOverlays( map );
+		drawState.active    = true;
+		drawState.lineIndex = msg.lineIndex;
+		drawState.lineType  = msg.lineType || 'line';
+		drawState.points    = ( msg.existingPoints || [] ).map( function ( p ) {
+			return [ p.lat, p.lng ];
+		} );
+
+		var strokeColor  = msg.color       || '#3388ff';
+		var fillColor    = msg.fillColor   || '#3388ff';
+		var fillOpacity  = msg.fillOpacity != null ? msg.fillOpacity : 0.2;
+
+		// Render existing points as pins.
+		drawState.points.forEach( function ( ll ) {
+			var pin = L.marker( ll, { icon: getDrawPinIcon(), zIndexOffset: 1000 } ).addTo( map );
+			drawState.pins.push( pin );
+		} );
+
+		// Create the live shape overlay.
+		if ( drawState.lineType === 'polygon' ) {
+			drawState.shape = L.polygon( drawState.points.length ? drawState.points : [ [ 0, 0 ] ], {
+				color:       strokeColor,
+				fillColor:   fillColor,
+				fillOpacity: fillOpacity,
+				weight:      2,
+				interactive: false,
+			} ).addTo( map );
+		} else {
+			drawState.shape = L.polyline( drawState.points.length ? drawState.points : [ [ 0, 0 ] ], {
+				color:       strokeColor,
+				weight:      2,
+				interactive: false,
+			} ).addTo( map );
+		}
+		if ( drawState.points.length < 1 ) {
+			drawState.shape.setLatLngs( [] );
+		}
+
+		map.doubleClickZoom.disable();
+		map.getContainer().style.cursor = 'crosshair';
+	}
+
+	function stopDraw( map ) {
+		clearDrawOverlays( map );
+		drawState.active    = false;
+		drawState.lineIndex = null;
+		drawState.points    = [];
+		map.doubleClickZoom.enable();
+	}
 
 	/**
 	 * Poll for the Leaflet Map plugin's map instance, then wire up
@@ -574,20 +668,86 @@ function bflm_preview_map(): void {
 			}
 		}
 
-		// Receive setView commands sent by the editor.
-		// Guard with blockId so only the matching block's message is acted on.
+		// ── Click-to-draw handlers ────────────────────────────────────────────
+		// map.on('click') fires for single clicks; map.on('dblclick') for double.
+		// Leaflet fires 'click' twice before 'dblclick' — use a small timeout to
+		// suppress the spurious single-click that precedes a double-click.
+		var clickTimer = null;
+		map.on( 'click', function ( e ) {
+			if ( ! drawState.active ) return;
+			// Defer by 250ms; dblclick will clear this timer so only one point
+			// is added per double-click (the dblclick ends drawing instead).
+			clearTimeout( clickTimer );
+			clickTimer = setTimeout( function () {
+				var lat = e.latlng.lat;
+				var lng = e.latlng.lng;
+				drawState.points.push( [ lat, lng ] );
+
+				// Add a red pin at this point.
+				var pin = L.marker( [ lat, lng ], { icon: getDrawPinIcon(), zIndexOffset: 1000 } ).addTo( map );
+				drawState.pins.push( pin );
+
+				// Update live shape preview.
+				if ( drawState.shape ) {
+					drawState.shape.setLatLngs( drawState.points );
+				}
+
+				// Notify the editor so it can update block attributes + undo history.
+				window.top.postMessage(
+					{ type: 'bflm_draw_point', blockId: blockId, lineIndex: drawState.lineIndex, lat: lat, lng: lng },
+					'*'
+				);
+			}, 250 );
+		} );
+
+		map.on( 'dblclick', function ( e ) {
+			if ( ! drawState.active ) return;
+			// Cancel the pending single-click so no extra point is added.
+			clearTimeout( clickTimer );
+			// Leaflet's default dblclick zoom is already disabled in draw mode.
+			L.DomEvent.stopPropagation( e );
+			var li = drawState.lineIndex;
+			stopDraw( map );
+			window.top.postMessage(
+				{ type: 'bflm_draw_end_request', blockId: blockId, lineIndex: li },
+				'*'
+			);
+		} );
+
+		// ── Inbound messages from the editor ─────────────────────────────────
 		window.addEventListener( 'message', function ( e ) {
-			if ( ! e.data || e.data.type !== 'bflm_set_view' || e.data.blockId !== blockId ) {
+			if ( ! e.data || typeof e.data.type !== 'string' || e.data.blockId !== blockId ) {
 				return;
 			}
-			// Clear the guard flag only after the (animated) move ends, not
-			// immediately, so moveend does not echo during the transition.
-			isProgrammaticMove = true;
-			map.once( 'moveend', function () {
-				isProgrammaticMove = false;
-			} );
-			map.setView( [ e.data.lat, e.data.lng ], e.data.zoom, { animate: true } );
+			var msg = e.data;
+
+			if ( msg.type === 'bflm_set_view' ) {
+				isProgrammaticMove = true;
+				map.once( 'moveend', function () {
+					isProgrammaticMove = false;
+				} );
+				map.setView( [ msg.lat, msg.lng ], msg.zoom, { animate: true } );
+				return;
+			}
+
+			if ( msg.type === 'bflm_draw_start' ) {
+				startDraw( map, msg );
+				return;
+			}
+
+			if ( msg.type === 'bflm_draw_end' ) {
+				stopDraw( map );
+				return;
+			}
 		} );
+
+		// Signal the editor that this iframe is ready (or has rebuilt).
+		// The editor uses this to re-send bflm_draw_start if a line was in draw
+		// mode when an attribute change triggered a full iframe reload.
+		window.top.postMessage(
+			{ type: 'bflm_iframe_ready', blockId: blockId },
+			'*'
+		);
 	}
 
 	init();
