@@ -5267,7 +5267,9 @@ export default function Edit( {
 									value={ circle.lat ?? '' }
 									step={ 0.000001 }
 									onChange={ ( v ) =>
-										handleUpdateCircle( circleIdx, { lat: parseFloat( v ) || 0 } )
+										handleUpdateCircle( circleIdx, {
+											lat: v === '' || v == null ? null : parseFloat( v ),
+										} )
 									}
 									__next40pxDefaultSize={ true }
 								/>
@@ -5276,7 +5278,9 @@ export default function Edit( {
 									value={ circle.lng ?? '' }
 									step={ 0.000001 }
 									onChange={ ( v ) =>
-										handleUpdateCircle( circleIdx, { lng: parseFloat( v ) || 0 } )
+										handleUpdateCircle( circleIdx, {
+											lng: v === '' || v == null ? null : parseFloat( v ),
+										} )
 									}
 									__next40pxDefaultSize={ true }
 								/>
