@@ -132,9 +132,9 @@ function bflm_preview_map(): void {
 	$lines_raw     = isset( $_GET['lines'] ) ? wp_unslash( $_GET['lines'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON decoded and each field sanitised below.
 	$lines_decoded = json_decode( $lines_raw, true );
 	$lines         = is_array( $lines_decoded ) ? $lines_decoded : array();
-	$fit_markers     = ! empty( $_GET['fitMarkers'] ) && 'true' === $_GET['fitMarkers'] ? 'true' : 'false';
-	$show_scale      = ! empty( $_GET['showScale'] ) && 'true' === $_GET['showScale'] ? '1' : '0';
-	$attribution     = isset( $_GET['attribution'] ) ? wp_kses_post( wp_unslash( $_GET['attribution'] ) ) : '';
+	$fit_markers   = ! empty( $_GET['fitMarkers'] ) && 'true' === $_GET['fitMarkers'] ? 'true' : 'false';
+	$show_scale    = ! empty( $_GET['showScale'] ) && 'true' === $_GET['showScale'] ? '1' : '0';
+	$attribution   = isset( $_GET['attribution'] ) ? wp_kses_post( wp_unslash( $_GET['attribution'] ) ) : '';
 
 	// Interaction attributes: only include when explicitly set.
 	$interaction_keys = array(
@@ -175,8 +175,8 @@ function bflm_preview_map(): void {
 	// Width is applied to the editor block container, not the shortcode.
 	$map_shortcode = sprintf(
 		'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" scrollwheel="%5$s" zoomcontrol="%6$s" fitbounds="%7$s" show_scale="%8$s"',
-		esc_attr( $lat ),
-		esc_attr( $lng ),
+		esc_attr( (string) $lat ),
+		esc_attr( (string) $lng ),
 		$zoom,
 		esc_attr( $height ),
 		$scroll_wheel,
@@ -260,8 +260,8 @@ function bflm_preview_map(): void {
 		// Build open tag incrementally; include optional attrs only when set.
 		$m_open_tag = sprintf(
 			'[leaflet-marker lat="%1$s" lng="%2$s"',
-			esc_attr( $m_lat ),
-			esc_attr( $m_lng )
+			esc_attr( (string) $m_lat ),
+			esc_attr( (string) $m_lng )
 		);
 
 		if ( '' !== $m_title ) {
@@ -279,7 +279,7 @@ function bflm_preview_map(): void {
 		if ( isset( $marker['opacity'] ) ) {
 			$m_opacity = (float) $marker['opacity'];
 			if ( abs( $m_opacity - 1.0 ) > 0.001 ) {
-				$m_open_tag .= sprintf( ' opacity="%s"', esc_attr( $m_opacity ) );
+				$m_open_tag .= sprintf( ' opacity="%s"', esc_attr( (string) $m_opacity ) );
 			}
 		}
 		if ( isset( $marker['zIndexOffset'] ) ) {
@@ -308,7 +308,7 @@ function bflm_preview_map(): void {
 			if ( '' !== $m_icon_url ) {
 				$m_open_tag .= sprintf( ' iconurl="%s"', esc_attr( $m_icon_url ) );
 			}
-			$m_icon_w = isset( $marker['iconWidth'] )  ? (int) $marker['iconWidth']  : 0;
+			$m_icon_w = isset( $marker['iconWidth'] ) ? (int) $marker['iconWidth'] : 0;
 			$m_icon_h = isset( $marker['iconHeight'] ) ? (int) $marker['iconHeight'] : 0;
 			if ( $m_icon_w >= 1 && $m_icon_h >= 1 ) {
 				$m_open_tag .= sprintf( ' iconsize="%d,%d"', $m_icon_w, $m_icon_h );
@@ -329,7 +329,7 @@ function bflm_preview_map(): void {
 				if ( '' !== $m_shadow_url ) {
 					$m_open_tag .= sprintf( ' shadowurl="%s"', esc_attr( $m_shadow_url ) );
 				}
-				$m_shadow_w = isset( $marker['shadowWidth'] )  ? (int) $marker['shadowWidth']  : 0;
+				$m_shadow_w = isset( $marker['shadowWidth'] ) ? (int) $marker['shadowWidth'] : 0;
 				$m_shadow_h = isset( $marker['shadowHeight'] ) ? (int) $marker['shadowHeight'] : 0;
 				if ( $m_shadow_w >= 1 && $m_shadow_h >= 1 ) {
 					$m_open_tag .= sprintf( ' shadowsize="%d,%d"', $m_shadow_w, $m_shadow_h );
@@ -352,24 +352,27 @@ function bflm_preview_map(): void {
 	// Editor-only: show a draggable pin for each point only when the line is not yet
 	// drawn (< 2 points). Once the line is rendered the pins are visual noise.
 	// These are NOT added by render.php.
-	$line_point_meta        = array();
-	$line_point_shortcodes  = '';
+	$line_point_meta       = array();
+	$line_point_shortcodes = '';
 	foreach ( $lines as $l_idx => $line ) {
 		$l_points = isset( $line['points'] ) && is_array( $line['points'] ) ? $line['points'] : array();
 		if ( count( $l_points ) >= 2 ) {
 			continue; // line is drawn; skip helper markers.
 		}
 		foreach ( $l_points as $p_idx => $pt ) {
-			$pt_lat = (float) ( isset( $pt['lat'] ) ? $pt['lat'] : 0 );
-			$pt_lng = (float) ( isset( $pt['lng'] ) ? $pt['lng'] : 0 );
-			$label  = sprintf( 'L%d·P%d', $l_idx + 1, $p_idx + 1 );
+			$pt_lat                 = (float) ( isset( $pt['lat'] ) ? $pt['lat'] : 0 );
+			$pt_lng                 = (float) ( isset( $pt['lng'] ) ? $pt['lng'] : 0 );
+			$label                  = sprintf( 'L%d·P%d', $l_idx + 1, $p_idx + 1 );
 			$line_point_shortcodes .= sprintf(
 				'[leaflet-marker lat="%s" lng="%s" title="%s" draggable="1" /]',
-				esc_attr( $pt_lat ),
-				esc_attr( $pt_lng ),
+				esc_attr( (string) $pt_lat ),
+				esc_attr( (string) $pt_lng ),
 				esc_attr( $label )
 			);
-			$line_point_meta[] = array( 'lineIndex' => $l_idx, 'pointIndex' => $p_idx );
+			$line_point_meta[]      = array(
+				'lineIndex'  => $l_idx,
+				'pointIndex' => $p_idx,
+			);
 		}
 	}
 
@@ -397,10 +400,10 @@ function bflm_preview_map(): void {
 			$l_open .= sprintf( ' color="%s"', esc_attr( trim( $line['color'] ) ) );
 		}
 		if ( isset( $line['weight'] ) && is_numeric( $line['weight'] ) ) {
-			$l_open .= sprintf( ' weight="%s"', esc_attr( (float) $line['weight'] ) );
+			$l_open .= sprintf( ' weight="%s"', esc_attr( (string) (float) $line['weight'] ) );
 		}
 		if ( isset( $line['opacity'] ) && is_numeric( $line['opacity'] ) ) {
-			$l_open .= sprintf( ' opacity="%s"', esc_attr( (float) $line['opacity'] ) );
+			$l_open .= sprintf( ' opacity="%s"', esc_attr( (string) (float) $line['opacity'] ) );
 		}
 		if ( isset( $line['dashArray'] ) && '' !== trim( $line['dashArray'] ) ) {
 			$l_open .= sprintf( ' dasharray="%s"', esc_attr( trim( $line['dashArray'] ) ) );
@@ -415,7 +418,7 @@ function bflm_preview_map(): void {
 			$l_open .= sprintf( ' fillcolor="%s"', esc_attr( trim( $line['fillColor'] ) ) );
 		}
 		if ( isset( $line['fillOpacity'] ) && is_numeric( $line['fillOpacity'] ) ) {
-			$l_open .= sprintf( ' fillopacity="%s"', esc_attr( (float) $line['fillOpacity'] ) );
+			$l_open .= sprintf( ' fillopacity="%s"', esc_attr( (string) (float) $line['fillOpacity'] ) );
 		}
 
 		$l_popup = isset( $line['popup'] ) ? wp_kses_post( $line['popup'] ) : '';
