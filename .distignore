@@ -1,6 +1,7 @@
 .claude
 .editorconfig
 .git
+.github
 .gitignore
 CHANGELOG.md
 CLAUDE.md
