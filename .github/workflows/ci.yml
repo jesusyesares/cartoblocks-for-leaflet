@@ -1,0 +1,56 @@
+name: CI
+
+on:
+    push:
+        branches: [main, 'feature/**']
+    pull_request:
+        branches: [main]
+
+jobs:
+    js:
+        name: JS — lint, test, build
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+                  cache: npm
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Lint JS
+              run: npm run lint:js
+
+            - name: Lint CSS
+              run: npm run lint:css
+
+            - name: Unit tests
+              run: npm test
+
+            - name: Build
+              run: npm run build
+
+    php:
+        name: PHP — PHPCS + PHPStan
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.2'
+                  tools: composer
+
+            - name: Install Composer dependencies
+              run: composer install --no-interaction --prefer-dist
+
+            - name: PHPCS
+              run: composer lint
+
+            - name: PHPStan
+              run: composer phpstan
