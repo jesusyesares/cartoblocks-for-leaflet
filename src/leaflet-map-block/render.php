@@ -88,8 +88,8 @@ $markers = isset( $attributes['markers'] ) && is_array( $attributes['markers'] )
 // so the Leaflet Map shortcode always renders at 100% of its container.
 $map_shortcode = sprintf(
 	'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" scrollwheel="%5$s" zoomcontrol="%6$s" fitbounds="%7$s" show_scale="%8$s"',
-	esc_attr( $lat ),
-	esc_attr( $lng ),
+	esc_attr( (string) $lat ),
+	esc_attr( (string) $lng ),
 	$zoom,
 	esc_attr( $height ),
 	$scroll_wheel_zoom,
@@ -172,8 +172,8 @@ foreach ( $markers as $marker ) {
 	// Build the open tag incrementally; include optional attrs only when set.
 	$m_open_tag = sprintf(
 		'[leaflet-marker lat="%1$s" lng="%2$s"',
-		esc_attr( $m_lat ),
-		esc_attr( $m_lng )
+		esc_attr( (string) $m_lat ),
+		esc_attr( (string) $m_lng )
 	);
 
 	// title: emit only when non-empty.
@@ -200,7 +200,7 @@ foreach ( $markers as $marker ) {
 	if ( isset( $marker['opacity'] ) ) {
 		$m_opacity = (float) $marker['opacity'];
 		if ( abs( $m_opacity - 1.0 ) > 0.001 ) {
-			$m_open_tag .= sprintf( ' opacity="%s"', esc_attr( $m_opacity ) );
+			$m_open_tag .= sprintf( ' opacity="%s"', esc_attr( (string) $m_opacity ) );
 		}
 	}
 
@@ -297,10 +297,10 @@ foreach ( $lines as $line ) {
 		$l_open .= sprintf( ' color="%s"', esc_attr( trim( $line['color'] ) ) );
 	}
 	if ( isset( $line['weight'] ) && is_numeric( $line['weight'] ) ) {
-		$l_open .= sprintf( ' weight="%s"', esc_attr( (float) $line['weight'] ) );
+		$l_open .= sprintf( ' weight="%s"', esc_attr( (string) (float) $line['weight'] ) );
 	}
 	if ( isset( $line['opacity'] ) && is_numeric( $line['opacity'] ) ) {
-		$l_open .= sprintf( ' opacity="%s"', esc_attr( (float) $line['opacity'] ) );
+		$l_open .= sprintf( ' opacity="%s"', esc_attr( (string) (float) $line['opacity'] ) );
 	}
 	if ( isset( $line['dashArray'] ) && '' !== trim( $line['dashArray'] ) ) {
 		$l_open .= sprintf( ' dasharray="%s"', esc_attr( trim( $line['dashArray'] ) ) );
@@ -315,7 +315,7 @@ foreach ( $lines as $line ) {
 		$l_open .= sprintf( ' fillcolor="%s"', esc_attr( trim( $line['fillColor'] ) ) );
 	}
 	if ( isset( $line['fillOpacity'] ) && is_numeric( $line['fillOpacity'] ) ) {
-		$l_open .= sprintf( ' fillopacity="%s"', esc_attr( (float) $line['fillOpacity'] ) );
+		$l_open .= sprintf( ' fillopacity="%s"', esc_attr( (string) (float) $line['fillOpacity'] ) );
 	}
 
 	$l_popup = isset( $line['popup'] ) ? wp_kses_post( $line['popup'] ) : '';
