@@ -330,6 +330,61 @@ foreach ( $lines as $line ) {
 	}
 }
 
+// Build [leaflet-circle] shortcodes. Keep in sync with buildCircleShortcodes() in edit.js and bflm_preview_map().
+$circles = isset( $attributes['circles'] ) && is_array( $attributes['circles'] )
+	? $attributes['circles']
+	: array();
+
+$circle_shortcodes = '';
+foreach ( $circles as $circle ) {
+	$c_lat = isset( $circle['lat'] ) ? (float) $circle['lat'] : null;
+	$c_lng = isset( $circle['lng'] ) ? (float) $circle['lng'] : null;
+	if ( null === $c_lat || null === $c_lng ) {
+		continue;
+	}
+	$c_radius = isset( $circle['radius'] ) && is_numeric( $circle['radius'] ) ? (float) $circle['radius'] : 1000.0;
+	if ( $c_radius <= 0 ) {
+		continue;
+	}
+	$c_open = sprintf( '[leaflet-circle lat="%s" lng="%s" radius="%s"', esc_attr( (string) $c_lat ), esc_attr( (string) $c_lng ), esc_attr( (string) $c_radius ) );
+	if ( ! empty( $circle['fitbounds'] ) ) {
+		$c_open .= ' fitbounds="true"';
+	}
+	if ( isset( $circle['color'] ) && '' !== trim( $circle['color'] ) ) {
+		$c_open .= sprintf( ' color="%s"', esc_attr( trim( $circle['color'] ) ) );
+	}
+	if ( isset( $circle['weight'] ) && is_numeric( $circle['weight'] ) ) {
+		$c_open .= sprintf( ' weight="%s"', esc_attr( (string) (float) $circle['weight'] ) );
+	}
+	if ( isset( $circle['opacity'] ) && is_numeric( $circle['opacity'] ) ) {
+		$c_open .= sprintf( ' opacity="%s"', esc_attr( (string) (float) $circle['opacity'] ) );
+	}
+	if ( isset( $circle['dashArray'] ) && '' !== trim( $circle['dashArray'] ) ) {
+		$c_open .= sprintf( ' dasharray="%s"', esc_attr( trim( $circle['dashArray'] ) ) );
+	}
+	if ( isset( $circle['classname'] ) && '' !== trim( $circle['classname'] ) ) {
+		$c_open .= sprintf( ' classname="%s"', esc_attr( trim( $circle['classname'] ) ) );
+	}
+	if ( ! empty( $circle['fill'] ) ) {
+		$c_open .= ' fill="true"';
+	}
+	if ( isset( $circle['fillColor'] ) && '' !== trim( $circle['fillColor'] ) ) {
+		$c_open .= sprintf( ' fillcolor="%s"', esc_attr( trim( $circle['fillColor'] ) ) );
+	}
+	if ( isset( $circle['fillOpacity'] ) && is_numeric( $circle['fillOpacity'] ) ) {
+		$c_open .= sprintf( ' fillopacity="%s"', esc_attr( (string) (float) $circle['fillOpacity'] ) );
+	}
+	$c_popup = isset( $circle['popup'] ) ? wp_kses_post( $circle['popup'] ) : '';
+	if ( ! empty( $circle['visible'] ) && '' !== $c_popup ) {
+		$c_open .= ' visible="1"';
+	}
+	if ( '' !== $c_popup ) {
+		$circle_shortcodes .= $c_open . ']' . $c_popup . '[/leaflet-circle]';
+	} else {
+		$circle_shortcodes .= $c_open . ' /]';
+	}
+}
+
 $wrapper_attributes = get_block_wrapper_attributes(
 	array(
 		'class' => 'bflm-leaflet-map-block',
@@ -340,5 +395,5 @@ $wrapper_attributes = get_block_wrapper_attributes(
 // Render: wrapper div → shortcode output (Leaflet Map plugin handles the rest).
 ?>
 <div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitized by get_block_wrapper_attributes(). ?>>
-	<?php echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted output from registered shortcodes; escaping would corrupt the map HTML and inline scripts. ?>
+	<?php echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes . $circle_shortcodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted output from registered shortcodes; escaping would corrupt the map HTML and inline scripts. ?>
 </div>
