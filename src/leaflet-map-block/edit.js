@@ -971,11 +971,7 @@ export default function Edit( {
 	 */
 	const hasMountedRef = useRef( false );
 
-	/**
-	 * The shortcode string that was used for the last iframe src load.
-	 * Used to skip rebuilds when Stop Drawing is pressed but no new renderable
-	 * content was added (e.g. the drawn line still has < 2 points).
-	 */
+	/** Shortcode used for the last iframe src load — set by mount and structural effects. */
 	const lastLoadedShortcodeRef = useRef( '' );
 
 	/** Ref attached to the toolbar shortcode toggle button for Popover anchoring. */
@@ -1017,8 +1013,10 @@ export default function Edit( {
 	//   • Changing style props (color, weight) → shortcode unchanged → no rebuild.
 	//   • A line reaching ≥2 points, marker added, height changed → rebuild fires.
 	// Suppressed while draw mode is active: the iframe paints its own live
-	// overlay, so reloading on every click causes flicker. A rebuild is triggered
-	// explicitly when draw mode ends (handleStopDrawing / bflm_draw_end_request).
+	// overlay, so reloading on every click causes flicker. When draw mode ends,
+	// NO explicit reload is triggered — the shape stays on the map via Leaflet
+	// API. This effect fires only if a truly renderable change happened (e.g. a
+	// line reached ≥2 points) after draw mode is cleared.
 	// Uses attributesRef so the rebuilt URL reflects the current lat/lng/zoom
 	// (which may have drifted via postMessage since the last full load).
 	// shortcode encodes every attribute that affects the preview URL, including
@@ -1194,23 +1192,10 @@ export default function Edit( {
 			// Double-click on the map requested draw mode end.
 			if ( msg.type === 'bflm_draw_end_request' ) {
 				if ( drawingLineIndexRef.current === msg.lineIndex ) {
+					// stopDraw() already ran in the iframe (dblclick handler);
+					// shape is kept on map, pins removed. No iframe reload needed.
 					drawingLineIndexRef.current = null;
 					setDrawingLineIndex( null );
-					// Only rebuild if shortcode changed during drawing.
-					const currentShortcode = buildShortcode( attributesRef.current );
-					if ( currentShortcode !== lastLoadedShortcodeRef.current ) {
-						const iframe = iframeRef.current;
-						if ( iframe ) {
-							const url = buildPreviewUrl(
-								attributesRef.current,
-								clientIdRef.current
-							);
-							if ( url && iframe.src !== url ) {
-								iframe.src = url;
-								lastLoadedShortcodeRef.current = currentShortcode;
-							}
-						}
-					}
 				}
 				return;
 			}
@@ -1653,31 +1638,22 @@ export default function Edit( {
 	}
 
 	/**
-	 * Exit draw mode. Sends bflm_draw_end to the iframe to clean up overlays.
+	 * Exit draw mode. Sends bflm_draw_end to the iframe to remove draw pins
+	 * only — the shape (polyline/polygon) stays on the map without any reload.
+	 * The debounced structural effect will fire a reload only when a truly
+	 * renderable change happened (e.g. line reaches ≥2 points for the first
+	 * time), but that is handled by previewUrlKey, not here.
 	 */
 	function handleStopDrawing() {
 		setDrawingLineIndex( null );
 		drawingLineIndexRef.current = null;
 		const iframe = iframeRef.current;
 		if ( ! iframe ) return;
-		// Tell the iframe to clean up its local draw overlays.
 		if ( iframe.contentWindow ) {
 			iframe.contentWindow.postMessage(
 				{ type: 'bflm_draw_end', blockId: clientId },
 				'*'
 			);
-		}
-		// Rebuild only if the shortcode changed during drawing (i.e. a line
-		// reached ≥2 points). If nothing renderable changed, the iframe is
-		// already correct — skip the reload to avoid a needless flicker.
-		const currentShortcode = buildShortcode( attributesRef.current );
-		if ( currentShortcode === lastLoadedShortcodeRef.current ) {
-			return;
-		}
-		const url = buildPreviewUrl( attributesRef.current, clientIdRef.current );
-		if ( url && iframe.src !== url ) {
-			iframe.src = url;
-			lastLoadedShortcodeRef.current = currentShortcode;
 		}
 	}
 

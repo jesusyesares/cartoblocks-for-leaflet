@@ -3,7 +3,7 @@
  * Plugin Name:       Blocks for Leaflet Map
  * Plugin URI:        https://github.com/jesusyesares/blocks-for-leaflet-map
  * Description:       A dynamic Gutenberg block that wraps the Leaflet Map plugin shortcodes. Requires the "Leaflet Map" plugin to be installed and active.
- * Version:           0.4.3
+ * Version:           0.5.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Jesús Yesares García
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-define( 'BFLM_VERSION', '0.4.3' );
+define( 'BFLM_VERSION', '0.5.0' );
 define( 'BFLM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BFLM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BFLM_LEAFLET_MAP_PLUGIN', 'leaflet-map/leaflet-map.php' );
@@ -501,9 +501,13 @@ function bflm_preview_map(): void {
 		return DRAW_PIN_ICON;
 	}
 
-	function clearDrawOverlays( map ) {
+	function clearDrawPins() {
 		drawState.pins.forEach( function ( pin ) { pin.remove(); } );
 		drawState.pins = [];
+	}
+
+	function clearDrawOverlays( map ) {
+		clearDrawPins();
 		if ( drawState.shape ) {
 			drawState.shape.remove();
 			drawState.shape = null;
@@ -555,10 +559,14 @@ function bflm_preview_map(): void {
 	}
 
 	function stopDraw( map ) {
-		clearDrawOverlays( map );
+		// Keep drawState.shape on the map so the line/polygon remains visible
+		// without an iframe reload. Only remove the temporary draw pins.
+		clearDrawPins();
+		map.getContainer().style.cursor = '';
 		drawState.active    = false;
 		drawState.lineIndex = null;
 		drawState.points    = [];
+		drawState.shape     = null; // shape stays on map; we just drop the ref
 		map.doubleClickZoom.enable();
 	}
 
