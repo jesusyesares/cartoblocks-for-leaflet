@@ -3,7 +3,7 @@
  * Plugin Name:       Blocks for Leaflet Map
  * Plugin URI:        https://github.com/jesusyesares/blocks-for-leaflet-map
  * Description:       A dynamic Gutenberg block that wraps the Leaflet Map plugin shortcodes. Requires the "Leaflet Map" plugin to be installed and active.
- * Version:           0.5.0
+ * Version:           0.6.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Jesús Yesares García
@@ -132,9 +132,13 @@ function bflm_preview_map(): void {
 	$lines_raw     = isset( $_GET['lines'] ) ? wp_unslash( $_GET['lines'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON decoded and each field sanitised below.
 	$lines_decoded = json_decode( $lines_raw, true );
 	$lines         = is_array( $lines_decoded ) ? $lines_decoded : array();
-	$fit_markers   = ! empty( $_GET['fitMarkers'] ) && 'true' === $_GET['fitMarkers'] ? 'true' : 'false';
-	$show_scale    = ! empty( $_GET['showScale'] ) && 'true' === $_GET['showScale'] ? '1' : '0';
-	$attribution   = isset( $_GET['attribution'] ) ? wp_kses_post( wp_unslash( $_GET['attribution'] ) ) : '';
+
+	$circles_raw     = isset( $_GET['circles'] ) ? wp_unslash( $_GET['circles'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON decoded and each field sanitised below.
+	$circles_decoded = json_decode( $circles_raw, true );
+	$circles         = is_array( $circles_decoded ) ? $circles_decoded : array();
+	$fit_markers     = ! empty( $_GET['fitMarkers'] ) && 'true' === $_GET['fitMarkers'] ? 'true' : 'false';
+	$show_scale      = ! empty( $_GET['showScale'] ) && 'true' === $_GET['showScale'] ? '1' : '0';
+	$attribution     = isset( $_GET['attribution'] ) ? wp_kses_post( wp_unslash( $_GET['attribution'] ) ) : '';
 
 	// Interaction attributes: only include when explicitly set.
 	$interaction_keys = array(
@@ -433,6 +437,57 @@ function bflm_preview_map(): void {
 		}
 	}
 
+	// Build [leaflet-circle] shortcodes. Keep in sync with buildCircleShortcodes() in edit.js and render.php.
+	$circle_shortcodes = '';
+	foreach ( $circles as $circle ) {
+		$c_lat = isset( $circle['lat'] ) ? (float) $circle['lat'] : null;
+		$c_lng = isset( $circle['lng'] ) ? (float) $circle['lng'] : null;
+		if ( null === $c_lat || null === $c_lng ) {
+			continue;
+		}
+		$c_radius = isset( $circle['radius'] ) && is_numeric( $circle['radius'] ) ? (float) $circle['radius'] : 1000.0;
+		if ( $c_radius <= 0 ) {
+			continue;
+		}
+		$c_open = sprintf( '[leaflet-circle lat="%s" lng="%s" radius="%s"', esc_attr( (string) $c_lat ), esc_attr( (string) $c_lng ), esc_attr( (string) $c_radius ) );
+		if ( ! empty( $circle['fitbounds'] ) ) {
+			$c_open .= ' fitbounds="true"';
+		}
+		if ( isset( $circle['color'] ) && '' !== trim( $circle['color'] ) ) {
+			$c_open .= sprintf( ' color="%s"', esc_attr( trim( $circle['color'] ) ) );
+		}
+		if ( isset( $circle['weight'] ) && is_numeric( $circle['weight'] ) ) {
+			$c_open .= sprintf( ' weight="%s"', esc_attr( (string) (float) $circle['weight'] ) );
+		}
+		if ( isset( $circle['opacity'] ) && is_numeric( $circle['opacity'] ) ) {
+			$c_open .= sprintf( ' opacity="%s"', esc_attr( (string) (float) $circle['opacity'] ) );
+		}
+		if ( isset( $circle['dashArray'] ) && '' !== trim( $circle['dashArray'] ) ) {
+			$c_open .= sprintf( ' dasharray="%s"', esc_attr( trim( $circle['dashArray'] ) ) );
+		}
+		if ( isset( $circle['classname'] ) && '' !== trim( $circle['classname'] ) ) {
+			$c_open .= sprintf( ' classname="%s"', esc_attr( trim( $circle['classname'] ) ) );
+		}
+		if ( ! empty( $circle['fill'] ) ) {
+			$c_open .= ' fill="true"';
+		}
+		if ( isset( $circle['fillColor'] ) && '' !== trim( $circle['fillColor'] ) ) {
+			$c_open .= sprintf( ' fillcolor="%s"', esc_attr( trim( $circle['fillColor'] ) ) );
+		}
+		if ( isset( $circle['fillOpacity'] ) && is_numeric( $circle['fillOpacity'] ) ) {
+			$c_open .= sprintf( ' fillopacity="%s"', esc_attr( (string) (float) $circle['fillOpacity'] ) );
+		}
+		$c_popup = isset( $circle['popup'] ) ? wp_kses_post( $circle['popup'] ) : '';
+		if ( ! empty( $circle['visible'] ) && '' !== $c_popup ) {
+			$c_open .= ' visible="1"';
+		}
+		if ( '' !== $c_popup ) {
+			$circle_shortcodes .= $c_open . ']' . $c_popup . '[/leaflet-circle]';
+		} else {
+			$circle_shortcodes .= $c_open . ' /]';
+		}
+	}
+
 	// Render a complete, self-contained HTML page.
 	// wp_head() / wp_footer() let the Leaflet Map plugin load its own assets.
 	?>
@@ -455,7 +510,7 @@ function bflm_preview_map(): void {
 <div id="map-wrap">
 	<?php
 	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted shortcode output, same rationale as render.php.
-	echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes . $line_point_shortcodes );
+	echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes . $line_point_shortcodes . $circle_shortcodes );
 	?>
 </div>
 <script>
@@ -570,6 +625,109 @@ function bflm_preview_map(): void {
 		map.doubleClickZoom.enable();
 	}
 
+	// ── Circle draw mode state ────────────────────────────────────────────────
+	// Two-click flow: phase 'center' (1st click) then phase 'edge' (2nd click).
+	// After the 2nd click the center pin becomes draggable to reposition the circle.
+	var circleDrawState = {
+		active:      false,
+		circleIndex: null,
+		phase:       'center', // 'center' | 'edge'
+		center:      null,     // [lat, lng]
+		color:       '#3388ff',
+		fillColor:   '#3388ff',
+		fillOpacity: 0.2,
+		shape:       null,     // L.circle — kept on map after draw ends
+		preview:     null,     // L.marker (center pin) — stays as draggable handle
+		guideLine:   null,     // L.polyline radius guide — removed after 2nd click
+	};
+
+	function clearCircleGuideLine() {
+		if ( circleDrawState.guideLine ) {
+			circleDrawState.guideLine.remove();
+			circleDrawState.guideLine = null;
+		}
+	}
+
+	function clearCirclePreview() {
+		clearCircleGuideLine();
+		if ( circleDrawState.preview ) {
+			circleDrawState.preview.remove();
+			circleDrawState.preview = null;
+		}
+	}
+
+	function makeCenterDraggable( map ) {
+		var pin = circleDrawState.preview;
+		if ( ! pin ) return;
+		pin.options.draggable = true;
+		pin.dragging.enable();
+		pin.on( 'dragstart', function () {
+			// Prevent map drag from interfering.
+			map.dragging.disable();
+		} );
+		pin.on( 'drag', function () {
+			var ll = pin.getLatLng();
+			if ( circleDrawState.shape ) {
+				circleDrawState.shape.setLatLng( ll );
+			}
+		} );
+		pin.on( 'dragend', function () {
+			map.dragging.enable();
+			var ll = pin.getLatLng();
+			circleDrawState.center = [ ll.lat, ll.lng ];
+			if ( circleDrawState.shape ) {
+				circleDrawState.shape.setLatLng( ll );
+			}
+			window.top.postMessage(
+				{
+					type:        'bflm_draw_circle_center',
+					blockId:     blockId,
+					circleIndex: circleDrawState.circleIndex,
+					lat:         parseFloat( ll.lat.toFixed( 6 ) ),
+					lng:         parseFloat( ll.lng.toFixed( 6 ) ),
+				},
+				'*'
+			);
+		} );
+	}
+
+	function startCircleDraw( map, msg ) {
+		// Always start fresh at phase='center' — user must click to place the
+		// center. Any previous draw overlays (pin, shape, guide) are cleared.
+		clearCirclePreview();
+		if ( circleDrawState.shape ) {
+			circleDrawState.shape.remove();
+			circleDrawState.shape = null;
+		}
+
+		circleDrawState.active      = true;
+		circleDrawState.circleIndex = msg.circleIndex;
+		circleDrawState.phase       = 'center';
+		circleDrawState.center      = null;
+		circleDrawState.color       = msg.color       || '#3388ff';
+		circleDrawState.fillColor   = msg.fillColor   || '#3388ff';
+		circleDrawState.fillOpacity = msg.fillOpacity != null ? msg.fillOpacity : 0.2;
+
+		map.doubleClickZoom.disable();
+		map.getContainer().style.cursor = 'crosshair';
+	}
+
+	function stopCircleDraw( map ) {
+		// Keep shape and center pin on the map — no reload needed.
+		// Remove only the radius guide line.
+		clearCircleGuideLine();
+		map.getContainer().style.cursor = '';
+		circleDrawState.active = false;
+		circleDrawState.phase  = 'center';
+		// Drop refs but leave shape + preview (center pin) in Leaflet's layer tree.
+		circleDrawState.shape  = null;
+		circleDrawState.center = null;
+		// circleIndex kept briefly so the dragend handler can still post the right index.
+		// Reset fully after a tick so the last dragend (if any) fires first.
+		setTimeout( function () { circleDrawState.circleIndex = null; }, 0 );
+		map.doubleClickZoom.enable();
+	}
+
 	/**
 	 * Poll for the Leaflet Map plugin's map instance, then wire up
 	 * bidirectional postMessage communication with the editor frame.
@@ -680,8 +838,77 @@ function bflm_preview_map(): void {
 		// map.on('click') fires for single clicks; map.on('dblclick') for double.
 		// Leaflet fires 'click' twice before 'dblclick' — use a small timeout to
 		// suppress the spurious single-click that precedes a double-click.
+		// ── Mousemove: live radius guide during circle edge phase ────────────
+		map.on( 'mousemove', function ( e ) {
+			if ( ! circleDrawState.active || circleDrawState.phase !== 'edge' ) return;
+			var mlat = e.latlng.lat;
+			var mlng = e.latlng.lng;
+			var r = map.distance( circleDrawState.center, [ mlat, mlng ] );
+			// Update live circle radius.
+			if ( circleDrawState.shape ) {
+				circleDrawState.shape.setRadius( r < 1 ? 1 : r );
+			}
+			// Update guide line from center to cursor.
+			if ( circleDrawState.guideLine ) {
+				circleDrawState.guideLine.setLatLngs( [ circleDrawState.center, [ mlat, mlng ] ] );
+			}
+		} );
+
 		var clickTimer = null;
 		map.on( 'click', function ( e ) {
+			// ── Circle draw (2-click: center then edge) ───────────────────────
+			if ( circleDrawState.active ) {
+				var clat = e.latlng.lat;
+				var clng = e.latlng.lng;
+				if ( circleDrawState.phase === 'center' ) {
+					// First click: place center pin, start L.circle (r=1) + guide line.
+					circleDrawState.center  = [ clat, clng ];
+					circleDrawState.phase   = 'edge';
+					circleDrawState.preview = L.marker(
+						[ clat, clng ],
+						{ icon: getDrawPinIcon(), draggable: false, zIndexOffset: 1000 }
+					).addTo( map );
+					circleDrawState.shape = L.circle( [ clat, clng ], {
+						radius:      1,
+						color:       circleDrawState.color,
+						fillColor:   circleDrawState.fillColor,
+						fillOpacity: circleDrawState.fillOpacity,
+						weight:      2,
+						interactive: false,
+					} ).addTo( map );
+					circleDrawState.guideLine = L.polyline(
+						[ [ clat, clng ], [ clat, clng ] ],
+						{ color: '#888', weight: 1, dashArray: '4,6', interactive: false }
+					).addTo( map );
+					window.top.postMessage(
+						{ type: 'bflm_draw_circle_center', blockId: blockId, circleIndex: circleDrawState.circleIndex, lat: clat, lng: clng },
+						'*'
+					);
+				} else {
+					// Second click: fix radius, remove guide, make center draggable.
+					var radius = map.distance( circleDrawState.center, [ clat, clng ] );
+					if ( radius < 1 ) radius = 1;
+					if ( circleDrawState.shape ) {
+						circleDrawState.shape.setRadius( radius );
+					}
+					clearCircleGuideLine();
+					// Convert center pin to draggable handle for repositioning.
+					makeCenterDraggable( map );
+					window.top.postMessage(
+						{ type: 'bflm_draw_circle_radius', blockId: blockId, circleIndex: circleDrawState.circleIndex, radius: radius },
+						'*'
+					);
+					var ci = circleDrawState.circleIndex;
+					stopCircleDraw( map );
+					window.top.postMessage(
+						{ type: 'bflm_draw_circle_end_request', blockId: blockId, circleIndex: ci },
+						'*'
+					);
+				}
+				return;
+			}
+
+			// ── Line/polygon draw ─────────────────────────────────────────────
 			if ( ! drawState.active ) return;
 			// Defer by 250ms; dblclick will clear this timer so only one point
 			// is added per double-click (the dblclick ends drawing instead).
@@ -745,6 +972,16 @@ function bflm_preview_map(): void {
 
 			if ( msg.type === 'bflm_draw_end' ) {
 				stopDraw( map );
+				return;
+			}
+
+			if ( msg.type === 'bflm_draw_circle_start' ) {
+				startCircleDraw( map, msg );
+				return;
+			}
+
+			if ( msg.type === 'bflm_draw_circle_end' ) {
+				stopCircleDraw( map );
 				return;
 			}
 		} );

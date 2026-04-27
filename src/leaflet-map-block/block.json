@@ -2,7 +2,7 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "blocks-for-leaflet-map/leaflet-map-block",
-	"version": "0.5.0",
+	"version": "0.6.0",
 	"title": "Leaflet Map Block",
 	"category": "embed",
 	"icon": "location-alt",
@@ -203,6 +203,35 @@
 							}
 						}
 					},
+					"fitbounds": { "type": "boolean", "default": false },
+					"color": { "type": "string", "default": "" },
+					"weight": { "type": [ "number", "null" ], "default": null },
+					"opacity": {
+						"type": [ "number", "null" ],
+						"default": null
+					},
+					"dashArray": { "type": "string", "default": "" },
+					"classname": { "type": "string", "default": "" },
+					"fill": { "type": "boolean", "default": false },
+					"fillColor": { "type": "string", "default": "" },
+					"fillOpacity": {
+						"type": [ "number", "null" ],
+						"default": null
+					},
+					"popup": { "type": "string", "default": "" },
+					"visible": { "type": "boolean", "default": false }
+				}
+			}
+		},
+		"circles": {
+			"type": "array",
+			"default": [],
+			"items": {
+				"type": "object",
+				"properties": {
+					"lat": { "type": [ "number", "null" ], "default": null },
+					"lng": { "type": [ "number", "null" ], "default": null },
+					"radius": { "type": "number", "default": 1000 },
 					"fitbounds": { "type": "boolean", "default": false },
 					"color": { "type": "string", "default": "" },
 					"weight": { "type": [ "number", "null" ], "default": null },
