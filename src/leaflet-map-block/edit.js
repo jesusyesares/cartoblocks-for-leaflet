@@ -1851,7 +1851,7 @@ export default function Edit( {
 
 	// ── Circle handlers ──────────────────────────────────────────────────────
 
-	/** Append a new circle with default values. Seeds lat/lng from current map center. */
+	/** Append a new circle with default values. lat/lng left null until user clicks on map. */
 	function handleAddCircle() {
 		// Stop any active draw mode first (mutual exclusion).
 		if ( drawingLineIndexRef.current !== null ) {
@@ -1865,8 +1865,8 @@ export default function Edit( {
 			circles: [
 				...( attributes.circles || [] ),
 				{
-					lat: parseFloat( lat.toFixed( 6 ) ),
-					lng: parseFloat( lng.toFixed( 6 ) ),
+					lat: null,
+					lng: null,
 					radius: 1000,
 					fitbounds: false,
 					color: '',

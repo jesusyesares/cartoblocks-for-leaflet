@@ -692,7 +692,8 @@ function bflm_preview_map(): void {
 	}
 
 	function startCircleDraw( map, msg ) {
-		// Clear any previous circle draw overlays for this slot.
+		// Always start fresh at phase='center' — user must click to place the
+		// center. Any previous draw overlays (pin, shape, guide) are cleared.
 		clearCirclePreview();
 		if ( circleDrawState.shape ) {
 			circleDrawState.shape.remove();
@@ -701,37 +702,11 @@ function bflm_preview_map(): void {
 
 		circleDrawState.active      = true;
 		circleDrawState.circleIndex = msg.circleIndex;
+		circleDrawState.phase       = 'center';
+		circleDrawState.center      = null;
 		circleDrawState.color       = msg.color       || '#3388ff';
 		circleDrawState.fillColor   = msg.fillColor   || '#3388ff';
 		circleDrawState.fillOpacity = msg.fillOpacity != null ? msg.fillOpacity : 0.2;
-
-		// If an existing center is provided, go straight to 'edge' phase and
-		// show the current circle so the user can re-draw to resize.
-		if ( msg.lat != null && msg.lng != null ) {
-			circleDrawState.phase  = 'edge';
-			circleDrawState.center = [ msg.lat, msg.lng ];
-			circleDrawState.preview = L.marker(
-				[ msg.lat, msg.lng ],
-				{ icon: getDrawPinIcon(), draggable: false, zIndexOffset: 1000 }
-			).addTo( map );
-			var r = ( msg.radius && msg.radius > 0 ) ? msg.radius : 1;
-			circleDrawState.shape = L.circle( [ msg.lat, msg.lng ], {
-				radius:      r,
-				color:       circleDrawState.color,
-				fillColor:   circleDrawState.fillColor,
-				fillOpacity: circleDrawState.fillOpacity,
-				weight:      2,
-				interactive: false,
-			} ).addTo( map );
-			// Guide line from center to map center as a starting reference.
-			circleDrawState.guideLine = L.polyline(
-				[ circleDrawState.center, circleDrawState.center ],
-				{ color: '#888', weight: 1, dashArray: '4,6', interactive: false }
-			).addTo( map );
-		} else {
-			circleDrawState.phase  = 'center';
-			circleDrawState.center = null;
-		}
 
 		map.doubleClickZoom.disable();
 		map.getContainer().style.cursor = 'crosshair';
