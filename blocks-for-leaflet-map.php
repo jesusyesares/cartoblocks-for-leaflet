@@ -627,6 +627,7 @@ function bflm_preview_map(): void {
 
 	// ── Circle draw mode state ────────────────────────────────────────────────
 	// Two-click flow: phase 'center' (1st click) then phase 'edge' (2nd click).
+	// After the 2nd click the center pin becomes draggable to reposition the circle.
 	var circleDrawState = {
 		active:      false,
 		circleIndex: null,
@@ -636,14 +637,58 @@ function bflm_preview_map(): void {
 		fillColor:   '#3388ff',
 		fillOpacity: 0.2,
 		shape:       null,     // L.circle — kept on map after draw ends
-		preview:     null,     // L.marker (center pin) — removed after draw ends
+		preview:     null,     // L.marker (center pin) — stays as draggable handle
+		guideLine:   null,     // L.polyline radius guide — removed after 2nd click
 	};
 
+	function clearCircleGuideLine() {
+		if ( circleDrawState.guideLine ) {
+			circleDrawState.guideLine.remove();
+			circleDrawState.guideLine = null;
+		}
+	}
+
 	function clearCirclePreview() {
+		clearCircleGuideLine();
 		if ( circleDrawState.preview ) {
 			circleDrawState.preview.remove();
 			circleDrawState.preview = null;
 		}
+	}
+
+	function makeCenterDraggable( map ) {
+		var pin = circleDrawState.preview;
+		if ( ! pin ) return;
+		pin.options.draggable = true;
+		pin.dragging.enable();
+		pin.on( 'dragstart', function () {
+			// Prevent map drag from interfering.
+			map.dragging.disable();
+		} );
+		pin.on( 'drag', function () {
+			var ll = pin.getLatLng();
+			if ( circleDrawState.shape ) {
+				circleDrawState.shape.setLatLng( ll );
+			}
+		} );
+		pin.on( 'dragend', function () {
+			map.dragging.enable();
+			var ll = pin.getLatLng();
+			circleDrawState.center = [ ll.lat, ll.lng ];
+			if ( circleDrawState.shape ) {
+				circleDrawState.shape.setLatLng( ll );
+			}
+			window.top.postMessage(
+				{
+					type:        'bflm_draw_circle_center',
+					blockId:     blockId,
+					circleIndex: circleDrawState.circleIndex,
+					lat:         parseFloat( ll.lat.toFixed( 6 ) ),
+					lng:         parseFloat( ll.lng.toFixed( 6 ) ),
+				},
+				'*'
+			);
+		} );
 	}
 
 	function startCircleDraw( map, msg ) {
@@ -667,7 +712,7 @@ function bflm_preview_map(): void {
 			circleDrawState.center = [ msg.lat, msg.lng ];
 			circleDrawState.preview = L.marker(
 				[ msg.lat, msg.lng ],
-				{ icon: getDrawPinIcon(), zIndexOffset: 1000 }
+				{ icon: getDrawPinIcon(), draggable: false, zIndexOffset: 1000 }
 			).addTo( map );
 			var r = ( msg.radius && msg.radius > 0 ) ? msg.radius : 1;
 			circleDrawState.shape = L.circle( [ msg.lat, msg.lng ], {
@@ -678,6 +723,11 @@ function bflm_preview_map(): void {
 				weight:      2,
 				interactive: false,
 			} ).addTo( map );
+			// Guide line from center to map center as a starting reference.
+			circleDrawState.guideLine = L.polyline(
+				[ circleDrawState.center, circleDrawState.center ],
+				{ color: '#888', weight: 1, dashArray: '4,6', interactive: false }
+			).addTo( map );
 		} else {
 			circleDrawState.phase  = 'center';
 			circleDrawState.center = null;
@@ -688,15 +738,18 @@ function bflm_preview_map(): void {
 	}
 
 	function stopCircleDraw( map ) {
-		// Keep circleDrawState.shape on the map (no reload needed).
-		// Only remove the temporary center pin.
-		clearCirclePreview();
+		// Keep shape and center pin on the map — no reload needed.
+		// Remove only the radius guide line.
+		clearCircleGuideLine();
 		map.getContainer().style.cursor = '';
-		circleDrawState.active      = false;
-		circleDrawState.circleIndex = null;
-		circleDrawState.phase       = 'center';
-		circleDrawState.center      = null;
-		circleDrawState.shape       = null; // shape stays on map; drop ref
+		circleDrawState.active = false;
+		circleDrawState.phase  = 'center';
+		// Drop refs but leave shape + preview (center pin) in Leaflet's layer tree.
+		circleDrawState.shape  = null;
+		circleDrawState.center = null;
+		// circleIndex kept briefly so the dragend handler can still post the right index.
+		// Reset fully after a tick so the last dragend (if any) fires first.
+		setTimeout( function () { circleDrawState.circleIndex = null; }, 0 );
 		map.doubleClickZoom.enable();
 	}
 
@@ -810,6 +863,22 @@ function bflm_preview_map(): void {
 		// map.on('click') fires for single clicks; map.on('dblclick') for double.
 		// Leaflet fires 'click' twice before 'dblclick' — use a small timeout to
 		// suppress the spurious single-click that precedes a double-click.
+		// ── Mousemove: live radius guide during circle edge phase ────────────
+		map.on( 'mousemove', function ( e ) {
+			if ( ! circleDrawState.active || circleDrawState.phase !== 'edge' ) return;
+			var mlat = e.latlng.lat;
+			var mlng = e.latlng.lng;
+			var r = map.distance( circleDrawState.center, [ mlat, mlng ] );
+			// Update live circle radius.
+			if ( circleDrawState.shape ) {
+				circleDrawState.shape.setRadius( r < 1 ? 1 : r );
+			}
+			// Update guide line from center to cursor.
+			if ( circleDrawState.guideLine ) {
+				circleDrawState.guideLine.setLatLngs( [ circleDrawState.center, [ mlat, mlng ] ] );
+			}
+		} );
+
 		var clickTimer = null;
 		map.on( 'click', function ( e ) {
 			// ── Circle draw (2-click: center then edge) ───────────────────────
@@ -817,12 +886,12 @@ function bflm_preview_map(): void {
 				var clat = e.latlng.lat;
 				var clng = e.latlng.lng;
 				if ( circleDrawState.phase === 'center' ) {
-					// First click: place center pin and start the L.circle shape.
+					// First click: place center pin, start L.circle (r=1) + guide line.
 					circleDrawState.center  = [ clat, clng ];
 					circleDrawState.phase   = 'edge';
 					circleDrawState.preview = L.marker(
 						[ clat, clng ],
-						{ icon: getDrawPinIcon(), zIndexOffset: 1000 }
+						{ icon: getDrawPinIcon(), draggable: false, zIndexOffset: 1000 }
 					).addTo( map );
 					circleDrawState.shape = L.circle( [ clat, clng ], {
 						radius:      1,
@@ -832,16 +901,24 @@ function bflm_preview_map(): void {
 						weight:      2,
 						interactive: false,
 					} ).addTo( map );
+					circleDrawState.guideLine = L.polyline(
+						[ [ clat, clng ], [ clat, clng ] ],
+						{ color: '#888', weight: 1, dashArray: '4,6', interactive: false }
+					).addTo( map );
 					window.top.postMessage(
 						{ type: 'bflm_draw_circle_center', blockId: blockId, circleIndex: circleDrawState.circleIndex, lat: clat, lng: clng },
 						'*'
 					);
 				} else {
-					// Second click: compute radius and finish draw.
+					// Second click: fix radius, remove guide, make center draggable.
 					var radius = map.distance( circleDrawState.center, [ clat, clng ] );
+					if ( radius < 1 ) radius = 1;
 					if ( circleDrawState.shape ) {
 						circleDrawState.shape.setRadius( radius );
 					}
+					clearCircleGuideLine();
+					// Convert center pin to draggable handle for repositioning.
+					makeCenterDraggable( map );
 					window.top.postMessage(
 						{ type: 'bflm_draw_circle_radius', blockId: blockId, circleIndex: circleDrawState.circleIndex, radius: radius },
 						'*'
