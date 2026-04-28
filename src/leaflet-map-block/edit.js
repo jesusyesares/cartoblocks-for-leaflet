@@ -315,6 +315,76 @@ function buildCircleShortcodes( circles ) {
 	return out;
 }
 
+/** @type {Record<string,string>} Maps layer type to its shortcode tag. */
+const LAYER_TYPE_TAGS = {
+	geojson: 'leaflet-geojson',
+	gpx: 'leaflet-gpx',
+	kml: 'leaflet-kml',
+};
+
+/**
+ * Build [leaflet-geojson] / [leaflet-gpx] / [leaflet-kml] shortcode strings.
+ * Skips layers with empty src. Always self-closing — popup config goes via attrs.
+ * Keep in sync with render.php and bflm_preview_map() in blocks-for-leaflet-map.php.
+ *
+ * @param {Array} layers
+ * @return {string}
+ */
+function buildLayerShortcodes( layers ) {
+	if ( ! layers || layers.length === 0 ) return '';
+	let out = '';
+	for ( const layer of layers ) {
+		const src = ( layer.src || '' ).trim();
+		if ( ! src ) continue;
+		const tag = LAYER_TYPE_TAGS[ layer.type ] || LAYER_TYPE_TAGS.geojson;
+
+		let attrs = ` src="${ src }"`;
+		if ( layer.fitbounds ) attrs += ` fitbounds="true"`;
+		if ( layer.circleMarker ) attrs += ` circleMarker="true"`;
+
+		const sanitize = ( s ) =>
+			s.replace( /"/g, '&quot;' ).replace( /\]/g, '&#93;' );
+		if ( layer.popupText && layer.popupText.trim() )
+			attrs += ` popup_text="${ sanitize( layer.popupText.trim() ) }"`;
+		if ( layer.popupProperty && layer.popupProperty.trim() )
+			attrs += ` popup_property="${ sanitize( layer.popupProperty.trim() ) }"`;
+		if ( layer.tableView ) attrs += ` table_view="1"`;
+
+		if ( layer.color && layer.color.trim() )
+			attrs += ` color="${ layer.color.trim() }"`;
+		if ( layer.weight != null ) attrs += ` weight="${ layer.weight }"`;
+		if ( layer.opacity != null ) attrs += ` opacity="${ layer.opacity }"`;
+		if ( layer.dashArray && layer.dashArray.trim() )
+			attrs += ` dasharray="${ layer.dashArray.trim() }"`;
+		if ( layer.classname && layer.classname.trim() )
+			attrs += ` classname="${ layer.classname.trim() }"`;
+		if ( layer.fill ) attrs += ` fill="true"`;
+		if ( layer.fillColor && layer.fillColor.trim() )
+			attrs += ` fillcolor="${ layer.fillColor.trim() }"`;
+		if ( layer.fillOpacity != null )
+			attrs += ` fillopacity="${ layer.fillOpacity }"`;
+
+		if ( layer.useCustomIcon && ! layer.circleMarker ) {
+			if ( layer.iconUrl ) attrs += ` iconurl="${ layer.iconUrl }"`;
+			if (
+				layer.iconWidth != null &&
+				layer.iconHeight != null &&
+				layer.iconWidth >= 1 &&
+				layer.iconHeight >= 1
+			) {
+				attrs += ` iconsize="${ layer.iconWidth },${ layer.iconHeight }"`;
+			}
+			if ( layer.iconAnchorX != null && layer.iconAnchorY != null )
+				attrs += ` iconanchor="${ layer.iconAnchorX },${ layer.iconAnchorY }"`;
+			if ( layer.popupAnchorX != null && layer.popupAnchorY != null )
+				attrs += ` popupanchor="${ layer.popupAnchorX },${ layer.popupAnchorY }"`;
+		}
+
+		out += `\n[${ tag }${ attrs } /]`;
+	}
+	return out;
+}
+
 /**
  * Build the [leaflet-map] and [leaflet-marker] shortcode string from block
  * attributes, exactly mirroring what render.php emits on the frontend.
@@ -322,7 +392,7 @@ function buildCircleShortcodes( circles ) {
  * Keep in sync with render.php → "Build the [leaflet-map] shortcode" section.
  *
  * @param {Object} attributes Block attributes.
- * @return {string} Full shortcode string (map + zero or more markers + zero or more lines + circles).
+ * @return {string} Full shortcode string (map + zero or more markers + zero or more lines + circles + layers).
  */
 function buildShortcode( attributes ) {
 	const parts = [];
@@ -419,6 +489,7 @@ function buildShortcode( attributes ) {
 
 	shortcode += buildLineShortcodes( attributes.lines );
 	shortcode += buildCircleShortcodes( attributes.circles );
+	shortcode += buildLayerShortcodes( attributes.layers );
 
 	return shortcode;
 }
@@ -666,6 +737,7 @@ function buildPreviewUrl( attributes, clientId ) {
 		markers,
 		lines,
 		circles,
+		layers,
 	} = attributes;
 
 	const { previewUrl, previewNonce } = window.bflmEditor || {};
@@ -697,6 +769,7 @@ function buildPreviewUrl( attributes, clientId ) {
 		markers: JSON.stringify( markers ),
 		lines: JSON.stringify( lines || [] ),
 		circles: JSON.stringify( circles || [] ),
+		layers: JSON.stringify( layers || [] ),
 	} );
 
 	// Only include interaction params when explicitly set (not "Default").
@@ -933,6 +1006,9 @@ export default function Edit( {
 
 	/** Index of the per-circle PanelBody that is currently expanded (controlled). */
 	const [ expandedCircleIndex, setExpandedCircleIndex ] = useState( null );
+
+	/** Index of the per-layer PanelBody that is currently expanded (controlled). */
+	const [ expandedLayerIndex, setExpandedLayerIndex ] = useState( null );
 
 	/** Per-circle geocode UI state keyed by circle index. { input, status, candidates, error } */
 	const [ circleSearch, setCircleSearch ] = useState( {} );
@@ -1935,6 +2011,64 @@ export default function Edit( {
 		setAttributes( {
 			circles: ( attributes.circles || [] ).map( ( c, i ) =>
 				i === index ? { ...c, ...updates } : c
+			),
+		} );
+	}
+
+	/** Add a new data layer of the given type and expand it. */
+	function handleAddLayer( type ) {
+		const next = [
+			...( attributes.layers || [] ),
+			{
+				type,
+				src: '',
+				fitbounds: false,
+				circleMarker: false,
+				popupText: '',
+				popupProperty: '',
+				tableView: false,
+				color: '',
+				weight: null,
+				opacity: null,
+				dashArray: '',
+				classname: '',
+				fill: false,
+				fillColor: '',
+				fillOpacity: null,
+				useCustomIcon: false,
+				iconUrl: '',
+				iconWidth: null,
+				iconHeight: null,
+				iconAnchorX: null,
+				iconAnchorY: null,
+				popupAnchorX: null,
+				popupAnchorY: null,
+				iconOriginalWidth: null,
+				iconOriginalHeight: null,
+				lockIconAspectRatio: true,
+			},
+		];
+		setAttributes( { layers: next } );
+		setExpandedLayerIndex( next.length - 1 );
+	}
+
+	/** Remove a layer by index. */
+	function handleRemoveLayer( index ) {
+		setAttributes( {
+			layers: ( attributes.layers || [] ).filter( ( _, i ) => i !== index ),
+		} );
+		if ( expandedLayerIndex === index ) {
+			setExpandedLayerIndex( null );
+		} else if ( expandedLayerIndex > index ) {
+			setExpandedLayerIndex( expandedLayerIndex - 1 );
+		}
+	}
+
+	/** Shallow-merge updates into a layer at the given index. */
+	function handleUpdateLayer( index, updates ) {
+		setAttributes( {
+			layers: ( attributes.layers || [] ).map( ( l, i ) =>
+				i === index ? { ...l, ...updates } : l
 			),
 		} );
 	}
@@ -5549,6 +5683,543 @@ export default function Edit( {
 							</PanelBody>
 						);
 					} ) }
+				</PanelBody>
+				{ /* ── Data Layers panel ────────────────────────────────── */ }
+				<PanelBody
+					title={ __( 'Data Layers', 'blocks-for-leaflet-map' ) }
+					initialOpen={ false }
+				>
+					<p style={ { margin: '0 0 8px', fontSize: '11px', color: '#757575' } }>
+						{ __(
+							'Load GeoJSON, GPX, or KML data from a URL. Each layer renders on the map as vector features.',
+							'blocks-for-leaflet-map'
+						) }
+					</p>
+					<div style={ { display: 'flex', gap: '4px', marginBottom: '8px' } }>
+						<Button
+							variant="secondary"
+							onClick={ () => handleAddLayer( 'geojson' ) }
+							style={ { flex: 1, justifyContent: 'center' } }
+						>
+							{ __( '+ GeoJSON', 'blocks-for-leaflet-map' ) }
+						</Button>
+						<Button
+							variant="secondary"
+							onClick={ () => handleAddLayer( 'gpx' ) }
+							style={ { flex: 1, justifyContent: 'center' } }
+						>
+							{ __( '+ GPX', 'blocks-for-leaflet-map' ) }
+						</Button>
+						<Button
+							variant="secondary"
+							onClick={ () => handleAddLayer( 'kml' ) }
+							style={ { flex: 1, justifyContent: 'center' } }
+						>
+							{ __( '+ KML', 'blocks-for-leaflet-map' ) }
+						</Button>
+					</div>
+
+					{ ( attributes.layers || [] ).map( ( layer, layerIdx ) => (
+						<PanelBody
+							key={ layerIdx }
+							title={ `${ layer.type.toUpperCase() } ${ layerIdx + 1 }${ layer.src ? ' — ' + layer.src.split( '/' ).pop().substring( 0, 30 ) : '' }` }
+							opened={ expandedLayerIndex === layerIdx }
+							onToggle={ () =>
+								setExpandedLayerIndex( ( prev ) =>
+									prev === layerIdx ? null : layerIdx
+								)
+							}
+						>
+							<SelectControl
+								label={ __( 'Type', 'blocks-for-leaflet-map' ) }
+								value={ layer.type || 'geojson' }
+								options={ [
+									{ label: 'GeoJSON', value: 'geojson' },
+									{ label: 'GPX', value: 'gpx' },
+									{ label: 'KML', value: 'kml' },
+								] }
+								onChange={ ( v ) =>
+									handleUpdateLayer( layerIdx, { type: v } )
+								}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+							<TextControl
+								label={ __(
+									'Source URL',
+									'blocks-for-leaflet-map'
+								) }
+								value={ layer.src || '' }
+								type="url"
+								help={ __(
+									'Full URL to a .geojson, .gpx, or .kml file. Must be publicly accessible (CORS-enabled).',
+									'blocks-for-leaflet-map'
+								) }
+								onChange={ ( v ) =>
+									handleUpdateLayer( layerIdx, { src: v } )
+								}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+							<ToggleControl
+								label={ __(
+									'Fit map to layer bounds',
+									'blocks-for-leaflet-map'
+								) }
+								checked={ layer.fitbounds || false }
+								onChange={ ( v ) =>
+									handleUpdateLayer( layerIdx, { fitbounds: v } )
+								}
+								__nextHasNoMarginBottom
+							/>
+							<ToggleControl
+								label={ __(
+									'Render points as circle markers',
+									'blocks-for-leaflet-map'
+								) }
+								help={ __(
+									'When enabled, point features render as Leaflet circleMarkers instead of pin icons.',
+									'blocks-for-leaflet-map'
+								) }
+								checked={ layer.circleMarker || false }
+								onChange={ ( v ) =>
+									handleUpdateLayer( layerIdx, { circleMarker: v } )
+								}
+								__nextHasNoMarginBottom
+							/>
+
+							{ /* Popup configuration */ }
+							<PanelBody
+								title={ __(
+									'Popup configuration',
+									'blocks-for-leaflet-map'
+								) }
+								initialOpen={ false }
+							>
+								<p style={ { margin: '0 0 8px', fontSize: '11px', color: '#757575' } }>
+									{ __(
+										'Precedence (highest first): Show all properties as table → Single property → Popup template. GPX/KML files rarely expose feature properties — popup config is most useful for GeoJSON.',
+										'blocks-for-leaflet-map'
+									) }
+								</p>
+								<TextareaControl
+									label={ __(
+										'Popup template',
+										'blocks-for-leaflet-map'
+									) }
+									value={ layer.popupText || '' }
+									help={ __(
+										'Use {property_name} placeholders to interpolate feature properties. E.g. "Name: {name}".',
+										'blocks-for-leaflet-map'
+									) }
+									onChange={ ( v ) =>
+										handleUpdateLayer( layerIdx, { popupText: v } )
+									}
+									__nextHasNoMarginBottom
+								/>
+								<TextControl
+									label={ __(
+										'Single property to display',
+										'blocks-for-leaflet-map'
+									) }
+									value={ layer.popupProperty || '' }
+									help={ __(
+										'Property name whose value becomes the popup content. Overrides the popup template.',
+										'blocks-for-leaflet-map'
+									) }
+									onChange={ ( v ) =>
+										handleUpdateLayer( layerIdx, { popupProperty: v } )
+									}
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+								<ToggleControl
+									label={ __(
+										'Show all properties as table',
+										'blocks-for-leaflet-map'
+									) }
+									help={ __(
+										'Displays every feature property as an HTML table in the popup. Overrides the two fields above.',
+										'blocks-for-leaflet-map'
+									) }
+									checked={ layer.tableView || false }
+									onChange={ ( v ) =>
+										handleUpdateLayer( layerIdx, { tableView: v } )
+									}
+									__nextHasNoMarginBottom
+								/>
+							</PanelBody>
+
+							{ /* Default feature style */ }
+							<PanelBody
+								title={ __(
+									'Default feature style',
+									'blocks-for-leaflet-map'
+								) }
+								initialOpen={ false }
+							>
+								<p style={ { margin: '0 0 8px', fontSize: '11px', color: '#757575' } }>
+									{ __(
+										'Applied as the default layer style. Feature properties (e.g. geojson.io stroke/fill) override these defaults per-feature.',
+										'blocks-for-leaflet-map'
+									) }
+								</p>
+								<div>
+									<p style={ { margin: '0 0 4px', fontSize: '11px', fontWeight: 600 } }>
+										{ __( 'Stroke color', 'blocks-for-leaflet-map' ) }
+									</p>
+									<ColorPicker
+										color={ layer.color || '' }
+										onChange={ ( v ) =>
+											handleUpdateLayer( layerIdx, { color: v || '' } )
+										}
+										enableAlpha={ false }
+									/>
+								</div>
+								<RangeControl
+									label={ __( 'Weight', 'blocks-for-leaflet-map' ) }
+									value={ layer.weight ?? undefined }
+									min={ 0 }
+									max={ 20 }
+									step={ 1 }
+									allowReset
+									onChange={ ( v ) =>
+										handleUpdateLayer( layerIdx, { weight: v ?? null } )
+									}
+									__nextHasNoMarginBottom
+									__next40pxDefaultSize
+								/>
+								<RangeControl
+									label={ __( 'Stroke opacity', 'blocks-for-leaflet-map' ) }
+									value={ layer.opacity ?? undefined }
+									min={ 0 }
+									max={ 1 }
+									step={ 0.05 }
+									allowReset
+									onChange={ ( v ) =>
+										handleUpdateLayer( layerIdx, { opacity: v ?? null } )
+									}
+									__nextHasNoMarginBottom
+									__next40pxDefaultSize
+								/>
+								<TextControl
+									label={ __( 'Dash array', 'blocks-for-leaflet-map' ) }
+									value={ layer.dashArray || '' }
+									placeholder="5,5"
+									onChange={ ( v ) =>
+										handleUpdateLayer( layerIdx, { dashArray: v } )
+									}
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+								<TextControl
+									label={ __( 'CSS class', 'blocks-for-leaflet-map' ) }
+									value={ layer.classname || '' }
+									onChange={ ( v ) =>
+										handleUpdateLayer( layerIdx, { classname: v } )
+									}
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+								<ToggleControl
+									label={ __( 'Fill', 'blocks-for-leaflet-map' ) }
+									checked={ layer.fill || false }
+									onChange={ ( v ) =>
+										handleUpdateLayer( layerIdx, { fill: v } )
+									}
+									__nextHasNoMarginBottom
+								/>
+								{ layer.fill && (
+									<>
+										<div>
+											<p style={ { margin: '8px 0 4px', fontSize: '11px', fontWeight: 600 } }>
+												{ __( 'Fill color', 'blocks-for-leaflet-map' ) }
+											</p>
+											<ColorPicker
+												color={ layer.fillColor || '' }
+												onChange={ ( v ) =>
+													handleUpdateLayer( layerIdx, { fillColor: v || '' } )
+												}
+												enableAlpha={ false }
+											/>
+										</div>
+										<RangeControl
+											label={ __( 'Fill opacity', 'blocks-for-leaflet-map' ) }
+											value={ layer.fillOpacity ?? undefined }
+											min={ 0 }
+											max={ 1 }
+											step={ 0.05 }
+											allowReset
+											onChange={ ( v ) =>
+												handleUpdateLayer( layerIdx, { fillOpacity: v ?? null } )
+											}
+											__nextHasNoMarginBottom
+											__next40pxDefaultSize
+										/>
+									</>
+								) }
+							</PanelBody>
+
+							{ /* Custom point icon */ }
+							<PanelBody
+								title={ __(
+									'Custom point icon',
+									'blocks-for-leaflet-map'
+								) }
+								initialOpen={ false }
+							>
+								{ layer.circleMarker && (
+									<Notice status="info" isDismissible={ false }>
+										{ __(
+											'"Render points as circle markers" is enabled — custom icon is ignored. Disable it to use a custom image icon.',
+											'blocks-for-leaflet-map'
+										) }
+									</Notice>
+								) }
+								<ToggleControl
+									label={ __(
+										'Use custom icon',
+										'blocks-for-leaflet-map'
+									) }
+									checked={ layer.useCustomIcon || false }
+									disabled={ layer.circleMarker || false }
+									onChange={ ( v ) =>
+										handleUpdateLayer( layerIdx, { useCustomIcon: v } )
+									}
+									__nextHasNoMarginBottom
+								/>
+								{ layer.useCustomIcon && ! layer.circleMarker && (
+									<>
+										<MediaUploadCheck>
+											<MediaUpload
+												onSelect={ ( media ) => {
+													const updates = { iconUrl: media.url };
+													if ( media.width && media.height ) {
+														updates.iconWidth = media.width;
+														updates.iconHeight = media.height;
+														updates.iconAnchorX = Math.round( media.width / 2 );
+														updates.iconAnchorY = media.height;
+														updates.popupAnchorX = 0;
+														updates.popupAnchorY = -media.height;
+														updates.iconOriginalWidth = media.width;
+														updates.iconOriginalHeight = media.height;
+													}
+													handleUpdateLayer( layerIdx, updates );
+												} }
+												allowedTypes={ [ 'image' ] }
+												render={ ( { open } ) => (
+													<>
+														<Button
+															variant="secondary"
+															onClick={ open }
+															style={ { width: '100%', justifyContent: 'center', marginTop: '8px' } }
+														>
+															{ layer.iconUrl
+																? __( 'Replace image', 'blocks-for-leaflet-map' )
+																: __( 'Select image', 'blocks-for-leaflet-map' ) }
+														</Button>
+														{ layer.iconUrl && (
+															<>
+																<p style={ { fontSize: '11px', wordBreak: 'break-all', margin: '4px 0' } }>
+																	{ layer.iconUrl }
+																</p>
+																<Button
+																	variant="link"
+																	isDestructive
+																	onClick={ () =>
+																		handleUpdateLayer( layerIdx, { iconUrl: '' } )
+																	}
+																>
+																	{ __( 'Remove', 'blocks-for-leaflet-map' ) }
+																</Button>
+															</>
+														) }
+													</>
+												) }
+											/>
+										</MediaUploadCheck>
+										<p style={ { margin: '12px 0 4px', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: '#1e1e1e' } }>
+											{ __( 'Icon Size (px)', 'blocks-for-leaflet-map' ) }
+										</p>
+										<div style={ { display: 'flex', gap: '8px' } }>
+											<NumberControl
+												label={ __( 'Width', 'blocks-for-leaflet-map' ) }
+												value={ layer.iconWidth ?? '' }
+												min={ 1 }
+												onChange={ ( value ) => {
+													const val = parseInt( value, 10 );
+													if ( isNaN( val ) || val < 1 ) {
+														handleUpdateLayer( layerIdx, { iconWidth: isNaN( val ) ? null : val } );
+														return;
+													}
+													if ( layer.lockIconAspectRatio !== false && layer.iconHeight >= 1 ) {
+														const result = computeProportionalResize( {
+															axis: 'w', newVal: val,
+															wKey: 'iconWidth', hKey: 'iconHeight',
+															origW: layer.iconOriginalWidth, origH: layer.iconOriginalHeight,
+															curW: layer.iconWidth, curH: layer.iconHeight,
+															anchors: [
+																{ key: 'iconAnchorX', val: layer.iconAnchorX, axis: 'w' },
+																{ key: 'iconAnchorY', val: layer.iconAnchorY, axis: 'h' },
+																{ key: 'popupAnchorX', val: layer.popupAnchorX, axis: 'w' },
+																{ key: 'popupAnchorY', val: layer.popupAnchorY, axis: 'h' },
+															],
+														} );
+														if ( result ) { handleUpdateLayer( layerIdx, result ); return; }
+													}
+													handleUpdateLayer( layerIdx, { iconWidth: val } );
+												} }
+												style={ { flex: 1 } }
+												__next40pxDefaultSize
+											/>
+											<NumberControl
+												label={ __( 'Height', 'blocks-for-leaflet-map' ) }
+												value={ layer.iconHeight ?? '' }
+												min={ 1 }
+												onChange={ ( value ) => {
+													const val = parseInt( value, 10 );
+													if ( isNaN( val ) || val < 1 ) {
+														handleUpdateLayer( layerIdx, { iconHeight: isNaN( val ) ? null : val } );
+														return;
+													}
+													if ( layer.lockIconAspectRatio !== false && layer.iconWidth >= 1 ) {
+														const result = computeProportionalResize( {
+															axis: 'h', newVal: val,
+															wKey: 'iconWidth', hKey: 'iconHeight',
+															origW: layer.iconOriginalWidth, origH: layer.iconOriginalHeight,
+															curW: layer.iconWidth, curH: layer.iconHeight,
+															anchors: [
+																{ key: 'iconAnchorX', val: layer.iconAnchorX, axis: 'w' },
+																{ key: 'iconAnchorY', val: layer.iconAnchorY, axis: 'h' },
+																{ key: 'popupAnchorX', val: layer.popupAnchorX, axis: 'w' },
+																{ key: 'popupAnchorY', val: layer.popupAnchorY, axis: 'h' },
+															],
+														} );
+														if ( result ) { handleUpdateLayer( layerIdx, result ); return; }
+													}
+													handleUpdateLayer( layerIdx, { iconHeight: val } );
+												} }
+												style={ { flex: 1 } }
+												__next40pxDefaultSize
+											/>
+										</div>
+										<ToggleControl
+											label={ __( 'Lock aspect ratio', 'blocks-for-leaflet-map' ) }
+											checked={ layer.lockIconAspectRatio !== false }
+											onChange={ ( v ) =>
+												handleUpdateLayer( layerIdx, { lockIconAspectRatio: v } )
+											}
+											style={ { marginTop: '8px' } }
+											__nextHasNoMarginBottom
+										/>
+										{ /* Icon Anchor */ }
+										{ ( () => {
+											const iconDimValid =
+												layer.iconWidth >= 1 &&
+												isFinite( layer.iconWidth ) &&
+												layer.iconHeight >= 1 &&
+												isFinite( layer.iconHeight );
+											return (
+												<SelectControl
+													label={ __( 'Anchor position', 'blocks-for-leaflet-map' ) }
+													value={
+														iconDimValid
+															? getAnchorPreset( layer.iconAnchorX, layer.iconAnchorY, layer.iconWidth, layer.iconHeight )
+															: ''
+													}
+													disabled={ ! iconDimValid }
+													help={
+														iconDimValid
+															? __( 'Quick-set common anchor positions', 'blocks-for-leaflet-map' )
+															: __( 'Set icon size first', 'blocks-for-leaflet-map' )
+													}
+													options={ [
+														{ label: __( '— Select —', 'blocks-for-leaflet-map' ), value: '' },
+														{ label: __( 'Top left', 'blocks-for-leaflet-map' ), value: 'top-left' },
+														{ label: __( 'Top center', 'blocks-for-leaflet-map' ), value: 'top-center' },
+														{ label: __( 'Top right', 'blocks-for-leaflet-map' ), value: 'top-right' },
+														{ label: __( 'Middle left', 'blocks-for-leaflet-map' ), value: 'middle-left' },
+														{ label: __( 'Middle center', 'blocks-for-leaflet-map' ), value: 'middle-center' },
+														{ label: __( 'Middle right', 'blocks-for-leaflet-map' ), value: 'middle-right' },
+														{ label: __( 'Bottom left', 'blocks-for-leaflet-map' ), value: 'bottom-left' },
+														{ label: __( 'Bottom center', 'blocks-for-leaflet-map' ), value: 'bottom-center' },
+														{ label: __( 'Bottom right', 'blocks-for-leaflet-map' ), value: 'bottom-right' },
+														{ label: __( 'Custom', 'blocks-for-leaflet-map' ), value: 'custom', disabled: true },
+													] }
+													onChange={ ( presetId ) => {
+														const coords = computeAnchorFromPreset( presetId, layer.iconWidth, layer.iconHeight );
+														if ( coords ) handleUpdateLayer( layerIdx, { iconAnchorX: coords.x, iconAnchorY: coords.y } );
+													} }
+													style={ { marginTop: '12px' } }
+													__next40pxDefaultSize
+													__nextHasNoMarginBottom
+												/>
+											);
+										} )() }
+										<p style={ { margin: '8px 0 4px', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: '#1e1e1e' } }>
+											{ __( 'Icon Anchor (px)', 'blocks-for-leaflet-map' ) }
+										</p>
+										<div style={ { display: 'flex', gap: '8px' } }>
+											<NumberControl
+												label={ __( 'X', 'blocks-for-leaflet-map' ) }
+												value={ layer.iconAnchorX ?? '' }
+												onChange={ ( value ) => {
+													const val = parseInt( value, 10 );
+													handleUpdateLayer( layerIdx, { iconAnchorX: isNaN( val ) ? null : val } );
+												} }
+												style={ { flex: 1 } }
+												__next40pxDefaultSize
+											/>
+											<NumberControl
+												label={ __( 'Y', 'blocks-for-leaflet-map' ) }
+												value={ layer.iconAnchorY ?? '' }
+												onChange={ ( value ) => {
+													const val = parseInt( value, 10 );
+													handleUpdateLayer( layerIdx, { iconAnchorY: isNaN( val ) ? null : val } );
+												} }
+												style={ { flex: 1 } }
+												__next40pxDefaultSize
+											/>
+										</div>
+										<p style={ { margin: '12px 0 4px', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: '#1e1e1e' } }>
+											{ __( 'Popup Anchor (px)', 'blocks-for-leaflet-map' ) }
+										</p>
+										<div style={ { display: 'flex', gap: '8px' } }>
+											<NumberControl
+												label={ __( 'X', 'blocks-for-leaflet-map' ) }
+												value={ layer.popupAnchorX ?? '' }
+												onChange={ ( value ) => {
+													const val = parseInt( value, 10 );
+													handleUpdateLayer( layerIdx, { popupAnchorX: isNaN( val ) ? null : val } );
+												} }
+												style={ { flex: 1 } }
+												__next40pxDefaultSize
+											/>
+											<NumberControl
+												label={ __( 'Y', 'blocks-for-leaflet-map' ) }
+												value={ layer.popupAnchorY ?? '' }
+												onChange={ ( value ) => {
+													const val = parseInt( value, 10 );
+													handleUpdateLayer( layerIdx, { popupAnchorY: isNaN( val ) ? null : val } );
+												} }
+												style={ { flex: 1 } }
+												__next40pxDefaultSize
+											/>
+										</div>
+									</>
+								) }
+							</PanelBody>
+
+							<Button
+								variant="link"
+								isDestructive
+								onClick={ () => handleRemoveLayer( layerIdx ) }
+								style={ { marginTop: '8px' } }
+							>
+								{ __( 'Remove this layer', 'blocks-for-leaflet-map' ) }
+							</Button>
+						</PanelBody>
+					) ) }
 				</PanelBody>
 			</InspectorControls>
 

@@ -254,3 +254,178 @@ describe( 'buildCircleShortcodes', () => {
 		expect( result ).toContain( 'radius="1000"' );
 	} );
 } );
+
+// ── buildLayerShortcodes ──────────────────────────────────────────────────────
+
+const LAYER_TYPE_TAGS = {
+	geojson: 'leaflet-geojson',
+	gpx: 'leaflet-gpx',
+	kml: 'leaflet-kml',
+};
+
+function buildLayerShortcodes( layers ) {
+	if ( ! layers || layers.length === 0 ) return '';
+	let out = '';
+	for ( const layer of layers ) {
+		const src = ( layer.src || '' ).trim();
+		if ( ! src ) continue;
+		const tag = LAYER_TYPE_TAGS[ layer.type ] || LAYER_TYPE_TAGS.geojson;
+
+		let attrs = ` src="${ src }"`;
+		if ( layer.fitbounds ) attrs += ` fitbounds="true"`;
+		if ( layer.circleMarker ) attrs += ` circleMarker="true"`;
+
+		const sanitize = ( s ) =>
+			s.replace( /"/g, '&quot;' ).replace( /\]/g, '&#93;' );
+		if ( layer.popupText && layer.popupText.trim() )
+			attrs += ` popup_text="${ sanitize( layer.popupText.trim() ) }"`;
+		if ( layer.popupProperty && layer.popupProperty.trim() )
+			attrs += ` popup_property="${ sanitize( layer.popupProperty.trim() ) }"`;
+		if ( layer.tableView ) attrs += ` table_view="1"`;
+
+		if ( layer.color && layer.color.trim() )
+			attrs += ` color="${ layer.color.trim() }"`;
+		if ( layer.weight != null ) attrs += ` weight="${ layer.weight }"`;
+		if ( layer.opacity != null ) attrs += ` opacity="${ layer.opacity }"`;
+		if ( layer.dashArray && layer.dashArray.trim() )
+			attrs += ` dasharray="${ layer.dashArray.trim() }"`;
+		if ( layer.classname && layer.classname.trim() )
+			attrs += ` classname="${ layer.classname.trim() }"`;
+		if ( layer.fill ) attrs += ` fill="true"`;
+		if ( layer.fillColor && layer.fillColor.trim() )
+			attrs += ` fillcolor="${ layer.fillColor.trim() }"`;
+		if ( layer.fillOpacity != null )
+			attrs += ` fillopacity="${ layer.fillOpacity }"`;
+
+		if ( layer.useCustomIcon && ! layer.circleMarker ) {
+			if ( layer.iconUrl ) attrs += ` iconurl="${ layer.iconUrl }"`;
+			if (
+				layer.iconWidth != null &&
+				layer.iconHeight != null &&
+				layer.iconWidth >= 1 &&
+				layer.iconHeight >= 1
+			) {
+				attrs += ` iconsize="${ layer.iconWidth },${ layer.iconHeight }"`;
+			}
+			if ( layer.iconAnchorX != null && layer.iconAnchorY != null )
+				attrs += ` iconanchor="${ layer.iconAnchorX },${ layer.iconAnchorY }"`;
+			if ( layer.popupAnchorX != null && layer.popupAnchorY != null )
+				attrs += ` popupanchor="${ layer.popupAnchorX },${ layer.popupAnchorY }"`;
+		}
+
+		out += `\n[${ tag }${ attrs } /]`;
+	}
+	return out;
+}
+
+describe( 'buildLayerShortcodes', () => {
+	test( 'empty / null → empty string', () => {
+		expect( buildLayerShortcodes( [] ) ).toBe( '' );
+		expect( buildLayerShortcodes( null ) ).toBe( '' );
+	} );
+
+	test( 'layer with no src → skipped', () => {
+		expect( buildLayerShortcodes( [ { type: 'geojson', src: '' } ] ) ).toBe( '' );
+		expect( buildLayerShortcodes( [ { type: 'geojson' } ] ) ).toBe( '' );
+	} );
+
+	test( 'type geojson → leaflet-geojson tag', () => {
+		const result = buildLayerShortcodes( [ { type: 'geojson', src: 'https://example.com/a.geojson' } ] );
+		expect( result ).toContain( '[leaflet-geojson' );
+	} );
+
+	test( 'type gpx → leaflet-gpx tag', () => {
+		const result = buildLayerShortcodes( [ { type: 'gpx', src: 'https://example.com/a.gpx' } ] );
+		expect( result ).toContain( '[leaflet-gpx' );
+	} );
+
+	test( 'type kml → leaflet-kml tag', () => {
+		const result = buildLayerShortcodes( [ { type: 'kml', src: 'https://example.com/a.kml' } ] );
+		expect( result ).toContain( '[leaflet-kml' );
+	} );
+
+	test( 'unknown type falls back to leaflet-geojson', () => {
+		const result = buildLayerShortcodes( [ { type: 'csv', src: 'https://example.com/a.csv' } ] );
+		expect( result ).toContain( '[leaflet-geojson' );
+	} );
+
+	test( 'popup_text emitted', () => {
+		const result = buildLayerShortcodes( [ { type: 'geojson', src: 'https://x.com/a.geojson', popupText: 'Name: {name}' } ] );
+		expect( result ).toContain( 'popup_text="Name: {name}"' );
+	} );
+
+	test( 'popup_property emitted', () => {
+		const result = buildLayerShortcodes( [ { type: 'geojson', src: 'https://x.com/a.geojson', popupProperty: 'name' } ] );
+		expect( result ).toContain( 'popup_property="name"' );
+	} );
+
+	test( 'tableView: true → table_view="1"', () => {
+		const result = buildLayerShortcodes( [ { type: 'geojson', src: 'https://x.com/a.geojson', tableView: true } ] );
+		expect( result ).toContain( 'table_view="1"' );
+	} );
+
+	test( 'style attrs are lowercased (dasharray, fillcolor, fillopacity)', () => {
+		const result = buildLayerShortcodes( [ {
+			type: 'geojson', src: 'https://x.com/a.geojson',
+			dashArray: '5,5', fillColor: '#abc', fillOpacity: 0.4,
+		} ] );
+		expect( result ).toContain( 'dasharray="5,5"' );
+		expect( result ).toContain( 'fillcolor="#abc"' );
+		expect( result ).toContain( 'fillopacity="0.4"' );
+	} );
+
+	test( 'custom icon attrs emitted when useCustomIcon true and circleMarker false', () => {
+		const result = buildLayerShortcodes( [ {
+			type: 'geojson', src: 'https://x.com/a.geojson',
+			useCustomIcon: true, iconUrl: 'https://x.com/pin.png',
+			iconWidth: 32, iconHeight: 48,
+			iconAnchorX: 16, iconAnchorY: 48,
+			popupAnchorX: 0, popupAnchorY: -48,
+		} ] );
+		expect( result ).toContain( 'iconurl="https://x.com/pin.png"' );
+		expect( result ).toContain( 'iconsize="32,48"' );
+		expect( result ).toContain( 'iconanchor="16,48"' );
+		expect( result ).toContain( 'popupanchor="0,-48"' );
+	} );
+
+	test( 'circleMarker=true suppresses icon attrs even when useCustomIcon=true', () => {
+		const result = buildLayerShortcodes( [ {
+			type: 'geojson', src: 'https://x.com/a.geojson',
+			circleMarker: true, useCustomIcon: true, iconUrl: 'https://x.com/pin.png',
+		} ] );
+		expect( result ).not.toContain( 'iconurl' );
+		expect( result ).toContain( 'circleMarker="true"' );
+	} );
+
+	test( 'iconsize not emitted when only width set', () => {
+		const result = buildLayerShortcodes( [ {
+			type: 'geojson', src: 'https://x.com/a.geojson',
+			useCustomIcon: true, iconUrl: 'https://x.com/pin.png',
+			iconWidth: 32, iconHeight: null,
+		} ] );
+		expect( result ).not.toContain( 'iconsize' );
+	} );
+
+	test( 'popup_text with double-quote escaped to &quot;', () => {
+		const result = buildLayerShortcodes( [ {
+			type: 'geojson', src: 'https://x.com/a.geojson',
+			popupText: 'Say "hello"',
+		} ] );
+		expect( result ).toContain( 'popup_text="Say &quot;hello&quot;"' );
+		expect( result ).not.toContain( '"hello"' );
+	} );
+
+	test( 'popup_text with ] escaped to &#93;', () => {
+		const result = buildLayerShortcodes( [ {
+			type: 'geojson', src: 'https://x.com/a.geojson',
+			popupText: 'Close]bracket',
+		} ] );
+		expect( result ).toContain( 'popup_text="Close&#93;bracket"' );
+	} );
+
+	test( 'all emissions are self-closing', () => {
+		const result = buildLayerShortcodes( [ { type: 'geojson', src: 'https://x.com/a.geojson' } ] );
+		expect( result ).toMatch( / \/\]$/ );
+		expect( result ).not.toContain( '[/leaflet-' );
+	} );
+} );
