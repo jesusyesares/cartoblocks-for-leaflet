@@ -2,7 +2,7 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "blocks-for-leaflet-map/leaflet-map-block",
-	"version": "0.6.0",
+	"version": "0.7.0",
 	"title": "Leaflet Map Block",
 	"category": "embed",
 	"icon": "location-alt",
@@ -249,6 +249,41 @@
 					},
 					"popup": { "type": "string", "default": "" },
 					"visible": { "type": "boolean", "default": false }
+				}
+			}
+		},
+		"layers": {
+			"type": "array",
+			"default": [],
+			"items": {
+				"type": "object",
+				"properties": {
+					"type":              { "type": "string",  "default": "geojson" },
+					"src":               { "type": "string",  "default": "" },
+					"fitbounds":         { "type": "boolean", "default": false },
+					"circleMarker":      { "type": "boolean", "default": false },
+					"popupText":         { "type": "string",  "default": "" },
+					"popupProperty":     { "type": "string",  "default": "" },
+					"tableView":         { "type": "boolean", "default": false },
+					"color":             { "type": "string",  "default": "" },
+					"weight":            { "type": [ "number", "null" ], "default": null },
+					"opacity":           { "type": [ "number", "null" ], "default": null },
+					"dashArray":         { "type": "string",  "default": "" },
+					"classname":         { "type": "string",  "default": "" },
+					"fill":              { "type": "boolean", "default": false },
+					"fillColor":         { "type": "string",  "default": "" },
+					"fillOpacity":       { "type": [ "number", "null" ], "default": null },
+					"useCustomIcon":     { "type": "boolean", "default": false },
+					"iconUrl":           { "type": "string",  "default": "" },
+					"iconWidth":         { "type": [ "number", "null" ] },
+					"iconHeight":        { "type": [ "number", "null" ] },
+					"iconAnchorX":       { "type": [ "number", "null" ] },
+					"iconAnchorY":       { "type": [ "number", "null" ] },
+					"popupAnchorX":      { "type": [ "number", "null" ] },
+					"popupAnchorY":      { "type": [ "number", "null" ] },
+					"iconOriginalWidth":  { "type": [ "number", "null" ] },
+					"iconOriginalHeight": { "type": [ "number", "null" ] },
+					"lockIconAspectRatio": { "type": "boolean", "default": true }
 				}
 			}
 		}

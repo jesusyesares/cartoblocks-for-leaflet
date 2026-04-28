@@ -3,7 +3,7 @@
  * Plugin Name:       Blocks for Leaflet Map
  * Plugin URI:        https://github.com/jesusyesares/blocks-for-leaflet-map
  * Description:       A dynamic Gutenberg block that wraps the Leaflet Map plugin shortcodes. Requires the "Leaflet Map" plugin to be installed and active.
- * Version:           0.6.0
+ * Version:           0.7.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Jesús Yesares García
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-define( 'BFLM_VERSION', '0.6.0' );
+define( 'BFLM_VERSION', '0.7.0' );
 define( 'BFLM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BFLM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BFLM_LEAFLET_MAP_PLUGIN', 'leaflet-map/leaflet-map.php' );
@@ -136,6 +136,9 @@ function bflm_preview_map(): void {
 	$circles_raw     = isset( $_GET['circles'] ) ? wp_unslash( $_GET['circles'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON decoded and each field sanitised below.
 	$circles_decoded = json_decode( $circles_raw, true );
 	$circles         = is_array( $circles_decoded ) ? $circles_decoded : array();
+	$layers_raw      = isset( $_GET['layers'] ) ? wp_unslash( $_GET['layers'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON decoded and each field sanitised below.
+	$layers_decoded  = json_decode( $layers_raw, true );
+	$layers          = is_array( $layers_decoded ) ? $layers_decoded : array();
 	$fit_markers     = ! empty( $_GET['fitMarkers'] ) && 'true' === $_GET['fitMarkers'] ? 'true' : 'false';
 	$show_scale      = ! empty( $_GET['showScale'] ) && 'true' === $_GET['showScale'] ? '1' : '0';
 	$attribution     = isset( $_GET['attribution'] ) ? wp_kses_post( wp_unslash( $_GET['attribution'] ) ) : '';
@@ -488,6 +491,88 @@ function bflm_preview_map(): void {
 		}
 	}
 
+	// Build [leaflet-geojson] / [leaflet-gpx] / [leaflet-kml] shortcodes.
+	// Keep in sync with buildLayerShortcodes() in edit.js and the matching loop in render.php.
+	$layer_tag_map = array(
+		'geojson' => 'leaflet-geojson',
+		'gpx'     => 'leaflet-gpx',
+		'kml'     => 'leaflet-kml',
+	);
+
+	$layer_shortcodes = '';
+	foreach ( $layers as $layer ) {
+		$l_src = isset( $layer['src'] ) ? trim( (string) $layer['src'] ) : '';
+		if ( '' === $l_src ) {
+			continue;
+		}
+		$l_type = isset( $layer['type'] ) && isset( $layer_tag_map[ $layer['type'] ] )
+			? $layer['type']
+			: 'geojson';
+		$l_tag  = $layer_tag_map[ $l_type ];
+
+		$l_open = sprintf( '[%s src="%s"', $l_tag, esc_attr( $l_src ) );
+		if ( ! empty( $layer['fitbounds'] ) ) {
+			$l_open .= ' fitbounds="true"';
+		}
+		if ( ! empty( $layer['circleMarker'] ) ) {
+			$l_open .= ' circleMarker="true"';
+		}
+		if ( isset( $layer['popupText'] ) && '' !== trim( $layer['popupText'] ) ) {
+			$l_open .= sprintf( ' popup_text="%s"', esc_attr( trim( $layer['popupText'] ) ) );
+		}
+		if ( isset( $layer['popupProperty'] ) && '' !== trim( $layer['popupProperty'] ) ) {
+			$l_open .= sprintf( ' popup_property="%s"', esc_attr( trim( $layer['popupProperty'] ) ) );
+		}
+		if ( ! empty( $layer['tableView'] ) ) {
+			$l_open .= ' table_view="1"';
+		}
+		if ( isset( $layer['color'] ) && '' !== trim( $layer['color'] ) ) {
+			$l_open .= sprintf( ' color="%s"', esc_attr( trim( $layer['color'] ) ) );
+		}
+		if ( isset( $layer['weight'] ) && is_numeric( $layer['weight'] ) ) {
+			$l_open .= sprintf( ' weight="%s"', esc_attr( (string) (float) $layer['weight'] ) );
+		}
+		if ( isset( $layer['opacity'] ) && is_numeric( $layer['opacity'] ) ) {
+			$l_open .= sprintf( ' opacity="%s"', esc_attr( (string) (float) $layer['opacity'] ) );
+		}
+		if ( isset( $layer['dashArray'] ) && '' !== trim( $layer['dashArray'] ) ) {
+			$l_open .= sprintf( ' dasharray="%s"', esc_attr( trim( $layer['dashArray'] ) ) );
+		}
+		if ( isset( $layer['classname'] ) && '' !== trim( $layer['classname'] ) ) {
+			$l_open .= sprintf( ' classname="%s"', esc_attr( trim( $layer['classname'] ) ) );
+		}
+		if ( ! empty( $layer['fill'] ) ) {
+			$l_open .= ' fill="true"';
+		}
+		if ( isset( $layer['fillColor'] ) && '' !== trim( $layer['fillColor'] ) ) {
+			$l_open .= sprintf( ' fillcolor="%s"', esc_attr( trim( $layer['fillColor'] ) ) );
+		}
+		if ( isset( $layer['fillOpacity'] ) && is_numeric( $layer['fillOpacity'] ) ) {
+			$l_open .= sprintf( ' fillopacity="%s"', esc_attr( (string) (float) $layer['fillOpacity'] ) );
+		}
+		if ( ! empty( $layer['useCustomIcon'] ) && empty( $layer['circleMarker'] ) ) {
+			if ( ! empty( $layer['iconUrl'] ) ) {
+				$l_open .= sprintf( ' iconurl="%s"', esc_attr( $layer['iconUrl'] ) );
+			}
+			$l_iw = isset( $layer['iconWidth'] ) && is_numeric( $layer['iconWidth'] ) ? (int) $layer['iconWidth'] : null;
+			$l_ih = isset( $layer['iconHeight'] ) && is_numeric( $layer['iconHeight'] ) ? (int) $layer['iconHeight'] : null;
+			if ( null !== $l_iw && null !== $l_ih && $l_iw >= 1 && $l_ih >= 1 ) {
+				$l_open .= sprintf( ' iconsize="%d,%d"', $l_iw, $l_ih );
+			}
+			$l_iax = isset( $layer['iconAnchorX'] ) && is_numeric( $layer['iconAnchorX'] ) ? (int) $layer['iconAnchorX'] : null;
+			$l_iay = isset( $layer['iconAnchorY'] ) && is_numeric( $layer['iconAnchorY'] ) ? (int) $layer['iconAnchorY'] : null;
+			if ( null !== $l_iax && null !== $l_iay ) {
+				$l_open .= sprintf( ' iconanchor="%d,%d"', $l_iax, $l_iay );
+			}
+			$l_pax = isset( $layer['popupAnchorX'] ) && is_numeric( $layer['popupAnchorX'] ) ? (int) $layer['popupAnchorX'] : null;
+			$l_pay = isset( $layer['popupAnchorY'] ) && is_numeric( $layer['popupAnchorY'] ) ? (int) $layer['popupAnchorY'] : null;
+			if ( null !== $l_pax && null !== $l_pay ) {
+				$l_open .= sprintf( ' popupanchor="%d,%d"', $l_pax, $l_pay );
+			}
+		}
+		$layer_shortcodes .= $l_open . ' /]';
+	}
+
 	// Render a complete, self-contained HTML page.
 	// wp_head() / wp_footer() let the Leaflet Map plugin load its own assets.
 	?>
@@ -510,7 +595,7 @@ function bflm_preview_map(): void {
 <div id="map-wrap">
 	<?php
 	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted shortcode output, same rationale as render.php.
-	echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes . $line_point_shortcodes . $circle_shortcodes );
+	echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes . $line_point_shortcodes . $circle_shortcodes . $layer_shortcodes );
 	?>
 </div>
 <script>

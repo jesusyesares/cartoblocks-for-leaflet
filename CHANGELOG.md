@@ -5,6 +5,24 @@ All notable changes to the Blocks for Leaflet Map plugin will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-04-28
+
+### Added
+- `[leaflet-geojson]`, `[leaflet-gpx]`, and `[leaflet-kml]` shortcode support via a new **Data Layers** panel in the block inspector.
+- Per-layer controls: source URL (`src`), format type selector (GeoJSON / GPX / KML — switchable post-add), **Fit map to layer bounds** (`fitbounds`), **Render points as circle markers** (`circleMarker`).
+- **Popup configuration** sub-panel: popup template with `{property}` interpolation (`popup_text`), single-property display (`popup_property`), and full-properties table view (`table_view`). Bozdoz precedence (highest → lowest): `table_view` → `popup_property` → `popup_text`.
+- **Default feature style** sub-panel: color, weight, opacity, dash array, CSS class, fill toggle, fill color, fill opacity — applied as the layer default; individual feature properties (e.g. geojson.io `stroke`/`fill`) override per-feature.
+- **Custom point icon** sub-panel: MediaUpload picker with auto-fill of size + bottom-center pin defaults, aspect-ratio lock, 9-position anchor preset selector, icon anchor (X/Y), popup anchor (X/Y). Reuses `computeProportionalResize`, `getAnchorPreset`, `computeAnchorFromPreset` helpers already present for markers.
+- Mutual-exclusion notice in the custom point icon panel when `circleMarker` is on — icon is suppressed in the shortcode, icon settings are preserved.
+- `layers` array attribute in `block.json` with full per-item schema (type, src, fitbounds, circleMarker, popup fields, full style fields, full custom-icon fields with aspect-ratio metadata).
+- All three serialization paths kept in sync: `edit.js::buildLayerShortcodes`, `render.php` loop, `bflm_preview_map()` loop in `blocks-for-leaflet-map.php`.
+- 16 new Jest unit tests for `buildLayerShortcodes` (36 total passing): empty array, missing src skip, all three type tags, unknown-type fallback, popup attrs, style attr lowercasing, custom icon block, circleMarker exclusion, partial icon size guard, `"` and `]` escaping in popup_text, self-closing assertion.
+
+### Out of scope (deferred)
+- Media Library file picker for `.geojson`/`.gpx`/`.kml` — requires `upload_mimes` filter; defer to v0.8.
+- `tooltipanchor` attribute — reachable upstream but unused in their UI.
+- Custom JS callbacks (`onEachFeature`, `pointToLayer`, `style` function) — would require sandboxed code editor.
+
 ## [0.6.0] - 2026-04-27
 
 ### Added
