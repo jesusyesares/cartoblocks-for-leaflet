@@ -387,6 +387,40 @@ function buildLayerShortcodes( layers ) {
 }
 
 /**
+ * Build [leaflet-image-overlay] / [leaflet-video-overlay] shortcode strings.
+ * Skips overlays with empty src or bounds. Always self-closing.
+ * Keep in sync with render.php and bflm_preview_map() in blocks-for-leaflet-map.php.
+ *
+ * @param {Array} overlays
+ * @return {string}
+ */
+function buildOverlayShortcodes( overlays ) {
+	if ( ! overlays || overlays.length === 0 ) return '';
+	let out = '';
+	for ( const overlay of overlays ) {
+		const src = ( overlay.src || '' ).trim();
+		const bounds = ( overlay.bounds || '' ).trim();
+		if ( ! src || ! bounds ) continue;
+		const tag =
+			overlay.type === 'video'
+				? 'leaflet-video-overlay'
+				: 'leaflet-image-overlay';
+		let attrs = ` src="${ src }" bounds="${ bounds }"`;
+		if ( overlay.opacity != null ) attrs += ` opacity="${ overlay.opacity }"`;
+		if ( overlay.interactive ) attrs += ` interactive="true"`;
+		if ( overlay.alt && overlay.alt.trim() )
+			attrs += ` alt="${ overlay.alt.trim() }"`;
+		if ( overlay.zIndex != null ) attrs += ` zindex="${ overlay.zIndex }"`;
+		if ( overlay.classname && overlay.classname.trim() )
+			attrs += ` classname="${ overlay.classname.trim() }"`;
+		if ( overlay.type !== 'video' && overlay.keepAspectRatio === false )
+			attrs += ` keepaspectratio="false"`;
+		out += `\n[${ tag }${ attrs } /]`;
+	}
+	return out;
+}
+
+/**
  * Build the [leaflet-map] and [leaflet-marker] shortcode string from block
  * attributes, exactly mirroring what render.php emits on the frontend.
  *
@@ -538,6 +572,7 @@ function buildShortcode( attributes ) {
 	shortcode += buildCircleShortcodes( attributes.circles );
 	if ( ! imageMap ) {
 		shortcode += buildLayerShortcodes( attributes.layers );
+		shortcode += buildOverlayShortcodes( attributes.overlays );
 	}
 
 	return shortcode;
@@ -796,6 +831,7 @@ function buildPreviewUrl( attributes, clientId ) {
 		wmsSource,
 		wmsLayer,
 		wmsCrs,
+		overlays,
 	} = attributes;
 
 	const { previewUrl, previewNonce } = window.bflmEditor || {};
@@ -837,6 +873,7 @@ function buildPreviewUrl( attributes, clientId ) {
 		wmsSource: wmsSource || '',
 		wmsLayer: wmsLayer || '',
 		wmsCrs: wmsCrs || '',
+		overlays: JSON.stringify( overlays || [] ),
 	} );
 
 	// Only include interaction params when explicitly set (not "Default").
@@ -971,6 +1008,7 @@ export default function Edit( {
 		wmsSource,
 		wmsLayer,
 		wmsCrs,
+		overlays,
 	} = attributes;
 
 	// Local state for NumberControls that commit only on blur (Tile Size, Zoom Offset).
@@ -1085,6 +1123,9 @@ export default function Edit( {
 
 	/** Index of the per-layer PanelBody that is currently expanded (controlled). */
 	const [ expandedLayerIndex, setExpandedLayerIndex ] = useState( null );
+
+	/** Index of the per-overlay PanelBody that is currently expanded (controlled). */
+	const [ expandedOverlayIndex, setExpandedOverlayIndex ] = useState( null );
 
 	/** Per-circle geocode UI state keyed by circle index. { input, status, candidates, error } */
 	const [ circleSearch, setCircleSearch ] = useState( {} );
@@ -2152,6 +2193,49 @@ export default function Edit( {
 		setAttributes( {
 			layers: ( attributes.layers || [] ).map( ( l, i ) =>
 				i === index ? { ...l, ...updates } : l
+			),
+		} );
+	}
+
+	/** Add a new overlay of the given type and expand it. */
+	function handleAddOverlay( type ) {
+		const next = [
+			...( attributes.overlays || [] ),
+			{
+				type,
+				src: '',
+				bounds: '',
+				opacity: null,
+				interactive: false,
+				alt: '',
+				zIndex: null,
+				classname: '',
+				keepAspectRatio: true,
+			},
+		];
+		setAttributes( { overlays: next } );
+		setExpandedOverlayIndex( next.length - 1 );
+	}
+
+	/** Remove an overlay by index. */
+	function handleRemoveOverlay( index ) {
+		setAttributes( {
+			overlays: ( attributes.overlays || [] ).filter(
+				( _, i ) => i !== index
+			),
+		} );
+		if ( expandedOverlayIndex === index ) {
+			setExpandedOverlayIndex( null );
+		} else if ( expandedOverlayIndex > index ) {
+			setExpandedOverlayIndex( expandedOverlayIndex - 1 );
+		}
+	}
+
+	/** Shallow-merge updates into an overlay at the given index. */
+	function handleUpdateOverlay( index, updates ) {
+		setAttributes( {
+			overlays: ( attributes.overlays || [] ).map( ( o, i ) =>
+				i === index ? { ...o, ...updates } : o
 			),
 		} );
 	}
@@ -7248,6 +7332,160 @@ export default function Edit( {
 									'Remove this layer',
 									'blocks-for-leaflet-map'
 								) }
+							</Button>
+						</PanelBody>
+					) ) }
+				</PanelBody> }
+
+				{ /* ── Overlays panel ──────────────────────────────────── */ }
+				{ ! imageMap && <PanelBody
+					title={ sprintf(
+						/* translators: %d: number of overlays. */
+						__( 'Overlays (%d)', 'blocks-for-leaflet-map' ),
+						( overlays || [] ).length
+					) }
+					initialOpen={ false }
+				>
+					<p>{ __( 'Add image or video layers pinned to map coordinates.', 'blocks-for-leaflet-map' ) }</p>
+					<div style={ { display: 'flex', gap: '8px', marginBottom: '12px' } }>
+						<Button
+							variant="secondary"
+							onClick={ () => handleAddOverlay( 'image' ) }
+						>
+							{ __( '+ Image', 'blocks-for-leaflet-map' ) }
+						</Button>
+						<Button
+							variant="secondary"
+							onClick={ () => handleAddOverlay( 'video' ) }
+						>
+							{ __( '+ Video', 'blocks-for-leaflet-map' ) }
+						</Button>
+					</div>
+					{ ( overlays || [] ).map( ( overlay, overlayIdx ) => (
+						<PanelBody
+							key={ overlayIdx }
+							title={ sprintf(
+								/* translators: 1: overlay type, 2: index number. */
+								__( '%1$s overlay %2$d', 'blocks-for-leaflet-map' ),
+								overlay.type === 'video'
+									? __( 'Video', 'blocks-for-leaflet-map' )
+									: __( 'Image', 'blocks-for-leaflet-map' ),
+								overlayIdx + 1
+							) }
+							initialOpen={ expandedOverlayIndex === overlayIdx }
+							onToggle={ ( isOpen ) =>
+								setExpandedOverlayIndex(
+									isOpen ? overlayIdx : null
+								)
+							}
+						>
+							<SelectControl
+								label={ __( 'Type', 'blocks-for-leaflet-map' ) }
+								value={ overlay.type }
+								options={ [
+									{ value: 'image', label: __( 'Image overlay', 'blocks-for-leaflet-map' ) },
+									{ value: 'video', label: __( 'Video overlay', 'blocks-for-leaflet-map' ) },
+								] }
+								onChange={ ( value ) =>
+									handleUpdateOverlay( overlayIdx, { type: value } )
+								}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+							<TextControl
+								label={ __( 'Source URL', 'blocks-for-leaflet-map' ) }
+								placeholder={ overlay.type === 'video'
+									? 'https://example.com/video.mp4'
+									: 'https://example.com/image.jpg'
+								}
+								value={ overlay.src }
+								onChange={ ( value ) =>
+									handleUpdateOverlay( overlayIdx, { src: value } )
+								}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+							<TextControl
+								label={ __( 'Bounds', 'blocks-for-leaflet-map' ) }
+								placeholder="40.712,-74.226;40.773,-74.125"
+								help={ __( 'SW corner ; NE corner: lat1,lng1;lat2,lng2', 'blocks-for-leaflet-map' ) }
+								value={ overlay.bounds }
+								onChange={ ( value ) =>
+									handleUpdateOverlay( overlayIdx, { bounds: value } )
+								}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+							<RangeControl
+								label={ __( 'Opacity', 'blocks-for-leaflet-map' ) }
+								value={ overlay.opacity ?? 1 }
+								min={ 0 }
+								max={ 1 }
+								step={ 0.05 }
+								onChange={ ( value ) =>
+									handleUpdateOverlay( overlayIdx, { opacity: value } )
+								}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+							<ToggleControl
+								label={ __( 'Interactive', 'blocks-for-leaflet-map' ) }
+								help={ __( 'Allow mouse/touch events on this overlay.', 'blocks-for-leaflet-map' ) }
+								checked={ overlay.interactive }
+								onChange={ ( value ) =>
+									handleUpdateOverlay( overlayIdx, { interactive: value } )
+								}
+								__nextHasNoMarginBottom
+							/>
+							{ overlay.type === 'image' && (
+								<>
+									<TextControl
+										label={ __( 'Alt text', 'blocks-for-leaflet-map' ) }
+										value={ overlay.alt }
+										onChange={ ( value ) =>
+											handleUpdateOverlay( overlayIdx, { alt: value } )
+										}
+										__next40pxDefaultSize
+										__nextHasNoMarginBottom
+									/>
+									<ToggleControl
+										label={ __( 'Keep aspect ratio', 'blocks-for-leaflet-map' ) }
+										checked={ overlay.keepAspectRatio }
+										onChange={ ( value ) =>
+											handleUpdateOverlay( overlayIdx, { keepAspectRatio: value } )
+										}
+										__nextHasNoMarginBottom
+									/>
+								</>
+							) }
+							<NumberControl
+								label={ __( 'Z-Index', 'blocks-for-leaflet-map' ) }
+								value={ overlay.zIndex ?? '' }
+								onChange={ ( value ) =>
+									handleUpdateOverlay( overlayIdx, {
+										zIndex: value !== '' && ! isNaN( value )
+											? parseInt( value, 10 )
+											: null,
+									} )
+								}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+							<TextControl
+								label={ __( 'CSS class', 'blocks-for-leaflet-map' ) }
+								value={ overlay.classname }
+								onChange={ ( value ) =>
+									handleUpdateOverlay( overlayIdx, { classname: value } )
+								}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+							<Button
+								isDestructive
+								variant="secondary"
+								onClick={ () => handleRemoveOverlay( overlayIdx ) }
+							>
+								{ __( 'Remove this overlay', 'blocks-for-leaflet-map' ) }
 							</Button>
 						</PanelBody>
 					) ) }

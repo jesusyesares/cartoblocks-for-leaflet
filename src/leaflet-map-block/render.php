@@ -502,6 +502,44 @@ foreach ( $layers as $layer ) {
 	$layer_shortcodes .= $l_open . ' /]';
 }
 
+// Build [leaflet-image-overlay] / [leaflet-video-overlay] shortcodes.
+// Keep in sync with buildOverlayShortcodes() in edit.js and the matching loop in blocks-for-leaflet-map.php.
+$overlays = isset( $attributes['overlays'] ) && is_array( $attributes['overlays'] )
+	? $attributes['overlays']
+	: array();
+
+$overlay_shortcodes = '';
+foreach ( $overlays as $overlay ) {
+	$o_src    = isset( $overlay['src'] ) ? trim( (string) $overlay['src'] ) : '';
+	$o_bounds = isset( $overlay['bounds'] ) ? trim( (string) $overlay['bounds'] ) : '';
+	if ( '' === $o_src || '' === $o_bounds ) {
+		continue;
+	}
+	$o_tag  = ( isset( $overlay['type'] ) && 'video' === $overlay['type'] )
+		? 'leaflet-video-overlay'
+		: 'leaflet-image-overlay';
+	$o_open = sprintf( '[%s src="%s" bounds="%s"', $o_tag, esc_attr( $o_src ), esc_attr( $o_bounds ) );
+	if ( isset( $overlay['opacity'] ) && is_numeric( $overlay['opacity'] ) ) {
+		$o_open .= sprintf( ' opacity="%s"', esc_attr( (string) (float) $overlay['opacity'] ) );
+	}
+	if ( ! empty( $overlay['interactive'] ) ) {
+		$o_open .= ' interactive="true"';
+	}
+	if ( isset( $overlay['alt'] ) && '' !== trim( $overlay['alt'] ) ) {
+		$o_open .= sprintf( ' alt="%s"', esc_attr( trim( $overlay['alt'] ) ) );
+	}
+	if ( isset( $overlay['zIndex'] ) && is_numeric( $overlay['zIndex'] ) ) {
+		$o_open .= sprintf( ' zindex="%d"', (int) $overlay['zIndex'] );
+	}
+	if ( isset( $overlay['classname'] ) && '' !== trim( $overlay['classname'] ) ) {
+		$o_open .= sprintf( ' classname="%s"', esc_attr( trim( $overlay['classname'] ) ) );
+	}
+	if ( 'leaflet-image-overlay' === $o_tag && isset( $overlay['keepAspectRatio'] ) && false === $overlay['keepAspectRatio'] ) {
+		$o_open .= ' keepaspectratio="false"';
+	}
+	$overlay_shortcodes .= $o_open . ' /]';
+}
+
 $wrapper_attributes = get_block_wrapper_attributes(
 	array(
 		'class' => 'bflm-leaflet-map-block',
@@ -563,7 +601,7 @@ if ( $is_image_map && '' !== $image_src ) {
 } else {
 	?>
 <div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitized by get_block_wrapper_attributes(). ?>>
-	<?php echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes . $circle_shortcodes . $layer_shortcodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted output from registered shortcodes; escaping would corrupt the map HTML and inline scripts. ?>
+	<?php echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes . $circle_shortcodes . $layer_shortcodes . $overlay_shortcodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted output from registered shortcodes; escaping would corrupt the map HTML and inline scripts. ?>
 </div>
 	<?php
 }
