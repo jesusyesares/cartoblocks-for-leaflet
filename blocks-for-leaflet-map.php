@@ -3,7 +3,7 @@
  * Plugin Name:       Blocks for Leaflet Map
  * Plugin URI:        https://github.com/jesusyesares/blocks-for-leaflet-map
  * Description:       A dynamic Gutenberg block that wraps the Leaflet Map plugin shortcodes. Requires the "Leaflet Map" plugin to be installed and active.
- * Version:           0.8.0
+ * Version:           0.9.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Jesús Yesares García
@@ -147,6 +147,10 @@ function bflm_preview_map(): void {
 	$image_x         = $is_image_map && isset( $_GET['imageX'] ) ? (float) $_GET['imageX'] : 0.0;
 	$image_y         = $is_image_map && isset( $_GET['imageY'] ) ? (float) $_GET['imageY'] : 0.0;
 	$image_zoom      = $is_image_map && isset( $_GET['imageZoom'] ) ? (float) $_GET['imageZoom'] : 0.0;
+	$wms_enabled     = ! $is_image_map && ! empty( $_GET['wmsEnabled'] ) && 'true' === $_GET['wmsEnabled'];
+	$wms_source      = $wms_enabled && isset( $_GET['wmsSource'] ) ? trim( sanitize_text_field( wp_unslash( $_GET['wmsSource'] ) ) ) : '';
+	$wms_layer       = $wms_enabled && isset( $_GET['wmsLayer'] ) ? trim( sanitize_text_field( wp_unslash( $_GET['wmsLayer'] ) ) ) : '';
+	$wms_crs         = $wms_enabled && isset( $_GET['wmsCrs'] ) ? trim( sanitize_text_field( wp_unslash( $_GET['wmsCrs'] ) ) ) : '';
 
 	// Interaction attributes: only include when explicitly set.
 	$interaction_keys = array(
@@ -255,6 +259,29 @@ function bflm_preview_map(): void {
 	}
 
 	$map_shortcode .= ']';
+
+	// Build [leaflet-wms] shortcode when wmsEnabled (mirrors render.php logic).
+	if ( $wms_enabled ) {
+		$wms_shortcode = sprintf(
+			'[leaflet-wms lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" scrollwheel="%5$s" zoomcontrol="%6$s"',
+			esc_attr( (string) $lat ),
+			esc_attr( (string) $lng ),
+			$zoom,
+			esc_attr( $height ),
+			$scroll_wheel,
+			$zoom_ctrl
+		);
+		if ( '' !== $wms_source ) {
+			$wms_shortcode .= sprintf( ' src="%s"', esc_attr( $wms_source ) );
+		}
+		if ( '' !== $wms_layer ) {
+			$wms_shortcode .= sprintf( ' layer="%s"', esc_attr( $wms_layer ) );
+		}
+		if ( '' !== $wms_crs ) {
+			$wms_shortcode .= sprintf( ' crs="%s"', esc_attr( $wms_crs ) );
+		}
+		$wms_shortcode .= ']';
+	}
 
 	$real_marker_count = 0;
 	$marker_shortcodes = '';
@@ -657,8 +684,10 @@ function bflm_preview_map(): void {
 		} )();
 		</script>
 		<?php
+	} elseif ( $wms_enabled ) {
+		echo do_shortcode( $wms_shortcode . $marker_shortcodes . $line_shortcodes . $line_point_shortcodes . $circle_shortcodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	} else {
-		echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes . $line_point_shortcodes . $circle_shortcodes . $layer_shortcodes );
+		echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes . $line_point_shortcodes . $circle_shortcodes . $layer_shortcodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 	?>
 </div>

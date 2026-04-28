@@ -62,6 +62,10 @@ Whatever you have configured in the Leaflet Map plugin settings. By default, Ope
 
 == Changelog ==
 
+= 0.9.0 =
+* Added: `[leaflet-wms]` shortcode support via a new "Use WMS tile source" toggle in the Tile Layer panel. Replaces the standard OSM/raster tile layer with a WMS (Web Map Service) source.
+* Added: WMS URL, Layer name, and CRS fields (default to bozdoz upstream defaults: mundialis TOPO-OSM-WMS, EPSG:3857). All standard map controls (lat/lng/zoom/height/markers/lines/circles) remain usable.
+
 = 0.8.0 =
 * Added: `[leaflet-image]` shortcode support via new "Image map mode" toggle in the Location panel. Replaces tile layer with a flat image (floor plans, diagrams, custom maps) rendered on `L.CRS.Simple`.
 * Added: MediaUpload picker (WordPress Media Library) and plain URL fallback for the image source.
