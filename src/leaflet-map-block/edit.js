@@ -415,7 +415,7 @@ function buildShortcode( attributes ) {
 			( typeof height === 'string' && /^\d+$/.test( height ) )
 				? `${ height }px`
 				: height || '400px';
-		shortcode = `[leaflet-image src="${ src }" x="${ imageX ?? 0 }" y="${ imageY ?? 0 }" zoom="${ imageZoom ?? 0 }" height="${ h }"]`;
+		shortcode = `[leaflet-image src="${ src }" x="${ imageX ?? 0 }" y="${ imageY ?? 0 }" zoom="0" height="${ h }"]`;
 	} else {
 		const parts = [];
 
@@ -1205,7 +1205,9 @@ export default function Edit( {
 	// tile params, markers, lines (only those with ≥2 points), height, etc.
 	// UI-only state (expandedLineIndex, drawingLineIndex, openPoints) is excluded
 	// because it doesn't affect the rendered map.
-	const previewUrlKey = shortcode;
+	// imageZoom changes the fitImage() view but not the shortcode (zoom="0" is hardcoded),
+	// so append it explicitly when in image mode so the iframe reloads on slider change.
+	const previewUrlKey = imageMap ? shortcode + '|iz=' + ( imageZoom ?? 0 ) : shortcode;
 
 	useEffect( () => {
 		// Skip on first render — mount effect already set iframe.src.
@@ -2401,15 +2403,16 @@ export default function Edit( {
 									'blocks-for-leaflet-map'
 								) }
 								help={ __(
-									'0 = fit image to block. Higher values zoom in further.',
+									'0 = fit image to block. Positive = zoom in, negative = zoom out.',
 									'blocks-for-leaflet-map'
 								) }
 								value={ imageZoom ?? 0 }
 								onChange={ ( value ) =>
 									setAttributes( { imageZoom: value } )
 								}
-								min={ 0 }
-								max={ 8 }
+								min={ -3 }
+								max={ 3 }
+								step={ 0.1 }
 								__next40pxDefaultSize
 								__nextHasNoMarginBottom
 							/>
@@ -7161,11 +7164,28 @@ export default function Edit( {
 				} }
 			>
 				<div style={ { position: 'relative' } }>
+					{ imageMap && ! imageSrc && (
+						<div
+							style={ {
+								width: '100%',
+								height: normalizedHeight,
+								display: 'block',
+								backgroundImage:
+									'linear-gradient(45deg,#ccc 25%,transparent 25%),' +
+									'linear-gradient(-45deg,#ccc 25%,transparent 25%),' +
+									'linear-gradient(45deg,transparent 75%,#ccc 75%),' +
+									'linear-gradient(-45deg,transparent 75%,#ccc 75%)',
+								backgroundSize: '16px 16px',
+								backgroundPosition: '0 0,0 8px,8px -8px,-8px 0',
+								backgroundColor: '#fff',
+							} }
+						/>
+					) }
 					<iframe
 						ref={ iframeRef }
 						width="100%"
 						height={ normalizedHeight }
-						style={ { border: 'none', display: 'block' } }
+						style={ { border: 'none', display: imageMap && ! imageSrc ? 'none' : 'block' } }
 						sandbox="allow-scripts allow-same-origin"
 						title={ __( 'Map preview', 'blocks-for-leaflet-map' ) }
 					/>

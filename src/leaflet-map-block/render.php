@@ -41,7 +41,7 @@ $is_image_map = ! empty( $attributes['imageMap'] );
 $image_src    = $is_image_map && isset( $attributes['imageSrc'] ) ? trim( (string) $attributes['imageSrc'] ) : '';
 $image_x      = $is_image_map && isset( $attributes['imageX'] ) ? (float) $attributes['imageX'] : 0.0;
 $image_y      = $is_image_map && isset( $attributes['imageY'] ) ? (float) $attributes['imageY'] : 0.0;
-$image_zoom   = $is_image_map && isset( $attributes['imageZoom'] ) ? (int) $attributes['imageZoom'] : 0;
+$image_zoom   = $is_image_map && isset( $attributes['imageZoom'] ) ? (float) $attributes['imageZoom'] : 0.0;
 
 $scroll_wheel_zoom = ! empty( $attributes['scrollWheelZoom'] ) ? 'true' : 'false';
 $zoom_control      = isset( $attributes['zoomControl'] ) && false === $attributes['zoomControl'] ? 'false' : 'true';
@@ -484,11 +484,10 @@ $wrapper_attributes = get_block_wrapper_attributes(
 // Render: wrapper div → shortcode output (Leaflet Map plugin handles the rest).
 if ( $is_image_map && '' !== $image_src ) {
 	$image_shortcode = sprintf(
-		'[leaflet-image src="%1$s" x="%2$s" y="%3$s" zoom="%4$d" height="%5$s"]',
+		'[leaflet-image src="%1$s" x="%2$s" y="%3$s" zoom="0" height="%4$s"]',
 		esc_attr( $image_src ),
 		esc_attr( (string) $image_x ),
 		esc_attr( (string) $image_y ),
-		$image_zoom,
 		esc_attr( $height )
 	);
 	?>
@@ -496,7 +495,7 @@ if ( $is_image_map && '' !== $image_src ) {
 	<?php echo do_shortcode( $image_shortcode . $marker_shortcodes . $line_shortcodes . $circle_shortcodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted output from registered shortcodes. ?>
 	<script>
 	( function () {
-		var zoomOffset = <?php echo (int) $image_zoom; ?>;
+		var zoomOffset = <?php echo (float) $image_zoom; ?>;
 		var attempts   = 0;
 		function fitImage() {
 			var plugin = window.WPLeafletMapPlugin;
@@ -517,9 +516,10 @@ if ( $is_image_map && '' !== $image_src ) {
 			var fitZoomX = Math.log( 2 * mw / iw ) / Math.LN2;
 			var fitZoomY = Math.log( 2 * mh / ih ) / Math.LN2;
 			var fitZoom  = Math.min( fitZoomX, fitZoomY );
+			map.options.zoomSnap = 0;
+			map.setMinZoom( fitZoom + zoomOffset );
 			map.setMaxBounds( null );
 			map.setView( [ 0, 0 ], fitZoom + zoomOffset, { animate: false } );
-			map.setMaxBounds( overlay.getBounds() );
 		}
 		fitImage();
 	} )();
