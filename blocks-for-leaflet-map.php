@@ -146,7 +146,7 @@ function bflm_preview_map(): void {
 	$image_src       = $is_image_map && isset( $_GET['imageSrc'] ) ? trim( sanitize_text_field( wp_unslash( $_GET['imageSrc'] ) ) ) : '';
 	$image_x         = $is_image_map && isset( $_GET['imageX'] ) ? (float) $_GET['imageX'] : 0.0;
 	$image_y         = $is_image_map && isset( $_GET['imageY'] ) ? (float) $_GET['imageY'] : 0.0;
-	$image_zoom      = $is_image_map && isset( $_GET['imageZoom'] ) ? absint( $_GET['imageZoom'] ) : 0;
+	$image_zoom      = $is_image_map && isset( $_GET['imageZoom'] ) ? (float) $_GET['imageZoom'] : 0.0;
 
 	// Interaction attributes: only include when explicitly set.
 	$interaction_keys = array(
@@ -599,18 +599,17 @@ function bflm_preview_map(): void {
 	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted shortcode output, same rationale as render.php.
 	if ( $is_image_map && '' !== $image_src ) {
 		$image_shortcode = sprintf(
-			'[leaflet-image src="%1$s" x="%2$s" y="%3$s" zoom="%4$d" height="%5$s"]',
+			'[leaflet-image src="%1$s" x="%2$s" y="%3$s" zoom="0" height="%4$s"]',
 			esc_attr( $image_src ),
 			esc_attr( (string) $image_x ),
 			esc_attr( (string) $image_y ),
-			$image_zoom,
 			esc_attr( $height )
 		);
 		echo do_shortcode( $image_shortcode . $marker_shortcodes . $line_shortcodes . $line_point_shortcodes . $circle_shortcodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		?>
 		<script>
 		( function () {
-			var zoomOffset = <?php echo (int) $image_zoom; ?>;
+			var zoomOffset = <?php echo (float) $image_zoom; ?>;
 			var attempts   = 0;
 			function fitImage() {
 				var plugin = window.WPLeafletMapPlugin;
@@ -649,9 +648,10 @@ function bflm_preview_map(): void {
 				var fitZoomY = Math.log( 2 * mh / ih ) / Math.LN2;
 				var fitZoom  = Math.min( fitZoomX, fitZoomY );
 
+				map.options.zoomSnap = 0;
+				map.setMinZoom( fitZoom + zoomOffset );
 				map.setMaxBounds( null );
 				map.setView( [ 0, 0 ], fitZoom + zoomOffset, { animate: false } );
-				map.setMaxBounds( overlay.getBounds() );
 			}
 			fitImage();
 		} )();
