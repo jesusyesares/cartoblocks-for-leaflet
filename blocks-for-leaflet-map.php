@@ -3,7 +3,7 @@
  * Plugin Name:       Blocks for Leaflet Map
  * Plugin URI:        https://github.com/jesusyesares/blocks-for-leaflet-map
  * Description:       A dynamic Gutenberg block that wraps the Leaflet Map plugin shortcodes. Requires the "Leaflet Map" plugin to be installed and active.
- * Version:           0.7.1
+ * Version:           0.8.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Jesús Yesares García
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-define( 'BFLM_VERSION', '0.7.1' );
+define( 'BFLM_VERSION', '0.8.0' );
 define( 'BFLM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BFLM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BFLM_LEAFLET_MAP_PLUGIN', 'leaflet-map/leaflet-map.php' );
@@ -142,6 +142,11 @@ function bflm_preview_map(): void {
 	$fit_markers     = ! empty( $_GET['fitMarkers'] ) && 'true' === $_GET['fitMarkers'] ? 'true' : 'false';
 	$show_scale      = ! empty( $_GET['showScale'] ) && 'true' === $_GET['showScale'] ? '1' : '0';
 	$attribution     = isset( $_GET['attribution'] ) ? wp_kses_post( wp_unslash( $_GET['attribution'] ) ) : '';
+	$is_image_map    = ! empty( $_GET['imageMap'] ) && 'true' === $_GET['imageMap'];
+	$image_src       = $is_image_map && isset( $_GET['imageSrc'] ) ? trim( sanitize_text_field( wp_unslash( $_GET['imageSrc'] ) ) ) : '';
+	$image_x         = $is_image_map && isset( $_GET['imageX'] ) ? (float) $_GET['imageX'] : 0.0;
+	$image_y         = $is_image_map && isset( $_GET['imageY'] ) ? (float) $_GET['imageY'] : 0.0;
+	$image_zoom      = $is_image_map && isset( $_GET['imageZoom'] ) ? absint( $_GET['imageZoom'] ) : 0;
 
 	// Interaction attributes: only include when explicitly set.
 	$interaction_keys = array(
@@ -592,7 +597,69 @@ function bflm_preview_map(): void {
 <div id="map-wrap">
 	<?php
 	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted shortcode output, same rationale as render.php.
-	echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes . $line_point_shortcodes . $circle_shortcodes . $layer_shortcodes );
+	if ( $is_image_map && '' !== $image_src ) {
+		$image_shortcode = sprintf(
+			'[leaflet-image src="%1$s" x="%2$s" y="%3$s" zoom="%4$d" height="%5$s"]',
+			esc_attr( $image_src ),
+			esc_attr( (string) $image_x ),
+			esc_attr( (string) $image_y ),
+			$image_zoom,
+			esc_attr( $height )
+		);
+		echo do_shortcode( $image_shortcode . $marker_shortcodes . $line_shortcodes . $line_point_shortcodes . $circle_shortcodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		?>
+		<script>
+		( function () {
+			var zoomOffset = <?php echo (int) $image_zoom; ?>;
+			var attempts   = 0;
+			function fitImage() {
+				var plugin = window.WPLeafletMapPlugin;
+				if ( ! plugin || ! plugin.maps || ! plugin.maps[ 0 ] ) {
+					if ( ++attempts < 50 ) { setTimeout( fitImage, 100 ); }
+					return;
+				}
+				var map = plugin.maps[ 0 ];
+				if ( ! map.is_image_map ) { return; }
+
+				// Find the ImageOverlay layer (has getBounds + getElement).
+				var overlay = null;
+				map.eachLayer( function ( l ) { if ( ! overlay && l.getBounds && l.getElement ) { overlay = l; } } );
+				if ( ! overlay ) {
+					if ( ++attempts < 50 ) { setTimeout( fitImage, 100 ); }
+					return;
+				}
+
+				// Need image natural dimensions — wait until loaded.
+				var img = overlay.getElement();
+				if ( ! img || ! img.naturalWidth ) {
+					if ( ++attempts < 50 ) { setTimeout( fitImage, 100 ); }
+					return;
+				}
+
+				var iw = img.naturalWidth;
+				var ih = img.naturalHeight;
+				var mw = map.getContainer().offsetWidth;
+				var mh = map.getContainer().offsetHeight;
+
+				// In L.CRS.Simple, bozdoz projects the image at projected_zoom = bozdozZoom+1 = 1.
+				// unproject([px,py], 1) = [px/2, py/2] world units.
+				// So image world size = iw/2 × ih/2. At map zoom Z, viewport = mw/2^Z world units.
+				// Fit: 2^Z = mw / (iw/2) = 2*mw/iw  →  Z = log2(2*mw/iw) = 1 + log2(mw/iw).
+				var fitZoomX = Math.log( 2 * mw / iw ) / Math.LN2;
+				var fitZoomY = Math.log( 2 * mh / ih ) / Math.LN2;
+				var fitZoom  = Math.min( fitZoomX, fitZoomY );
+
+				map.setMaxBounds( null );
+				map.setView( [ 0, 0 ], fitZoom + zoomOffset, { animate: false } );
+				map.setMaxBounds( overlay.getBounds() );
+			}
+			fitImage();
+		} )();
+		</script>
+		<?php
+	} else {
+		echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes . $line_point_shortcodes . $circle_shortcodes . $layer_shortcodes );
+	}
 	?>
 </div>
 <script>
