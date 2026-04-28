@@ -1218,3 +1218,54 @@ function bflm_geocode_address(): void {
 	wp_send_json_success( array( 'candidates' => $candidates ) );
 }
 add_action( 'wp_ajax_bflm_geocode', 'bflm_geocode_address' );
+
+/**
+ * Allow GeoJSON, GPX, and KML files to be uploaded via the WordPress Media Library.
+ *
+ * WordPress strips these MIME types from the default allowlist. Without this filter
+ * the files upload successfully but are served as 404 by the web server because
+ * WordPress marks them as invalid and does not write them to the uploads directory.
+ *
+ * @param array<string,string> $mimes Associative array of extension → MIME type.
+ * @return array<string,string>
+ */
+function bflm_allow_data_layer_mimes( array $mimes ): array {
+	$mimes['geojson'] = 'application/geo+json';
+	$mimes['gpx']     = 'application/gpx+xml';
+	$mimes['kml']     = 'application/vnd.google-earth.kml+xml';
+	$mimes['kmz']     = 'application/vnd.google-earth.kmz';
+	return $mimes;
+}
+add_filter( 'upload_mimes', 'bflm_allow_data_layer_mimes' );
+
+/**
+ * Bypass real-file-type check for GeoJSON/GPX/KML uploads.
+ *
+ * `wp_check_filetype_and_ext()` uses finfo/mime_content_type to inspect the
+ * actual file bytes. These text-XML formats are often identified as text/plain
+ * or application/xml, which does not match the registered MIME type and causes
+ * WordPress to reject the upload. We trust the file extension alone for these
+ * known-safe, editor-only types.
+ *
+ * @param array<string,string|bool> $checked   Array with keys: ext, type, proper_filename.
+ * @param string                    $file      Full path to the file.
+ * @param string                    $filename  The name of the file.
+ * @param array<string,string>|null $mimes     Allowed MIME types (unused; extension checked directly).
+ * @param string|false              $real_mime The real MIME type detected (unused).
+ * @return array<string,string|bool>
+ */
+function bflm_fix_data_layer_filetype( array $checked, string $file, string $filename, ?array $mimes, $real_mime ): array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- $mimes and $real_mime required by filter signature.
+	$ext     = strtolower( pathinfo( $filename, PATHINFO_EXTENSION ) );
+	$allowed = array(
+		'geojson' => 'application/geo+json',
+		'gpx'     => 'application/gpx+xml',
+		'kml'     => 'application/vnd.google-earth.kml+xml',
+		'kmz'     => 'application/vnd.google-earth.kmz',
+	);
+	if ( isset( $allowed[ $ext ] ) ) {
+		$checked['ext']  = $ext;
+		$checked['type'] = $allowed[ $ext ];
+	}
+	return $checked;
+}
+add_filter( 'wp_check_filetype_and_ext', 'bflm_fix_data_layer_filetype', 10, 5 );
