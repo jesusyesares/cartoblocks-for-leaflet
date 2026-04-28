@@ -3,7 +3,7 @@
  * Plugin Name:       Blocks for Leaflet Map
  * Plugin URI:        https://github.com/jesusyesares/blocks-for-leaflet-map
  * Description:       A dynamic Gutenberg block that wraps the Leaflet Map plugin shortcodes. Requires the "Leaflet Map" plugin to be installed and active.
- * Version:           0.9.0
+ * Version:           1.0.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Jesús Yesares García
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-define( 'BFLM_VERSION', '0.8.0' );
+define( 'BFLM_VERSION', '1.0.0' );
 define( 'BFLM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BFLM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BFLM_LEAFLET_MAP_PLUGIN', 'leaflet-map/leaflet-map.php' );
@@ -133,24 +133,27 @@ function bflm_preview_map(): void {
 	$lines_decoded = json_decode( $lines_raw, true );
 	$lines         = is_array( $lines_decoded ) ? $lines_decoded : array();
 
-	$circles_raw     = isset( $_GET['circles'] ) ? wp_unslash( $_GET['circles'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON decoded and each field sanitised below.
-	$circles_decoded = json_decode( $circles_raw, true );
-	$circles         = is_array( $circles_decoded ) ? $circles_decoded : array();
-	$layers_raw      = isset( $_GET['layers'] ) ? wp_unslash( $_GET['layers'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON decoded and each field sanitised below.
-	$layers_decoded  = json_decode( $layers_raw, true );
-	$layers          = is_array( $layers_decoded ) ? $layers_decoded : array();
-	$fit_markers     = ! empty( $_GET['fitMarkers'] ) && 'true' === $_GET['fitMarkers'] ? 'true' : 'false';
-	$show_scale      = ! empty( $_GET['showScale'] ) && 'true' === $_GET['showScale'] ? '1' : '0';
-	$attribution     = isset( $_GET['attribution'] ) ? wp_kses_post( wp_unslash( $_GET['attribution'] ) ) : '';
-	$is_image_map    = ! empty( $_GET['imageMap'] ) && 'true' === $_GET['imageMap'];
-	$image_src       = $is_image_map && isset( $_GET['imageSrc'] ) ? trim( sanitize_text_field( wp_unslash( $_GET['imageSrc'] ) ) ) : '';
-	$image_x         = $is_image_map && isset( $_GET['imageX'] ) ? (float) $_GET['imageX'] : 0.0;
-	$image_y         = $is_image_map && isset( $_GET['imageY'] ) ? (float) $_GET['imageY'] : 0.0;
-	$image_zoom      = $is_image_map && isset( $_GET['imageZoom'] ) ? (float) $_GET['imageZoom'] : 0.0;
-	$wms_enabled     = ! $is_image_map && ! empty( $_GET['wmsEnabled'] ) && 'true' === $_GET['wmsEnabled'];
-	$wms_source      = $wms_enabled && isset( $_GET['wmsSource'] ) ? trim( sanitize_text_field( wp_unslash( $_GET['wmsSource'] ) ) ) : '';
-	$wms_layer       = $wms_enabled && isset( $_GET['wmsLayer'] ) ? trim( sanitize_text_field( wp_unslash( $_GET['wmsLayer'] ) ) ) : '';
-	$wms_crs         = $wms_enabled && isset( $_GET['wmsCrs'] ) ? trim( sanitize_text_field( wp_unslash( $_GET['wmsCrs'] ) ) ) : '';
+	$circles_raw      = isset( $_GET['circles'] ) ? wp_unslash( $_GET['circles'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON decoded and each field sanitised below.
+	$circles_decoded  = json_decode( $circles_raw, true );
+	$circles          = is_array( $circles_decoded ) ? $circles_decoded : array();
+	$layers_raw       = isset( $_GET['layers'] ) ? wp_unslash( $_GET['layers'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON decoded and each field sanitised below.
+	$layers_decoded   = json_decode( $layers_raw, true );
+	$layers           = is_array( $layers_decoded ) ? $layers_decoded : array();
+	$overlays_raw     = isset( $_GET['overlays'] ) ? wp_unslash( $_GET['overlays'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON decoded and each field sanitised below.
+	$overlays_decoded = json_decode( $overlays_raw, true );
+	$overlays         = is_array( $overlays_decoded ) ? $overlays_decoded : array();
+	$fit_markers      = ! empty( $_GET['fitMarkers'] ) && 'true' === $_GET['fitMarkers'] ? 'true' : 'false';
+	$show_scale       = ! empty( $_GET['showScale'] ) && 'true' === $_GET['showScale'] ? '1' : '0';
+	$attribution      = isset( $_GET['attribution'] ) ? wp_kses_post( wp_unslash( $_GET['attribution'] ) ) : '';
+	$is_image_map     = ! empty( $_GET['imageMap'] ) && 'true' === $_GET['imageMap'];
+	$image_src        = $is_image_map && isset( $_GET['imageSrc'] ) ? trim( sanitize_text_field( wp_unslash( $_GET['imageSrc'] ) ) ) : '';
+	$image_x          = $is_image_map && isset( $_GET['imageX'] ) ? (float) $_GET['imageX'] : 0.0;
+	$image_y          = $is_image_map && isset( $_GET['imageY'] ) ? (float) $_GET['imageY'] : 0.0;
+	$image_zoom       = $is_image_map && isset( $_GET['imageZoom'] ) ? (float) $_GET['imageZoom'] : 0.0;
+	$wms_enabled      = ! $is_image_map && ! empty( $_GET['wmsEnabled'] ) && 'true' === $_GET['wmsEnabled'];
+	$wms_source       = $wms_enabled && isset( $_GET['wmsSource'] ) ? trim( sanitize_text_field( wp_unslash( $_GET['wmsSource'] ) ) ) : '';
+	$wms_layer        = $wms_enabled && isset( $_GET['wmsLayer'] ) ? trim( sanitize_text_field( wp_unslash( $_GET['wmsLayer'] ) ) ) : '';
+	$wms_crs          = $wms_enabled && isset( $_GET['wmsCrs'] ) ? trim( sanitize_text_field( wp_unslash( $_GET['wmsCrs'] ) ) ) : '';
 
 	// Interaction attributes: only include when explicitly set.
 	$interaction_keys = array(
@@ -602,6 +605,40 @@ function bflm_preview_map(): void {
 		$layer_shortcodes .= $l_open . ' /]';
 	}
 
+	// Build [leaflet-image-overlay] / [leaflet-video-overlay] shortcodes.
+	// Keep in sync with buildOverlayShortcodes() in edit.js and the matching loop in render.php.
+	$overlay_shortcodes = '';
+	foreach ( $overlays as $overlay ) {
+		$o_src    = isset( $overlay['src'] ) ? trim( (string) $overlay['src'] ) : '';
+		$o_bounds = isset( $overlay['bounds'] ) ? trim( (string) $overlay['bounds'] ) : '';
+		if ( '' === $o_src || '' === $o_bounds ) {
+			continue;
+		}
+		$o_tag  = ( isset( $overlay['type'] ) && 'video' === $overlay['type'] )
+			? 'leaflet-video-overlay'
+			: 'leaflet-image-overlay';
+		$o_open = sprintf( '[%s src="%s" bounds="%s"', $o_tag, esc_attr( $o_src ), esc_attr( $o_bounds ) );
+		if ( isset( $overlay['opacity'] ) && is_numeric( $overlay['opacity'] ) ) {
+			$o_open .= sprintf( ' opacity="%s"', esc_attr( (string) (float) $overlay['opacity'] ) );
+		}
+		if ( ! empty( $overlay['interactive'] ) ) {
+			$o_open .= ' interactive="true"';
+		}
+		if ( isset( $overlay['alt'] ) && '' !== trim( $overlay['alt'] ) ) {
+			$o_open .= sprintf( ' alt="%s"', esc_attr( trim( $overlay['alt'] ) ) );
+		}
+		if ( isset( $overlay['zIndex'] ) && is_numeric( $overlay['zIndex'] ) ) {
+			$o_open .= sprintf( ' zindex="%d"', (int) $overlay['zIndex'] );
+		}
+		if ( isset( $overlay['classname'] ) && '' !== trim( $overlay['classname'] ) ) {
+			$o_open .= sprintf( ' classname="%s"', esc_attr( trim( $overlay['classname'] ) ) );
+		}
+		if ( 'leaflet-image-overlay' === $o_tag && isset( $overlay['keepAspectRatio'] ) && false === $overlay['keepAspectRatio'] ) {
+			$o_open .= ' keepaspectratio="false"';
+		}
+		$overlay_shortcodes .= $o_open . ' /]';
+	}
+
 	// Render a complete, self-contained HTML page.
 	// wp_head() / wp_footer() let the Leaflet Map plugin load its own assets.
 	?>
@@ -687,7 +724,7 @@ function bflm_preview_map(): void {
 	} elseif ( $wms_enabled ) {
 		echo do_shortcode( $wms_shortcode . $marker_shortcodes . $line_shortcodes . $line_point_shortcodes . $circle_shortcodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	} else {
-		echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes . $line_point_shortcodes . $circle_shortcodes . $layer_shortcodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes . $line_point_shortcodes . $circle_shortcodes . $layer_shortcodes . $overlay_shortcodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 	?>
 </div>
