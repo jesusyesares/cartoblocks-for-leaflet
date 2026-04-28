@@ -38,6 +38,10 @@ if ( ! preg_match( '/^\d+(\.\d+)?(px|%|vh|vw|em|rem)$/', $width ) ) {
 	$width = '100%';
 }
 $is_image_map = ! empty( $attributes['imageMap'] );
+$wms_enabled  = ! $is_image_map && ! empty( $attributes['wmsEnabled'] );
+$wms_source   = $wms_enabled && isset( $attributes['wmsSource'] ) ? trim( (string) $attributes['wmsSource'] ) : '';
+$wms_layer    = $wms_enabled && isset( $attributes['wmsLayer'] ) ? trim( (string) $attributes['wmsLayer'] ) : '';
+$wms_crs      = $wms_enabled && isset( $attributes['wmsCrs'] ) ? trim( (string) $attributes['wmsCrs'] ) : '';
 $image_src    = $is_image_map && isset( $attributes['imageSrc'] ) ? trim( (string) $attributes['imageSrc'] ) : '';
 $image_x      = $is_image_map && isset( $attributes['imageX'] ) ? (float) $attributes['imageX'] : 0.0;
 $image_y      = $is_image_map && isset( $attributes['imageY'] ) ? (float) $attributes['imageY'] : 0.0;
@@ -161,6 +165,30 @@ if ( '' !== $attribution ) {
 }
 
 $map_shortcode .= ']';
+
+// Build [leaflet-wms] shortcode (replaces map shortcode when wmsEnabled).
+// Emits the same base lat/lng/zoom/height attrs as [leaflet-map], plus src/layer/crs.
+if ( $wms_enabled ) {
+	$wms_shortcode = sprintf(
+		'[leaflet-wms lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" scrollwheel="%5$s" zoomcontrol="%6$s"',
+		esc_attr( (string) $lat ),
+		esc_attr( (string) $lng ),
+		$zoom,
+		esc_attr( $height ),
+		$scroll_wheel_zoom,
+		$zoom_control
+	);
+	if ( '' !== $wms_source ) {
+		$wms_shortcode .= sprintf( ' src="%s"', esc_attr( $wms_source ) );
+	}
+	if ( '' !== $wms_layer ) {
+		$wms_shortcode .= sprintf( ' layer="%s"', esc_attr( $wms_layer ) );
+	}
+	if ( '' !== $wms_crs ) {
+		$wms_shortcode .= sprintf( ' crs="%s"', esc_attr( $wms_crs ) );
+	}
+	$wms_shortcode .= ']';
+}
 
 // Build [leaflet-marker] shortcodes for each marker.
 $marker_shortcodes = '';
@@ -524,6 +552,12 @@ if ( $is_image_map && '' !== $image_src ) {
 		fitImage();
 	} )();
 	</script>
+</div>
+	<?php
+} elseif ( $wms_enabled ) {
+	?>
+<div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitized by get_block_wrapper_attributes(). ?>>
+	<?php echo do_shortcode( $wms_shortcode . $marker_shortcodes . $line_shortcodes . $circle_shortcodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted output from registered shortcodes. ?>
 </div>
 	<?php
 } else {
