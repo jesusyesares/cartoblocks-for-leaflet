@@ -5864,18 +5864,15 @@ export default function Edit( {
 										'blocks-for-leaflet-map'
 									) }
 								</p>
-								<div>
-									<p style={ { margin: '0 0 4px', fontSize: '11px', fontWeight: 600 } }>
-										{ __( 'Stroke color', 'blocks-for-leaflet-map' ) }
-									</p>
-									<ColorPicker
-										color={ layer.color || '' }
-										onChange={ ( v ) =>
-											handleUpdateLayer( layerIdx, { color: v || '' } )
-										}
-										enableAlpha={ false }
-									/>
-								</div>
+								<p style={ { margin: '8px 0 4px', fontSize: '11px', fontWeight: 600 } }>
+									{ __( 'Stroke color', 'blocks-for-leaflet-map' ) }
+								</p>
+								<ColorPalette
+									value={ layer.color || '' }
+									onChange={ ( v ) =>
+										handleUpdateLayer( layerIdx, { color: v || '' } )
+									}
+								/>
 								<RangeControl
 									label={ __( 'Weight', 'blocks-for-leaflet-map' ) }
 									value={ layer.weight ?? undefined }
@@ -5931,18 +5928,15 @@ export default function Edit( {
 								/>
 								{ layer.fill && (
 									<>
-										<div>
-											<p style={ { margin: '8px 0 4px', fontSize: '11px', fontWeight: 600 } }>
-												{ __( 'Fill color', 'blocks-for-leaflet-map' ) }
-											</p>
-											<ColorPicker
-												color={ layer.fillColor || '' }
-												onChange={ ( v ) =>
-													handleUpdateLayer( layerIdx, { fillColor: v || '' } )
-												}
-												enableAlpha={ false }
-											/>
-										</div>
+										<p style={ { margin: '8px 0 4px', fontSize: '11px', fontWeight: 600 } }>
+											{ __( 'Fill color', 'blocks-for-leaflet-map' ) }
+										</p>
+										<ColorPalette
+											value={ layer.fillColor || '' }
+											onChange={ ( v ) =>
+												handleUpdateLayer( layerIdx, { fillColor: v || '' } )
+											}
+										/>
 										<RangeControl
 											label={ __( 'Fill opacity', 'blocks-for-leaflet-map' ) }
 											value={ layer.fillOpacity ?? undefined }
