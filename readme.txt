@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.0
 Tested up to:      6.9
-Stable tag:        0.6.0
+Stable tag:        0.7.0
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -61,6 +61,12 @@ Whatever you have configured in the Leaflet Map plugin settings. By default, Ope
 3. Frontend rendering with Leaflet Map shortcodes.
 
 == Changelog ==
+
+= 0.7.0 =
+* Added: `[leaflet-geojson]`, `[leaflet-gpx]`, and `[leaflet-kml]` shortcode support via a new "Data Layers" panel in the block inspector.
+* Added: Full attribute parity with the bozdoz upstream shortcode — source URL, fitbounds, circleMarker, popup template (with {property} interpolation), popup property, table view, full style options (color/weight/opacity/dasharray/classname/fill/fillcolor/fillopacity), and custom point icon (iconurl/iconsize/iconanchor/popupanchor with aspect-ratio lock and 9-position anchor presets).
+* Added: Mutual-exclusion notice — when "Render points as circle markers" is enabled, the custom point icon panel shows an informational notice and the icon is suppressed in the shortcode.
+* Added: 16 new Jest unit tests for `buildLayerShortcodes` (36 total passing).
 
 = 0.6.0 =
 * Added: `[leaflet-circle]` shortcode support with full attribute parity (lat/lng, radius, fitbounds, color, weight, opacity, dasharray, classname, fill, fillcolor, fillopacity, popup, visible).
