@@ -37,6 +37,12 @@ $width     = is_numeric( $width_raw ) ? $width_raw . 'px' : sanitize_text_field(
 if ( ! preg_match( '/^\d+(\.\d+)?(px|%|vh|vw|em|rem)$/', $width ) ) {
 	$width = '100%';
 }
+$is_image_map = ! empty( $attributes['imageMap'] );
+$image_src    = $is_image_map && isset( $attributes['imageSrc'] ) ? trim( (string) $attributes['imageSrc'] ) : '';
+$image_x      = $is_image_map && isset( $attributes['imageX'] ) ? (float) $attributes['imageX'] : 0.0;
+$image_y      = $is_image_map && isset( $attributes['imageY'] ) ? (float) $attributes['imageY'] : 0.0;
+$image_zoom   = $is_image_map && isset( $attributes['imageZoom'] ) ? (int) $attributes['imageZoom'] : 0;
+
 $scroll_wheel_zoom = ! empty( $attributes['scrollWheelZoom'] ) ? 'true' : 'false';
 $zoom_control      = isset( $attributes['zoomControl'] ) && false === $attributes['zoomControl'] ? 'false' : 'true';
 $fit_markers       = ! empty( $attributes['fitMarkers'] ) ? 'true' : 'false';
@@ -476,7 +482,54 @@ $wrapper_attributes = get_block_wrapper_attributes(
 );
 
 // Render: wrapper div → shortcode output (Leaflet Map plugin handles the rest).
-?>
+if ( $is_image_map && '' !== $image_src ) {
+	$image_shortcode = sprintf(
+		'[leaflet-image src="%1$s" x="%2$s" y="%3$s" zoom="%4$d" height="%5$s"]',
+		esc_attr( $image_src ),
+		esc_attr( (string) $image_x ),
+		esc_attr( (string) $image_y ),
+		$image_zoom,
+		esc_attr( $height )
+	);
+	?>
+<div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitized by get_block_wrapper_attributes(). ?>>
+	<?php echo do_shortcode( $image_shortcode . $marker_shortcodes . $line_shortcodes . $circle_shortcodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted output from registered shortcodes. ?>
+	<script>
+	( function () {
+		var zoomOffset = <?php echo (int) $image_zoom; ?>;
+		var attempts   = 0;
+		function fitImage() {
+			var plugin = window.WPLeafletMapPlugin;
+			if ( ! plugin || ! plugin.maps || ! plugin.maps[ 0 ] ) {
+				if ( ++attempts < 50 ) { setTimeout( fitImage, 100 ); } return;
+			}
+			var map = plugin.maps[ 0 ];
+			if ( ! map.is_image_map ) { return; }
+			var overlay = null;
+			map.eachLayer( function ( l ) { if ( ! overlay && l.getBounds && l.getElement ) { overlay = l; } } );
+			if ( ! overlay ) { if ( ++attempts < 50 ) { setTimeout( fitImage, 100 ); } return; }
+			var img = overlay.getElement();
+			if ( ! img || ! img.naturalWidth ) { if ( ++attempts < 50 ) { setTimeout( fitImage, 100 ); } return; }
+			var iw = img.naturalWidth;
+			var ih = img.naturalHeight;
+			var mw = map.getContainer().offsetWidth;
+			var mh = map.getContainer().offsetHeight;
+			var fitZoomX = Math.log( 2 * mw / iw ) / Math.LN2;
+			var fitZoomY = Math.log( 2 * mh / ih ) / Math.LN2;
+			var fitZoom  = Math.min( fitZoomX, fitZoomY );
+			map.setMaxBounds( null );
+			map.setView( [ 0, 0 ], fitZoom + zoomOffset, { animate: false } );
+			map.setMaxBounds( overlay.getBounds() );
+		}
+		fitImage();
+	} )();
+	</script>
+</div>
+	<?php
+} else {
+	?>
 <div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitized by get_block_wrapper_attributes(). ?>>
 	<?php echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes . $circle_shortcodes . $layer_shortcodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted output from registered shortcodes; escaping would corrupt the map HTML and inline scripts. ?>
 </div>
+	<?php
+}

@@ -396,21 +396,43 @@ function buildLayerShortcodes( layers ) {
  * @return {string} Full shortcode string (map + zero or more markers + zero or more lines + circles + layers).
  */
 function buildShortcode( attributes ) {
-	const parts = [];
+	const {
+		imageMap,
+		imageSrc,
+		imageX,
+		imageY,
+		imageZoom,
+		zoom,
+		height,
+	} = attributes;
 
-	for ( const {
-		key,
-		attr,
-		quote = '"',
-		serialize,
-	} of LEAFLET_MAP_DESCRIPTORS ) {
-		const serialized = serialize( attributes[ attr ] );
-		if ( serialized !== null ) {
-			parts.push( `${ key }=${ quote }${ serialized }${ quote }` );
+	let shortcode;
+
+	if ( imageMap ) {
+		const src = ( imageSrc || '' ).trim();
+		const h =
+			typeof height === 'number' ||
+			( typeof height === 'string' && /^\d+$/.test( height ) )
+				? `${ height }px`
+				: height || '400px';
+		shortcode = `[leaflet-image src="${ src }" x="${ imageX ?? 0 }" y="${ imageY ?? 0 }" zoom="${ imageZoom ?? 0 }" height="${ h }"]`;
+	} else {
+		const parts = [];
+
+		for ( const {
+			key,
+			attr,
+			quote = '"',
+			serialize,
+		} of LEAFLET_MAP_DESCRIPTORS ) {
+			const serialized = serialize( attributes[ attr ] );
+			if ( serialized !== null ) {
+				parts.push( `${ key }=${ quote }${ serialized }${ quote }` );
+			}
 		}
-	}
 
-	let shortcode = '[leaflet-map ' + parts.join( ' ' ) + ']';
+		shortcode = '[leaflet-map ' + parts.join( ' ' ) + ']';
+	}
 
 	const markers = attributes.markers || [];
 	for ( const marker of markers ) {
@@ -490,7 +512,9 @@ function buildShortcode( attributes ) {
 
 	shortcode += buildLineShortcodes( attributes.lines );
 	shortcode += buildCircleShortcodes( attributes.circles );
-	shortcode += buildLayerShortcodes( attributes.layers );
+	if ( ! imageMap ) {
+		shortcode += buildLayerShortcodes( attributes.layers );
+	}
 
 	return shortcode;
 }
@@ -739,6 +763,11 @@ function buildPreviewUrl( attributes, clientId ) {
 		lines,
 		circles,
 		layers,
+		imageMap,
+		imageSrc,
+		imageX,
+		imageY,
+		imageZoom,
 	} = attributes;
 
 	const { previewUrl, previewNonce } = window.bflmEditor || {};
@@ -771,6 +800,11 @@ function buildPreviewUrl( attributes, clientId ) {
 		lines: JSON.stringify( lines || [] ),
 		circles: JSON.stringify( circles || [] ),
 		layers: JSON.stringify( layers || [] ),
+		imageMap: imageMap ? 'true' : 'false',
+		imageSrc: imageSrc || '',
+		imageX: imageX ?? 0,
+		imageY: imageY ?? 0,
+		imageZoom: imageZoom ?? 0,
 	} );
 
 	// Only include interaction params when explicitly set (not "Default").
@@ -896,6 +930,11 @@ export default function Edit( {
 		address,
 		markers,
 		lines,
+		imageMap,
+		imageSrc,
+		imageX,
+		imageY,
+		imageZoom,
 	} = attributes;
 
 	// Local state for NumberControls that commit only on blur (Tile Size, Zoom Offset).
@@ -2246,6 +2285,138 @@ export default function Edit( {
 					title={ __( 'Location', 'blocks-for-leaflet-map' ) }
 					initialOpen={ true }
 				>
+					<ToggleControl
+						label={ __(
+							'Image map mode',
+							'blocks-for-leaflet-map'
+						) }
+						help={ __(
+							'Replace tile layer with a flat image. Coordinates become pixel positions.',
+							'blocks-for-leaflet-map'
+						) }
+						checked={ imageMap }
+						onChange={ ( value ) =>
+							setAttributes( { imageMap: value } )
+						}
+						__nextHasNoMarginBottom
+					/>
+
+					{ imageMap && (
+						<>
+							<MediaUploadCheck>
+								<MediaUpload
+									onSelect={ ( media ) =>
+										setAttributes( {
+											imageSrc: media.url,
+										} )
+									}
+									allowedTypes={ [ 'image' ] }
+									value={ imageSrc }
+									render={ ( { open } ) => (
+										<>
+											{ imageSrc && (
+												<img
+													src={ imageSrc }
+													alt=""
+													style={ {
+														width: '100%',
+														height: 'auto',
+														display: 'block',
+														marginBottom: '8px',
+														borderRadius: '2px',
+													} }
+												/>
+											) }
+											<Button
+												variant="secondary"
+												onClick={ open }
+												style={ {
+													width: '100%',
+													justifyContent: 'center',
+													marginBottom: '8px',
+												} }
+											>
+												{ imageSrc
+													? __(
+															'Replace image',
+															'blocks-for-leaflet-map'
+													  )
+													: __(
+															'Select image',
+															'blocks-for-leaflet-map'
+													  ) }
+											</Button>
+										</>
+									) }
+								/>
+							</MediaUploadCheck>
+							<TextControl
+								label={ __(
+									'Image URL',
+									'blocks-for-leaflet-map'
+								) }
+								help={ __(
+									'Paste an external image URL, or use the picker above.',
+									'blocks-for-leaflet-map'
+								) }
+								value={ imageSrc }
+								onChange={ ( value ) =>
+									setAttributes( { imageSrc: value } )
+								}
+								type="url"
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+							<NumberControl
+								label={ __(
+									'Center X (pixels)',
+									'blocks-for-leaflet-map'
+								) }
+								value={ imageX }
+								onChange={ ( value ) =>
+									setAttributes( {
+										imageX: parseFloat( value ) || 0,
+									} )
+								}
+								step={ 1 }
+								__next40pxDefaultSize
+							/>
+							<NumberControl
+								label={ __(
+									'Center Y (pixels)',
+									'blocks-for-leaflet-map'
+								) }
+								value={ imageY }
+								onChange={ ( value ) =>
+									setAttributes( {
+										imageY: parseFloat( value ) || 0,
+									} )
+								}
+								step={ 1 }
+								__next40pxDefaultSize
+							/>
+							<RangeControl
+								label={ __(
+									'Zoom Level',
+									'blocks-for-leaflet-map'
+								) }
+								help={ __(
+									'0 = fit image to block. Higher values zoom in further.',
+									'blocks-for-leaflet-map'
+								) }
+								value={ imageZoom ?? 0 }
+								onChange={ ( value ) =>
+									setAttributes( { imageZoom: value } )
+								}
+								min={ 0 }
+								max={ 8 }
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						</>
+					) }
+
+					{ ! imageMap && (
 					<RadioControl
 						label={ __( 'Input mode', 'blocks-for-leaflet-map' ) }
 						selected={ locationMode }
@@ -2271,9 +2442,9 @@ export default function Edit( {
 							setCandidates( [] );
 							setGeocodeError( '' );
 						} }
-					/>
+					/> ) }
 
-					{ locationMode === 'coordinates' && (
+					{ ! imageMap && locationMode === 'coordinates' && (
 						<>
 							<NumberControl
 								label={ __(
@@ -2306,7 +2477,7 @@ export default function Edit( {
 						</>
 					) }
 
-					{ locationMode === 'address' && (
+					{ ! imageMap && locationMode === 'address' && (
 						<>
 							<TextControl
 								label={ __(
@@ -2422,32 +2593,36 @@ export default function Edit( {
 						</>
 					) }
 
-					<RangeControl
-						label={ __( 'Zoom Level', 'blocks-for-leaflet-map' ) }
-						value={ zoom }
-						onChange={ ( value ) =>
-							setAttributes( { zoom: value } )
-						}
-						min={ 1 }
-						max={ 20 }
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-					<ToggleControl
-						label={ __(
-							'Fit to Markers',
-							'blocks-for-leaflet-map'
-						) }
-						help={ __(
-							'Automatically adjust the map view to contain all markers.',
-							'blocks-for-leaflet-map'
-						) }
-						checked={ fitMarkers }
-						onChange={ ( value ) =>
-							setAttributes( { fitMarkers: value } )
-						}
-						__nextHasNoMarginBottom
-					/>
+					{ ! imageMap && (
+						<RangeControl
+							label={ __( 'Zoom Level', 'blocks-for-leaflet-map' ) }
+							value={ zoom }
+							onChange={ ( value ) =>
+								setAttributes( { zoom: value } )
+							}
+							min={ 1 }
+							max={ 20 }
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					) }
+					{ ! imageMap && (
+						<ToggleControl
+							label={ __(
+								'Fit to Markers',
+								'blocks-for-leaflet-map'
+							) }
+							help={ __(
+								'Automatically adjust the map view to contain all markers.',
+								'blocks-for-leaflet-map'
+							) }
+							checked={ fitMarkers }
+							onChange={ ( value ) =>
+								setAttributes( { fitMarkers: value } )
+							}
+							__nextHasNoMarginBottom
+						/>
+					) }
 				</PanelBody>
 
 				{ /* ── Dimensions panel ───────────────────────────────────── */ }
@@ -2478,7 +2653,7 @@ export default function Edit( {
 				</PanelBody>
 
 				{ /* ── Interaction panel ───────────────────────────────────── */ }
-				<PanelBody
+				{ ! imageMap && <PanelBody
 					title={ __( 'Interaction', 'blocks-for-leaflet-map' ) }
 					initialOpen={ false }
 				>
@@ -2584,10 +2759,10 @@ export default function Edit( {
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
-				</PanelBody>
+				</PanelBody> }
 
 				{ /* ── Zoom & Bounds panel ────────────────────────────────── */ }
-				<PanelBody
+				{ ! imageMap && <PanelBody
 					title={ __( 'Zoom & Bounds', 'blocks-for-leaflet-map' ) }
 					initialOpen={ false }
 				>
@@ -2638,10 +2813,10 @@ export default function Edit( {
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
-				</PanelBody>
+				</PanelBody> }
 
 				{ /* ── Tile Layer panel ──────────────────────────────────── */ }
-				<PanelBody
+				{ ! imageMap && <PanelBody
 					title={ __( 'Tile Layer', 'blocks-for-leaflet-map' ) }
 					initialOpen={ false }
 				>
@@ -2849,10 +3024,10 @@ export default function Edit( {
 						}
 						rows={ 2 }
 					/>
-				</PanelBody>
+				</PanelBody> }
 
 				{ /* ── Map Controls panel ──────────────────────────────────── */ }
-				<PanelBody
+				{ ! imageMap && <PanelBody
 					title={ __( 'Map Controls', 'blocks-for-leaflet-map' ) }
 					initialOpen={ false }
 				>
@@ -2876,7 +3051,7 @@ export default function Edit( {
 						}
 						__nextHasNoMarginBottom
 					/>
-				</PanelBody>
+				</PanelBody> }
 
 				{ /* ── Markers panel ────────────────────────────────────────── */ }
 				<PanelBody
@@ -2913,7 +3088,7 @@ export default function Edit( {
 							initialOpen={ false }
 						>
 							{ /* ── Per-marker address search ─────────────────── */ }
-							{ ( () => {
+							{ ! imageMap && ( () => {
 								const ms = markerSearch[ index ] || {};
 								const msInput = ms.input || '';
 								const msStatus = ms.status || 'idle';
@@ -3056,31 +3231,31 @@ export default function Edit( {
 							} )() }
 
 							<NumberControl
-								label={ __(
-									'Latitude',
-									'blocks-for-leaflet-map'
-								) }
+								label={ imageMap
+									? __( 'Y (pixels)', 'blocks-for-leaflet-map' )
+									: __( 'Latitude', 'blocks-for-leaflet-map' )
+								}
 								value={ marker.lat }
 								onChange={ ( value ) =>
 									handleUpdateMarker( index, {
 										lat: parseFloat( value ) || 0,
 									} )
 								}
-								step={ 0.0001 }
+								step={ imageMap ? 1 : 0.0001 }
 								__next40pxDefaultSize
 							/>
 							<NumberControl
-								label={ __(
-									'Longitude',
-									'blocks-for-leaflet-map'
-								) }
+								label={ imageMap
+									? __( 'X (pixels)', 'blocks-for-leaflet-map' )
+									: __( 'Longitude', 'blocks-for-leaflet-map' )
+								}
 								value={ marker.lng }
 								onChange={ ( value ) =>
 									handleUpdateMarker( index, {
 										lng: parseFloat( value ) || 0,
 									} )
 								}
-								step={ 0.0001 }
+								step={ imageMap ? 1 : 0.0001 }
 								__next40pxDefaultSize
 							/>
 							<TextControl
@@ -4817,12 +4992,12 @@ export default function Edit( {
 										{ isOpen && (
 											<>
 												<NumberControl
-													label={ __(
-														'Latitude',
-														'blocks-for-leaflet-map'
-													) }
+													label={ imageMap
+														? __( 'Y (pixels)', 'blocks-for-leaflet-map' )
+														: __( 'Latitude', 'blocks-for-leaflet-map' )
+													}
 													value={ point.lat }
-													step={ 0.000001 }
+													step={ imageMap ? 1 : 0.000001 }
 													onChange={ ( v ) =>
 														handleUpdatePoint(
 															lineIdx,
@@ -4840,12 +5015,12 @@ export default function Edit( {
 													}
 												/>
 												<NumberControl
-													label={ __(
-														'Longitude',
-														'blocks-for-leaflet-map'
-													) }
+													label={ imageMap
+														? __( 'X (pixels)', 'blocks-for-leaflet-map' )
+														: __( 'Longitude', 'blocks-for-leaflet-map' )
+													}
 													value={ point.lng }
-													step={ 0.000001 }
+													step={ imageMap ? 1 : 0.000001 }
 													onChange={ ( v ) =>
 														handleUpdatePoint(
 															lineIdx,
@@ -4882,7 +5057,7 @@ export default function Edit( {
 														'blocks-for-leaflet-map'
 													) }
 												</Button>
-												<div
+												{ ! imageMap && <div
 													style={ {
 														marginTop: '6px',
 													} }
@@ -5033,7 +5208,7 @@ export default function Edit( {
 																) }
 															</div>
 														) }
-												</div>
+												</div> }
 											</>
 										) }
 										<Button
@@ -5427,12 +5602,12 @@ export default function Edit( {
 									</p>
 
 									<NumberControl
-										label={ __(
-											'Latitude',
-											'blocks-for-leaflet-map'
-										) }
+										label={ imageMap
+											? __( 'Y (pixels)', 'blocks-for-leaflet-map' )
+											: __( 'Latitude', 'blocks-for-leaflet-map' )
+										}
 										value={ circle.lat ?? '' }
-										step={ 0.000001 }
+										step={ imageMap ? 1 : 0.000001 }
 										onChange={ ( v ) =>
 											handleUpdateCircle( circleIdx, {
 												lat:
@@ -5444,12 +5619,12 @@ export default function Edit( {
 										__next40pxDefaultSize={ true }
 									/>
 									<NumberControl
-										label={ __(
-											'Longitude',
-											'blocks-for-leaflet-map'
-										) }
+										label={ imageMap
+											? __( 'X (pixels)', 'blocks-for-leaflet-map' )
+											: __( 'Longitude', 'blocks-for-leaflet-map' )
+										}
 										value={ circle.lng ?? '' }
-										step={ 0.000001 }
+										step={ imageMap ? 1 : 0.000001 }
 										onChange={ ( v ) =>
 											handleUpdateCircle( circleIdx, {
 												lng:
@@ -5481,7 +5656,7 @@ export default function Edit( {
 									</Button>
 
 									{ /* Geocoder */ }
-									<div style={ { marginTop: '6px' } }>
+									{ ! imageMap && <div style={ { marginTop: '6px' } }>
 										<TextControl
 											label={ __(
 												'Search by address',
@@ -5595,7 +5770,7 @@ export default function Edit( {
 													) }
 												</div>
 											) }
-									</div>
+									</div> }
 
 									{ /* Radius + unit toggle */ }
 									<div
@@ -5983,7 +6158,7 @@ export default function Edit( {
 					) }
 				</PanelBody>
 				{ /* ── Data Layers panel ────────────────────────────────── */ }
-				<PanelBody
+				{ ! imageMap && <PanelBody
 					title={ __( 'Data Layers', 'blocks-for-leaflet-map' ) }
 					initialOpen={ false }
 				>
@@ -6975,7 +7150,7 @@ export default function Edit( {
 							</Button>
 						</PanelBody>
 					) ) }
-				</PanelBody>
+				</PanelBody> }
 			</InspectorControls>
 
 			<div

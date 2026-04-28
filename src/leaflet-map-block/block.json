@@ -2,7 +2,7 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "blocks-for-leaflet-map/leaflet-map-block",
-	"version": "0.7.1",
+	"version": "0.8.0",
 	"title": "Leaflet Map Block",
 	"category": "embed",
 	"icon": "location-alt",
@@ -136,6 +136,26 @@
 		"address": {
 			"type": "string",
 			"default": ""
+		},
+		"imageMap": {
+			"type": "boolean",
+			"default": false
+		},
+		"imageSrc": {
+			"type": "string",
+			"default": ""
+		},
+		"imageX": {
+			"type": "number",
+			"default": 0
+		},
+		"imageY": {
+			"type": "number",
+			"default": 0
+		},
+		"imageZoom": {
+			"type": "number",
+			"default": 0
 		},
 		"markers": {
 			"type": "array",

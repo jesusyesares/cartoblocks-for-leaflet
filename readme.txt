@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.0
 Tested up to:      6.9
-Stable tag:        0.7.1
+Stable tag:        0.8.0
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -61,6 +61,12 @@ Whatever you have configured in the Leaflet Map plugin settings. By default, Ope
 3. Frontend rendering with Leaflet Map shortcodes.
 
 == Changelog ==
+
+= 0.8.0 =
+* Added: `[leaflet-image]` shortcode support via new "Image map mode" toggle in the Location panel. Replaces tile layer with a flat image (floor plans, diagrams, custom maps) rendered on `L.CRS.Simple`.
+* Added: MediaUpload picker (WordPress Media Library) and plain URL fallback for the image source.
+* Added: Center X / Center Y pixel coordinate fields (replaces Lat/Lng in image mode).
+* Added: Markers, lines, polygons, and circles remain usable in image mode — coordinates are pixel positions.
 
 = 0.7.1 =
 * Fixed: Removed unreachable `circleMarker` toggle from Data Layers (WordPress lowercases shortcode attributes; bozdoz checks camelCase `$circleMarker` — same trap as `touchZoom`).

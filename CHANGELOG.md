@@ -5,6 +5,15 @@ All notable changes to the Blocks for Leaflet Map plugin will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-04-28
+
+### Added
+- `[leaflet-image]` shortcode support via new "Image map mode" toggle in the Location panel. Replaces tile layer with a flat image rendered on `L.CRS.Simple` — useful for floor plans, custom maps, and diagrams.
+- MediaUpload picker (WordPress Media Library) + plain URL fallback for the image source.
+- Center X / Center Y pixel coordinate fields (used in place of Lat/Lng when image mode is active).
+- All child layers (markers, lines, polygons, circles) remain available in image mode — coordinates are interpreted as pixel positions by Leaflet.
+- Tile Layer, Interaction, Zoom & Bounds, Map Controls, Data Layers, and Fit to Markers panels automatically hidden when image mode is active.
+
 ## [0.7.1] - 2026-04-28
 
 ### Fixed
