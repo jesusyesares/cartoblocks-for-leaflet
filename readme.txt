@@ -62,9 +62,8 @@ Whatever you have configured in the Leaflet Map plugin settings. By default, Ope
 
 == Changelog ==
 
-= 1.0.0 =
+= 0.10.0 =
 * Added: `[leaflet-image-overlay]` and `[leaflet-video-overlay]` shortcode support via new "Overlays" panel. Pin raster images or videos to geo coordinates with configurable bounds, opacity, interactivity, z-index, CSS class, alt text, and aspect-ratio lock.
-* Milestone: full feature parity with the Leaflet Map plugin shortcode set.
 
 = 0.9.0 =
 * Added: `[leaflet-wms]` shortcode support via a new "Use WMS tile source" toggle in the Tile Layer panel. Replaces the standard OSM/raster tile layer with a WMS (Web Map Service) source.
