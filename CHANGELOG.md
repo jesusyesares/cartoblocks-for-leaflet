@@ -5,6 +5,13 @@ All notable changes to the Blocks for Leaflet Map plugin will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-04-28
+
+### Fixed
+- Removed `circleMarker` toggle from Data Layers — WordPress lowercases all shortcode attribute names so `circleMarker` is unreachable via shortcode (same camelCase trap as `touchZoom` documented in CLAUDE.md). Matches the existing precedent of not implementing camelCase-trapped attributes.
+- Clarified "Single property to display" help text: bare property name required (e.g. `ciudad`, not `{ciudad}`).
+- Added warning in "Default feature style" panel that style applies to line/polygon features only — point markers (`L.marker`) are HTML elements, not SVG paths, and ignore path styles.
+
 ## [0.7.0] - 2026-04-28
 
 ### Added

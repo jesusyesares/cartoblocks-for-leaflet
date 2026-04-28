@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.0
 Tested up to:      6.9
-Stable tag:        0.7.0
+Stable tag:        0.7.1
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -62,11 +62,15 @@ Whatever you have configured in the Leaflet Map plugin settings. By default, Ope
 
 == Changelog ==
 
+= 0.7.1 =
+* Fixed: Removed unreachable `circleMarker` toggle from Data Layers (WordPress lowercases shortcode attributes; bozdoz checks camelCase `$circleMarker` — same trap as `touchZoom`).
+* Fixed: "Single property to display" help text now clarifies bare property name required (e.g. `ciudad`, not `{ciudad}`).
+* Fixed: Added warning in "Default feature style" panel that style applies to line/polygon features only — point markers ignore path styles.
+
 = 0.7.0 =
 * Added: `[leaflet-geojson]`, `[leaflet-gpx]`, and `[leaflet-kml]` shortcode support via a new "Data Layers" panel in the block inspector.
-* Added: Full attribute parity with the bozdoz upstream shortcode — source URL, fitbounds, circleMarker, popup template (with {property} interpolation), popup property, table view, full style options (color/weight/opacity/dasharray/classname/fill/fillcolor/fillopacity), and custom point icon (iconurl/iconsize/iconanchor/popupanchor with aspect-ratio lock and 9-position anchor presets).
-* Added: Mutual-exclusion notice — when "Render points as circle markers" is enabled, the custom point icon panel shows an informational notice and the icon is suppressed in the shortcode.
-* Added: 16 new Jest unit tests for `buildLayerShortcodes` (36 total passing).
+* Added: Full attribute parity with the bozdoz upstream shortcode — source URL, fitbounds, popup template (with {property} interpolation), popup property, table view, full style options (color/weight/opacity/dasharray/classname/fill/fillcolor/fillopacity), and custom point icon (iconurl/iconsize/iconanchor/popupanchor with aspect-ratio lock and 9-position anchor presets).
+* Added: 16 new Jest unit tests for `buildLayerShortcodes` (35 total passing).
 
 = 0.6.0 =
 * Added: `[leaflet-circle]` shortcode support with full attribute parity (lat/lng, radius, fitbounds, color, weight, opacity, dasharray, classname, fill, fillcolor, fillopacity, popup, visible).

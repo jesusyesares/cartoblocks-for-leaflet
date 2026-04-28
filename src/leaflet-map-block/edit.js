@@ -340,14 +340,15 @@ function buildLayerShortcodes( layers ) {
 
 		let attrs = ` src="${ src }"`;
 		if ( layer.fitbounds ) attrs += ` fitbounds="true"`;
-		if ( layer.circleMarker ) attrs += ` circleMarker="true"`;
 
 		const sanitize = ( s ) =>
 			s.replace( /"/g, '&quot;' ).replace( /\]/g, '&#93;' );
 		if ( layer.popupText && layer.popupText.trim() )
 			attrs += ` popup_text="${ sanitize( layer.popupText.trim() ) }"`;
 		if ( layer.popupProperty && layer.popupProperty.trim() )
-			attrs += ` popup_property="${ sanitize( layer.popupProperty.trim() ) }"`;
+			attrs += ` popup_property="${ sanitize(
+				layer.popupProperty.trim()
+			) }"`;
 		if ( layer.tableView ) attrs += ` table_view="1"`;
 
 		if ( layer.color && layer.color.trim() )
@@ -364,7 +365,7 @@ function buildLayerShortcodes( layers ) {
 		if ( layer.fillOpacity != null )
 			attrs += ` fillopacity="${ layer.fillOpacity }"`;
 
-		if ( layer.useCustomIcon && ! layer.circleMarker ) {
+		if ( layer.useCustomIcon ) {
 			if ( layer.iconUrl ) attrs += ` iconurl="${ layer.iconUrl }"`;
 			if (
 				layer.iconWidth != null &&
@@ -1139,7 +1140,9 @@ export default function Edit( {
 		);
 		if ( url ) {
 			iframe.src = url;
-			lastLoadedShortcodeRef.current = buildShortcode( attributesRef.current );
+			lastLoadedShortcodeRef.current = buildShortcode(
+				attributesRef.current
+			);
 		}
 		hasMountedRef.current = true;
 	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1970,7 +1973,9 @@ export default function Edit( {
 			handleStopDrawingCircle();
 		}
 		setAttributes( {
-			circles: ( attributes.circles || [] ).filter( ( _, i ) => i !== index ),
+			circles: ( attributes.circles || [] ).filter(
+				( _, i ) => i !== index
+			),
 		} );
 		setCircleSearch( ( prev ) => {
 			const next = {};
@@ -2023,7 +2028,6 @@ export default function Edit( {
 				type,
 				src: '',
 				fitbounds: false,
-				circleMarker: false,
 				popupText: '',
 				popupProperty: '',
 				tableView: false,
@@ -2055,7 +2059,9 @@ export default function Edit( {
 	/** Remove a layer by index. */
 	function handleRemoveLayer( index ) {
 		setAttributes( {
-			layers: ( attributes.layers || [] ).filter( ( _, i ) => i !== index ),
+			layers: ( attributes.layers || [] ).filter(
+				( _, i ) => i !== index
+			),
 		} );
 		if ( expandedLayerIndex === index ) {
 			setExpandedLayerIndex( null );
@@ -2176,7 +2182,10 @@ export default function Edit( {
 		if ( found.length === 1 ) {
 			applyCircleCandidate( index, found[ 0 ] );
 		} else {
-			updateCircleSearch( index, { status: 'candidates', candidates: found } );
+			updateCircleSearch( index, {
+				status: 'candidates',
+				candidates: found,
+			} );
 		}
 	}
 
@@ -5362,340 +5371,641 @@ export default function Edit( {
 					<Button
 						variant="secondary"
 						onClick={ handleAddCircle }
-						style={ { width: '100%', justifyContent: 'center', marginBottom: '8px' } }
+						style={ {
+							width: '100%',
+							justifyContent: 'center',
+							marginBottom: '8px',
+						} }
 					>
 						{ __( '+ Circle', 'blocks-for-leaflet-map' ) }
 					</Button>
 
-					{ ( attributes.circles || [] ).map( ( circle, circleIdx ) => {
-						const csKey = String( circleIdx );
-						const cs = circleSearch[ csKey ] || {};
-						const csStatus = cs.status || 'idle';
-						const csInput = cs.input || '';
-						const csCandidates = cs.candidates || [];
-						const radiusUnit = circleRadiusUnit[ csKey ] || 'm';
-						const displayRadius = radiusUnit === 'km'
-							? parseFloat( ( ( circle.radius ?? 1000 ) / 1000 ).toFixed( 3 ) )
-							: ( circle.radius ?? 1000 );
+					{ ( attributes.circles || [] ).map(
+						( circle, circleIdx ) => {
+							const csKey = String( circleIdx );
+							const cs = circleSearch[ csKey ] || {};
+							const csStatus = cs.status || 'idle';
+							const csInput = cs.input || '';
+							const csCandidates = cs.candidates || [];
+							const radiusUnit = circleRadiusUnit[ csKey ] || 'm';
+							const displayRadius =
+								radiusUnit === 'km'
+									? parseFloat(
+											(
+												( circle.radius ?? 1000 ) / 1000
+											).toFixed( 3 )
+									  )
+									: circle.radius ?? 1000;
 
-						return (
-							<PanelBody
-								key={ circleIdx }
-								title={ `${ __( 'Circle', 'blocks-for-leaflet-map' ) } ${ circleIdx + 1 }` }
-								opened={ expandedCircleIndex === circleIdx }
-								onToggle={ () =>
-									setExpandedCircleIndex( ( prev ) =>
-										prev === circleIdx ? null : circleIdx
-									)
-								}
-							>
-								<p style={ { margin: '0 0 8px', fontSize: '11px', color: '#757575' } }>
-									{ __(
-										'Click "Draw on map" to set center + radius by clicking on the map, or enter coordinates manually.',
+							return (
+								<PanelBody
+									key={ circleIdx }
+									title={ `${ __(
+										'Circle',
 										'blocks-for-leaflet-map'
-									) }
-								</p>
-
-								<NumberControl
-									label={ __( 'Latitude', 'blocks-for-leaflet-map' ) }
-									value={ circle.lat ?? '' }
-									step={ 0.000001 }
-									onChange={ ( v ) =>
-										handleUpdateCircle( circleIdx, {
-											lat: v === '' || v == null ? null : parseFloat( v ),
-										} )
+									) } ${ circleIdx + 1 }` }
+									opened={ expandedCircleIndex === circleIdx }
+									onToggle={ () =>
+										setExpandedCircleIndex( ( prev ) =>
+											prev === circleIdx
+												? null
+												: circleIdx
+										)
 									}
-									__next40pxDefaultSize={ true }
-								/>
-								<NumberControl
-									label={ __( 'Longitude', 'blocks-for-leaflet-map' ) }
-									value={ circle.lng ?? '' }
-									step={ 0.000001 }
-									onChange={ ( v ) =>
-										handleUpdateCircle( circleIdx, {
-											lng: v === '' || v == null ? null : parseFloat( v ),
-										} )
-									}
-									__next40pxDefaultSize={ true }
-								/>
-								<Button
-									variant="tertiary"
-									onClick={ () =>
-										handleLocatePoint( circle.lat ?? lat, circle.lng ?? lng )
-									}
-									style={ { marginTop: '4px', width: '100%', justifyContent: 'center' } }
 								>
-									{ __( '📍 Locate on map', 'blocks-for-leaflet-map' ) }
-								</Button>
-
-								{ /* Geocoder */ }
-								<div style={ { marginTop: '6px' } }>
-									<TextControl
-										label={ __( 'Search by address', 'blocks-for-leaflet-map' ) }
-										placeholder={ __( 'e.g. Paris, France', 'blocks-for-leaflet-map' ) }
-										value={ csInput }
-										onChange={ ( v ) => updateCircleSearch( circleIdx, { input: v } ) }
-										onKeyDown={ ( e ) => {
-											if ( e.key === 'Enter' ) {
-												e.preventDefault();
-												handleCircleGeocode( circleIdx );
-											}
+									<p
+										style={ {
+											margin: '0 0 8px',
+											fontSize: '11px',
+											color: '#757575',
 										} }
-										__nextHasNoMarginBottom={ true }
+									>
+										{ __(
+											'Click "Draw on map" to set center + radius by clicking on the map, or enter coordinates manually.',
+											'blocks-for-leaflet-map'
+										) }
+									</p>
+
+									<NumberControl
+										label={ __(
+											'Latitude',
+											'blocks-for-leaflet-map'
+										) }
+										value={ circle.lat ?? '' }
+										step={ 0.000001 }
+										onChange={ ( v ) =>
+											handleUpdateCircle( circleIdx, {
+												lat:
+													v === '' || v == null
+														? null
+														: parseFloat( v ),
+											} )
+										}
+										__next40pxDefaultSize={ true }
+									/>
+									<NumberControl
+										label={ __(
+											'Longitude',
+											'blocks-for-leaflet-map'
+										) }
+										value={ circle.lng ?? '' }
+										step={ 0.000001 }
+										onChange={ ( v ) =>
+											handleUpdateCircle( circleIdx, {
+												lng:
+													v === '' || v == null
+														? null
+														: parseFloat( v ),
+											} )
+										}
+										__next40pxDefaultSize={ true }
 									/>
 									<Button
-										variant="secondary"
-										onClick={ () => handleCircleGeocode( circleIdx ) }
-										isBusy={ csStatus === 'loading' }
-										disabled={ csStatus === 'loading' || ! csInput.trim() }
-										style={ { marginTop: '4px', width: '100%', justifyContent: 'center' } }
+										variant="tertiary"
+										onClick={ () =>
+											handleLocatePoint(
+												circle.lat ?? lat,
+												circle.lng ?? lng
+											)
+										}
+										style={ {
+											marginTop: '4px',
+											width: '100%',
+											justifyContent: 'center',
+										} }
 									>
-										{ csStatus === 'loading'
-											? __( 'Searching…', 'blocks-for-leaflet-map' )
-											: __( 'Search', 'blocks-for-leaflet-map' ) }
+										{ __(
+											'📍 Locate on map',
+											'blocks-for-leaflet-map'
+										) }
 									</Button>
-									{ csStatus === 'error' && cs.error && (
-										<Notice
-											status="warning"
-											isDismissible={ false }
-											style={ { marginTop: '6px' } }
-										>
-											{ cs.error }
-										</Notice>
-									) }
-									{ csStatus === 'candidates' && csCandidates.length > 0 && (
-										<div style={ { marginTop: '6px' } }>
-											<p style={ { margin: '0 0 4px', fontSize: '11px', color: '#757575' } }>
-												{ __( 'Select a result:', 'blocks-for-leaflet-map' ) }
-											</p>
-											{ csCandidates.map( ( candidate, cIdx ) => (
-												<Button
-													key={ cIdx }
-													variant="tertiary"
-													onClick={ () => applyCircleCandidate( circleIdx, candidate ) }
-													style={ {
-														display: 'block',
-														width: '100%',
-														textAlign: 'left',
-														marginBottom: '4px',
-														whiteSpace: 'normal',
-														height: 'auto',
-														minHeight: '32px',
-													} }
-												>
-													{ candidate.display_name }
-												</Button>
-											) ) }
-										</div>
-									) }
-								</div>
 
-								{ /* Radius + unit toggle */ }
-								<div style={ { marginTop: '12px', display: 'flex', gap: '6px', alignItems: 'flex-end' } }>
-									<div style={ { flex: 1 } }>
-										<NumberControl
-											label={ __( 'Radius', 'blocks-for-leaflet-map' ) }
-											value={ displayRadius }
-											step={ radiusUnit === 'km' ? 0.001 : 1 }
-											min={ 0 }
-											onChange={ ( v ) => {
-												const meters = radiusUnit === 'km'
-													? Math.round( ( parseFloat( v ) || 0 ) * 1000 )
-													: Math.round( parseFloat( v ) || 0 );
-												handleUpdateCircle( circleIdx, { radius: meters } );
-											} }
-											__next40pxDefaultSize={ true }
-										/>
-									</div>
-									<div>
-										<p style={ { margin: '0 0 2px', fontSize: '11px', color: '#1e1e1e' } }>
-											{ __( 'Unit', 'blocks-for-leaflet-map' ) }
-										</p>
-										<SelectControl
-											value={ radiusUnit }
-											options={ [
-												{ label: 'm', value: 'm' },
-												{ label: 'km', value: 'km' },
-											] }
+									{ /* Geocoder */ }
+									<div style={ { marginTop: '6px' } }>
+										<TextControl
+											label={ __(
+												'Search by address',
+												'blocks-for-leaflet-map'
+											) }
+											placeholder={ __(
+												'e.g. Paris, France',
+												'blocks-for-leaflet-map'
+											) }
+											value={ csInput }
 											onChange={ ( v ) =>
-												setCircleRadiusUnit( ( prev ) => ( { ...prev, [ csKey ]: v } ) )
+												updateCircleSearch( circleIdx, {
+													input: v,
+												} )
 											}
+											onKeyDown={ ( e ) => {
+												if ( e.key === 'Enter' ) {
+													e.preventDefault();
+													handleCircleGeocode(
+														circleIdx
+													);
+												}
+											} }
 											__nextHasNoMarginBottom={ true }
 										/>
-									</div>
-								</div>
-
-								{ /* Draw on map / Stop drawing */ }
-								<div style={ { display: 'flex', gap: '6px', marginTop: '10px', marginBottom: '12px' } }>
-									{ drawingCircleIndex === circleIdx ? (
-										<Button
-											variant="primary"
-											onClick={ handleStopDrawingCircle }
-											style={ { flex: 1, justifyContent: 'center' } }
-										>
-											{ __( '⏹ Stop drawing', 'blocks-for-leaflet-map' ) }
-										</Button>
-									) : (
 										<Button
 											variant="secondary"
-											onClick={ () => handleStartDrawingCircle( circleIdx ) }
-											style={ { flex: 1, justifyContent: 'center' } }
+											onClick={ () =>
+												handleCircleGeocode( circleIdx )
+											}
+											isBusy={ csStatus === 'loading' }
+											disabled={
+												csStatus === 'loading' ||
+												! csInput.trim()
+											}
+											style={ {
+												marginTop: '4px',
+												width: '100%',
+												justifyContent: 'center',
+											} }
 										>
-											{ __( '✏ Draw on map', 'blocks-for-leaflet-map' ) }
+											{ csStatus === 'loading'
+												? __(
+														'Searching…',
+														'blocks-for-leaflet-map'
+												  )
+												: __(
+														'Search',
+														'blocks-for-leaflet-map'
+												  ) }
 										</Button>
-									) }
-								</div>
-								{ drawingCircleIndex === circleIdx && (
-									<p style={ { margin: '-4px 0 12px', fontSize: '11px', color: '#1d4ed8', fontWeight: 600 } }>
-										{ __( '🖱 Click map to set center, then click again to set radius.', 'blocks-for-leaflet-map' ) }
-									</p>
-								) }
+										{ csStatus === 'error' && cs.error && (
+											<Notice
+												status="warning"
+												isDismissible={ false }
+												style={ { marginTop: '6px' } }
+											>
+												{ cs.error }
+											</Notice>
+										) }
+										{ csStatus === 'candidates' &&
+											csCandidates.length > 0 && (
+												<div
+													style={ {
+														marginTop: '6px',
+													} }
+												>
+													<p
+														style={ {
+															margin: '0 0 4px',
+															fontSize: '11px',
+															color: '#757575',
+														} }
+													>
+														{ __(
+															'Select a result:',
+															'blocks-for-leaflet-map'
+														) }
+													</p>
+													{ csCandidates.map(
+														( candidate, cIdx ) => (
+															<Button
+																key={ cIdx }
+																variant="tertiary"
+																onClick={ () =>
+																	applyCircleCandidate(
+																		circleIdx,
+																		candidate
+																	)
+																}
+																style={ {
+																	display:
+																		'block',
+																	width: '100%',
+																	textAlign:
+																		'left',
+																	marginBottom:
+																		'4px',
+																	whiteSpace:
+																		'normal',
+																	height: 'auto',
+																	minHeight:
+																		'32px',
+																} }
+															>
+																{
+																	candidate.display_name
+																}
+															</Button>
+														)
+													) }
+												</div>
+											) }
+									</div>
 
-								<ToggleControl
-									label={ __( 'Fit map to this circle', 'blocks-for-leaflet-map' ) }
-									checked={ !! circle.fitbounds }
-									onChange={ ( v ) => handleUpdateCircle( circleIdx, { fitbounds: v } ) }
-									__nextHasNoMarginBottom={ true }
-								/>
-
-								<PanelBody
-									title={ __( 'Style', 'blocks-for-leaflet-map' ) }
-									initialOpen={ false }
-								>
-									<p style={ { margin: '0 0 4px', fontSize: '12px' } }>
-										{ __( 'Stroke color', 'blocks-for-leaflet-map' ) }
-									</p>
-									<ColorPalette
-										value={ circle.color || undefined }
-										onChange={ ( v ) => handleUpdateCircle( circleIdx, { color: v || '' } ) }
-										enableAlpha={ false }
-									/>
-									<RangeControl
-										label={ __( 'Weight (px)', 'blocks-for-leaflet-map' ) }
-										value={ circle.weight ?? 3 }
-										min={ 0 }
-										max={ 20 }
-										step={ 1 }
-										onChange={ ( v ) => handleUpdateCircle( circleIdx, { weight: v } ) }
-										allowReset={ true }
-										resetFallbackValue={ 3 }
-										__next40pxDefaultSize={ true }
-										__nextHasNoMarginBottom={ true }
-									/>
-									<RangeControl
-										label={ __( 'Opacity', 'blocks-for-leaflet-map' ) }
-										value={ circle.opacity ?? 1 }
-										min={ 0 }
-										max={ 1 }
-										step={ 0.05 }
-										onChange={ ( v ) => handleUpdateCircle( circleIdx, { opacity: v } ) }
-										allowReset={ true }
-										resetFallbackValue={ 1 }
-										__next40pxDefaultSize={ true }
-										__nextHasNoMarginBottom={ true }
-									/>
-									<TextControl
-										label={ __( 'Dash array', 'blocks-for-leaflet-map' ) }
-										value={ circle.dashArray || '' }
-										placeholder="e.g. 5,10"
-										onChange={ ( v ) => handleUpdateCircle( circleIdx, { dashArray: v } ) }
-										__nextHasNoMarginBottom={ true }
-									/>
-									<TextControl
-										label={ __( 'CSS class', 'blocks-for-leaflet-map' ) }
-										value={ circle.classname || '' }
-										onChange={ ( v ) => handleUpdateCircle( circleIdx, { classname: v } ) }
-										__nextHasNoMarginBottom={ true }
-									/>
-								</PanelBody>
-
-								<PanelBody
-									title={ __( 'Fill', 'blocks-for-leaflet-map' ) }
-									initialOpen={ false }
-								>
-									<ToggleControl
-										label={ __( 'Fill circle', 'blocks-for-leaflet-map' ) }
-										checked={ !! circle.fill }
-										onChange={ ( v ) => handleUpdateCircle( circleIdx, { fill: v } ) }
-										__nextHasNoMarginBottom={ true }
-									/>
-									{ circle.fill && (
-										<>
-											<p style={ { margin: '8px 0 4px', fontSize: '12px' } }>
-												{ __( 'Fill color', 'blocks-for-leaflet-map' ) }
-											</p>
-											<ColorPalette
-												value={ circle.fillColor || undefined }
-												onChange={ ( v ) =>
-													handleUpdateCircle( circleIdx, { fillColor: v || '' } )
+									{ /* Radius + unit toggle */ }
+									<div
+										style={ {
+											marginTop: '12px',
+											display: 'flex',
+											gap: '6px',
+											alignItems: 'flex-end',
+										} }
+									>
+										<div style={ { flex: 1 } }>
+											<NumberControl
+												label={ __(
+													'Radius',
+													'blocks-for-leaflet-map'
+												) }
+												value={ displayRadius }
+												step={
+													radiusUnit === 'km'
+														? 0.001
+														: 1
 												}
-												enableAlpha={ false }
-											/>
-											<RangeControl
-												label={ __( 'Fill opacity', 'blocks-for-leaflet-map' ) }
-												value={ circle.fillOpacity ?? 0.2 }
 												min={ 0 }
-												max={ 1 }
-												step={ 0.05 }
-												onChange={ ( v ) =>
-													handleUpdateCircle( circleIdx, { fillOpacity: v } )
-												}
-												allowReset={ true }
-												resetFallbackValue={ 0.2 }
+												onChange={ ( v ) => {
+													const meters =
+														radiusUnit === 'km'
+															? Math.round(
+																	( parseFloat(
+																		v
+																	) || 0 ) *
+																		1000
+															  )
+															: Math.round(
+																	parseFloat(
+																		v
+																	) || 0
+															  );
+													handleUpdateCircle(
+														circleIdx,
+														{ radius: meters }
+													);
+												} }
 												__next40pxDefaultSize={ true }
+											/>
+										</div>
+										<div>
+											<p
+												style={ {
+													margin: '0 0 2px',
+													fontSize: '11px',
+													color: '#1e1e1e',
+												} }
+											>
+												{ __(
+													'Unit',
+													'blocks-for-leaflet-map'
+												) }
+											</p>
+											<SelectControl
+												value={ radiusUnit }
+												options={ [
+													{ label: 'm', value: 'm' },
+													{
+														label: 'km',
+														value: 'km',
+													},
+												] }
+												onChange={ ( v ) =>
+													setCircleRadiusUnit(
+														( prev ) => ( {
+															...prev,
+															[ csKey ]: v,
+														} )
+													)
+												}
 												__nextHasNoMarginBottom={ true }
 											/>
-										</>
-									) }
-								</PanelBody>
+										</div>
+									</div>
 
-								<PanelBody
-									title={ __( 'Popup', 'blocks-for-leaflet-map' ) }
-									initialOpen={ false }
-								>
-									<TextareaControl
-										label={ __( 'Popup content (HTML allowed)', 'blocks-for-leaflet-map' ) }
-										value={ circle.popup || '' }
-										onChange={ ( v ) => handleUpdateCircle( circleIdx, { popup: v } ) }
-										rows={ 3 }
+									{ /* Draw on map / Stop drawing */ }
+									<div
+										style={ {
+											display: 'flex',
+											gap: '6px',
+											marginTop: '10px',
+											marginBottom: '12px',
+										} }
+									>
+										{ drawingCircleIndex === circleIdx ? (
+											<Button
+												variant="primary"
+												onClick={
+													handleStopDrawingCircle
+												}
+												style={ {
+													flex: 1,
+													justifyContent: 'center',
+												} }
+											>
+												{ __(
+													'⏹ Stop drawing',
+													'blocks-for-leaflet-map'
+												) }
+											</Button>
+										) : (
+											<Button
+												variant="secondary"
+												onClick={ () =>
+													handleStartDrawingCircle(
+														circleIdx
+													)
+												}
+												style={ {
+													flex: 1,
+													justifyContent: 'center',
+												} }
+											>
+												{ __(
+													'✏ Draw on map',
+													'blocks-for-leaflet-map'
+												) }
+											</Button>
+										) }
+									</div>
+									{ drawingCircleIndex === circleIdx && (
+										<p
+											style={ {
+												margin: '-4px 0 12px',
+												fontSize: '11px',
+												color: '#1d4ed8',
+												fontWeight: 600,
+											} }
+										>
+											{ __(
+												'🖱 Click map to set center, then click again to set radius.',
+												'blocks-for-leaflet-map'
+											) }
+										</p>
+									) }
+
+									<ToggleControl
+										label={ __(
+											'Fit map to this circle',
+											'blocks-for-leaflet-map'
+										) }
+										checked={ !! circle.fitbounds }
+										onChange={ ( v ) =>
+											handleUpdateCircle( circleIdx, {
+												fitbounds: v,
+											} )
+										}
 										__nextHasNoMarginBottom={ true }
 									/>
-									{ ( circle.popup || '' ).trim() && (
-										<ToggleControl
-											label={ __( 'Open popup on load', 'blocks-for-leaflet-map' ) }
-											checked={ !! circle.visible }
+
+									<PanelBody
+										title={ __(
+											'Style',
+											'blocks-for-leaflet-map'
+										) }
+										initialOpen={ false }
+									>
+										<p
+											style={ {
+												margin: '0 0 4px',
+												fontSize: '12px',
+											} }
+										>
+											{ __(
+												'Stroke color',
+												'blocks-for-leaflet-map'
+											) }
+										</p>
+										<ColorPalette
+											value={ circle.color || undefined }
 											onChange={ ( v ) =>
-												handleUpdateCircle( circleIdx, { visible: v } )
+												handleUpdateCircle( circleIdx, {
+													color: v || '',
+												} )
+											}
+											enableAlpha={ false }
+										/>
+										<RangeControl
+											label={ __(
+												'Weight (px)',
+												'blocks-for-leaflet-map'
+											) }
+											value={ circle.weight ?? 3 }
+											min={ 0 }
+											max={ 20 }
+											step={ 1 }
+											onChange={ ( v ) =>
+												handleUpdateCircle( circleIdx, {
+													weight: v,
+												} )
+											}
+											allowReset={ true }
+											resetFallbackValue={ 3 }
+											__next40pxDefaultSize={ true }
+											__nextHasNoMarginBottom={ true }
+										/>
+										<RangeControl
+											label={ __(
+												'Opacity',
+												'blocks-for-leaflet-map'
+											) }
+											value={ circle.opacity ?? 1 }
+											min={ 0 }
+											max={ 1 }
+											step={ 0.05 }
+											onChange={ ( v ) =>
+												handleUpdateCircle( circleIdx, {
+													opacity: v,
+												} )
+											}
+											allowReset={ true }
+											resetFallbackValue={ 1 }
+											__next40pxDefaultSize={ true }
+											__nextHasNoMarginBottom={ true }
+										/>
+										<TextControl
+											label={ __(
+												'Dash array',
+												'blocks-for-leaflet-map'
+											) }
+											value={ circle.dashArray || '' }
+											placeholder="e.g. 5,10"
+											onChange={ ( v ) =>
+												handleUpdateCircle( circleIdx, {
+													dashArray: v,
+												} )
 											}
 											__nextHasNoMarginBottom={ true }
 										/>
-									) }
-								</PanelBody>
+										<TextControl
+											label={ __(
+												'CSS class',
+												'blocks-for-leaflet-map'
+											) }
+											value={ circle.classname || '' }
+											onChange={ ( v ) =>
+												handleUpdateCircle( circleIdx, {
+													classname: v,
+												} )
+											}
+											__nextHasNoMarginBottom={ true }
+										/>
+									</PanelBody>
 
-								<Button
-									variant="link"
-									isDestructive
-									onClick={ () => handleRemoveCircle( circleIdx ) }
-									style={ { marginTop: '8px' } }
-								>
-									{ __( 'Remove Circle', 'blocks-for-leaflet-map' ) }
-								</Button>
-							</PanelBody>
-						);
-					} ) }
+									<PanelBody
+										title={ __(
+											'Fill',
+											'blocks-for-leaflet-map'
+										) }
+										initialOpen={ false }
+									>
+										<ToggleControl
+											label={ __(
+												'Fill circle',
+												'blocks-for-leaflet-map'
+											) }
+											checked={ !! circle.fill }
+											onChange={ ( v ) =>
+												handleUpdateCircle( circleIdx, {
+													fill: v,
+												} )
+											}
+											__nextHasNoMarginBottom={ true }
+										/>
+										{ circle.fill && (
+											<>
+												<p
+													style={ {
+														margin: '8px 0 4px',
+														fontSize: '12px',
+													} }
+												>
+													{ __(
+														'Fill color',
+														'blocks-for-leaflet-map'
+													) }
+												</p>
+												<ColorPalette
+													value={
+														circle.fillColor ||
+														undefined
+													}
+													onChange={ ( v ) =>
+														handleUpdateCircle(
+															circleIdx,
+															{
+																fillColor:
+																	v || '',
+															}
+														)
+													}
+													enableAlpha={ false }
+												/>
+												<RangeControl
+													label={ __(
+														'Fill opacity',
+														'blocks-for-leaflet-map'
+													) }
+													value={
+														circle.fillOpacity ??
+														0.2
+													}
+													min={ 0 }
+													max={ 1 }
+													step={ 0.05 }
+													onChange={ ( v ) =>
+														handleUpdateCircle(
+															circleIdx,
+															{ fillOpacity: v }
+														)
+													}
+													allowReset={ true }
+													resetFallbackValue={ 0.2 }
+													__next40pxDefaultSize={
+														true
+													}
+													__nextHasNoMarginBottom={
+														true
+													}
+												/>
+											</>
+										) }
+									</PanelBody>
+
+									<PanelBody
+										title={ __(
+											'Popup',
+											'blocks-for-leaflet-map'
+										) }
+										initialOpen={ false }
+									>
+										<TextareaControl
+											label={ __(
+												'Popup content (HTML allowed)',
+												'blocks-for-leaflet-map'
+											) }
+											value={ circle.popup || '' }
+											onChange={ ( v ) =>
+												handleUpdateCircle( circleIdx, {
+													popup: v,
+												} )
+											}
+											rows={ 3 }
+											__nextHasNoMarginBottom={ true }
+										/>
+										{ ( circle.popup || '' ).trim() && (
+											<ToggleControl
+												label={ __(
+													'Open popup on load',
+													'blocks-for-leaflet-map'
+												) }
+												checked={ !! circle.visible }
+												onChange={ ( v ) =>
+													handleUpdateCircle(
+														circleIdx,
+														{ visible: v }
+													)
+												}
+												__nextHasNoMarginBottom={ true }
+											/>
+										) }
+									</PanelBody>
+
+									<Button
+										variant="link"
+										isDestructive
+										onClick={ () =>
+											handleRemoveCircle( circleIdx )
+										}
+										style={ { marginTop: '8px' } }
+									>
+										{ __(
+											'Remove Circle',
+											'blocks-for-leaflet-map'
+										) }
+									</Button>
+								</PanelBody>
+							);
+						}
+					) }
 				</PanelBody>
 				{ /* ── Data Layers panel ────────────────────────────────── */ }
 				<PanelBody
 					title={ __( 'Data Layers', 'blocks-for-leaflet-map' ) }
 					initialOpen={ false }
 				>
-					<p style={ { margin: '0 0 8px', fontSize: '11px', color: '#757575' } }>
+					<p
+						style={ {
+							margin: '0 0 8px',
+							fontSize: '11px',
+							color: '#757575',
+						} }
+					>
 						{ __(
 							'Load GeoJSON, GPX, or KML data from a URL. Each layer renders on the map as vector features.',
 							'blocks-for-leaflet-map'
 						) }
 					</p>
-					<div style={ { display: 'flex', gap: '4px', marginBottom: '8px' } }>
+					<div
+						style={ {
+							display: 'flex',
+							gap: '4px',
+							marginBottom: '8px',
+						} }
+					>
 						<Button
 							variant="secondary"
 							onClick={ () => handleAddLayer( 'geojson' ) }
@@ -5722,7 +6032,17 @@ export default function Edit( {
 					{ ( attributes.layers || [] ).map( ( layer, layerIdx ) => (
 						<PanelBody
 							key={ layerIdx }
-							title={ `${ layer.type.toUpperCase() } ${ layerIdx + 1 }${ layer.src ? ' — ' + layer.src.split( '/' ).pop().substring( 0, 30 ) : '' }` }
+							title={ `${ layer.type.toUpperCase() } ${
+								layerIdx + 1
+							}${
+								layer.src
+									? ' — ' +
+									  layer.src
+											.split( '/' )
+											.pop()
+											.substring( 0, 30 )
+									: ''
+							}` }
 							opened={ expandedLayerIndex === layerIdx }
 							onToggle={ () =>
 								setExpandedLayerIndex( ( prev ) =>
@@ -5768,26 +6088,12 @@ export default function Edit( {
 								) }
 								checked={ layer.fitbounds || false }
 								onChange={ ( v ) =>
-									handleUpdateLayer( layerIdx, { fitbounds: v } )
+									handleUpdateLayer( layerIdx, {
+										fitbounds: v,
+									} )
 								}
 								__nextHasNoMarginBottom
 							/>
-							<ToggleControl
-								label={ __(
-									'Render points as circle markers',
-									'blocks-for-leaflet-map'
-								) }
-								help={ __(
-									'When enabled, point features render as Leaflet circleMarkers instead of pin icons.',
-									'blocks-for-leaflet-map'
-								) }
-								checked={ layer.circleMarker || false }
-								onChange={ ( v ) =>
-									handleUpdateLayer( layerIdx, { circleMarker: v } )
-								}
-								__nextHasNoMarginBottom
-							/>
-
 							{ /* Popup configuration */ }
 							<PanelBody
 								title={ __(
@@ -5796,7 +6102,13 @@ export default function Edit( {
 								) }
 								initialOpen={ false }
 							>
-								<p style={ { margin: '0 0 8px', fontSize: '11px', color: '#757575' } }>
+								<p
+									style={ {
+										margin: '0 0 8px',
+										fontSize: '11px',
+										color: '#757575',
+									} }
+								>
 									{ __(
 										'Precedence (highest first): Show all properties as table → Single property → Popup template. GPX/KML files rarely expose feature properties — popup config is most useful for GeoJSON.',
 										'blocks-for-leaflet-map'
@@ -5813,7 +6125,9 @@ export default function Edit( {
 										'blocks-for-leaflet-map'
 									) }
 									onChange={ ( v ) =>
-										handleUpdateLayer( layerIdx, { popupText: v } )
+										handleUpdateLayer( layerIdx, {
+											popupText: v,
+										} )
 									}
 									__nextHasNoMarginBottom
 								/>
@@ -5824,11 +6138,13 @@ export default function Edit( {
 									) }
 									value={ layer.popupProperty || '' }
 									help={ __(
-										'Property name whose value becomes the popup content. Overrides the popup template.',
+										'Bare property name (e.g. "ciudad", not "{ciudad}"). When set, overrides the popup template above.',
 										'blocks-for-leaflet-map'
 									) }
 									onChange={ ( v ) =>
-										handleUpdateLayer( layerIdx, { popupProperty: v } )
+										handleUpdateLayer( layerIdx, {
+											popupProperty: v,
+										} )
 									}
 									__next40pxDefaultSize
 									__nextHasNoMarginBottom
@@ -5844,7 +6160,9 @@ export default function Edit( {
 									) }
 									checked={ layer.tableView || false }
 									onChange={ ( v ) =>
-										handleUpdateLayer( layerIdx, { tableView: v } )
+										handleUpdateLayer( layerIdx, {
+											tableView: v,
+										} )
 									}
 									__nextHasNoMarginBottom
 								/>
@@ -5858,94 +6176,166 @@ export default function Edit( {
 								) }
 								initialOpen={ false }
 							>
-								<p style={ { margin: '0 0 8px', fontSize: '11px', color: '#757575' } }>
+								<p
+									style={ {
+										margin: '0 0 8px',
+										fontSize: '11px',
+										color: '#757575',
+									} }
+								>
 									{ __(
 										'Applied as the default layer style. Feature properties (e.g. geojson.io stroke/fill) override these defaults per-feature.',
 										'blocks-for-leaflet-map'
 									) }
 								</p>
-								<p style={ { margin: '8px 0 4px', fontSize: '11px', fontWeight: 600 } }>
-									{ __( 'Stroke color', 'blocks-for-leaflet-map' ) }
+								<p
+									style={ {
+										margin: '0 0 8px',
+										fontSize: '11px',
+										color: '#b45309',
+									} }
+								>
+									{ __(
+										'Style applies to line and polygon features only. Point markers are not affected — use Custom point icon to customise them.',
+										'blocks-for-leaflet-map'
+									) }
+								</p>
+								<p
+									style={ {
+										margin: '8px 0 4px',
+										fontSize: '11px',
+										fontWeight: 600,
+									} }
+								>
+									{ __(
+										'Stroke color',
+										'blocks-for-leaflet-map'
+									) }
 								</p>
 								<ColorPalette
 									value={ layer.color || '' }
 									onChange={ ( v ) =>
-										handleUpdateLayer( layerIdx, { color: v || '' } )
+										handleUpdateLayer( layerIdx, {
+											color: v || '',
+										} )
 									}
 								/>
 								<RangeControl
-									label={ __( 'Weight', 'blocks-for-leaflet-map' ) }
+									label={ __(
+										'Weight',
+										'blocks-for-leaflet-map'
+									) }
 									value={ layer.weight ?? undefined }
 									min={ 0 }
 									max={ 20 }
 									step={ 1 }
 									allowReset
 									onChange={ ( v ) =>
-										handleUpdateLayer( layerIdx, { weight: v ?? null } )
+										handleUpdateLayer( layerIdx, {
+											weight: v ?? null,
+										} )
 									}
 									__nextHasNoMarginBottom
 									__next40pxDefaultSize
 								/>
 								<RangeControl
-									label={ __( 'Stroke opacity', 'blocks-for-leaflet-map' ) }
+									label={ __(
+										'Stroke opacity',
+										'blocks-for-leaflet-map'
+									) }
 									value={ layer.opacity ?? undefined }
 									min={ 0 }
 									max={ 1 }
 									step={ 0.05 }
 									allowReset
 									onChange={ ( v ) =>
-										handleUpdateLayer( layerIdx, { opacity: v ?? null } )
+										handleUpdateLayer( layerIdx, {
+											opacity: v ?? null,
+										} )
 									}
 									__nextHasNoMarginBottom
 									__next40pxDefaultSize
 								/>
 								<TextControl
-									label={ __( 'Dash array', 'blocks-for-leaflet-map' ) }
+									label={ __(
+										'Dash array',
+										'blocks-for-leaflet-map'
+									) }
 									value={ layer.dashArray || '' }
 									placeholder="5,5"
 									onChange={ ( v ) =>
-										handleUpdateLayer( layerIdx, { dashArray: v } )
+										handleUpdateLayer( layerIdx, {
+											dashArray: v,
+										} )
 									}
 									__next40pxDefaultSize
 									__nextHasNoMarginBottom
 								/>
 								<TextControl
-									label={ __( 'CSS class', 'blocks-for-leaflet-map' ) }
+									label={ __(
+										'CSS class',
+										'blocks-for-leaflet-map'
+									) }
 									value={ layer.classname || '' }
 									onChange={ ( v ) =>
-										handleUpdateLayer( layerIdx, { classname: v } )
+										handleUpdateLayer( layerIdx, {
+											classname: v,
+										} )
 									}
 									__next40pxDefaultSize
 									__nextHasNoMarginBottom
 								/>
 								<ToggleControl
-									label={ __( 'Fill', 'blocks-for-leaflet-map' ) }
+									label={ __(
+										'Fill',
+										'blocks-for-leaflet-map'
+									) }
 									checked={ layer.fill || false }
 									onChange={ ( v ) =>
-										handleUpdateLayer( layerIdx, { fill: v } )
+										handleUpdateLayer( layerIdx, {
+											fill: v,
+										} )
 									}
 									__nextHasNoMarginBottom
 								/>
 								{ layer.fill && (
 									<>
-										<p style={ { margin: '8px 0 4px', fontSize: '11px', fontWeight: 600 } }>
-											{ __( 'Fill color', 'blocks-for-leaflet-map' ) }
+										<p
+											style={ {
+												margin: '8px 0 4px',
+												fontSize: '11px',
+												fontWeight: 600,
+											} }
+										>
+											{ __(
+												'Fill color',
+												'blocks-for-leaflet-map'
+											) }
 										</p>
 										<ColorPalette
 											value={ layer.fillColor || '' }
 											onChange={ ( v ) =>
-												handleUpdateLayer( layerIdx, { fillColor: v || '' } )
+												handleUpdateLayer( layerIdx, {
+													fillColor: v || '',
+												} )
 											}
 										/>
 										<RangeControl
-											label={ __( 'Fill opacity', 'blocks-for-leaflet-map' ) }
-											value={ layer.fillOpacity ?? undefined }
+											label={ __(
+												'Fill opacity',
+												'blocks-for-leaflet-map'
+											) }
+											value={
+												layer.fillOpacity ?? undefined
+											}
 											min={ 0 }
 											max={ 1 }
 											step={ 0.05 }
 											allowReset
 											onChange={ ( v ) =>
-												handleUpdateLayer( layerIdx, { fillOpacity: v ?? null } )
+												handleUpdateLayer( layerIdx, {
+													fillOpacity: v ?? null,
+												} )
 											}
 											__nextHasNoMarginBottom
 											__next40pxDefaultSize
@@ -5962,43 +6352,53 @@ export default function Edit( {
 								) }
 								initialOpen={ false }
 							>
-								{ layer.circleMarker && (
-									<Notice status="info" isDismissible={ false }>
-										{ __(
-											'"Render points as circle markers" is enabled — custom icon is ignored. Disable it to use a custom image icon.',
-											'blocks-for-leaflet-map'
-										) }
-									</Notice>
-								) }
 								<ToggleControl
 									label={ __(
 										'Use custom icon',
 										'blocks-for-leaflet-map'
 									) }
 									checked={ layer.useCustomIcon || false }
-									disabled={ layer.circleMarker || false }
 									onChange={ ( v ) =>
-										handleUpdateLayer( layerIdx, { useCustomIcon: v } )
+										handleUpdateLayer( layerIdx, {
+											useCustomIcon: v,
+										} )
 									}
 									__nextHasNoMarginBottom
 								/>
-								{ layer.useCustomIcon && ! layer.circleMarker && (
+								{ layer.useCustomIcon && (
 									<>
 										<MediaUploadCheck>
 											<MediaUpload
 												onSelect={ ( media ) => {
-													const updates = { iconUrl: media.url };
-													if ( media.width && media.height ) {
-														updates.iconWidth = media.width;
-														updates.iconHeight = media.height;
-														updates.iconAnchorX = Math.round( media.width / 2 );
-														updates.iconAnchorY = media.height;
+													const updates = {
+														iconUrl: media.url,
+													};
+													if (
+														media.width &&
+														media.height
+													) {
+														updates.iconWidth =
+															media.width;
+														updates.iconHeight =
+															media.height;
+														updates.iconAnchorX =
+															Math.round(
+																media.width / 2
+															);
+														updates.iconAnchorY =
+															media.height;
 														updates.popupAnchorX = 0;
-														updates.popupAnchorY = -media.height;
-														updates.iconOriginalWidth = media.width;
-														updates.iconOriginalHeight = media.height;
+														updates.popupAnchorY =
+															-media.height;
+														updates.iconOriginalWidth =
+															media.width;
+														updates.iconOriginalHeight =
+															media.height;
 													}
-													handleUpdateLayer( layerIdx, updates );
+													handleUpdateLayer(
+														layerIdx,
+														updates
+													);
 												} }
 												allowedTypes={ [ 'image' ] }
 												render={ ( { open } ) => (
@@ -6006,25 +6406,56 @@ export default function Edit( {
 														<Button
 															variant="secondary"
 															onClick={ open }
-															style={ { width: '100%', justifyContent: 'center', marginTop: '8px' } }
+															style={ {
+																width: '100%',
+																justifyContent:
+																	'center',
+																marginTop:
+																	'8px',
+															} }
 														>
 															{ layer.iconUrl
-																? __( 'Replace image', 'blocks-for-leaflet-map' )
-																: __( 'Select image', 'blocks-for-leaflet-map' ) }
+																? __(
+																		'Replace image',
+																		'blocks-for-leaflet-map'
+																  )
+																: __(
+																		'Select image',
+																		'blocks-for-leaflet-map'
+																  ) }
 														</Button>
 														{ layer.iconUrl && (
 															<>
-																<p style={ { fontSize: '11px', wordBreak: 'break-all', margin: '4px 0' } }>
-																	{ layer.iconUrl }
+																<p
+																	style={ {
+																		fontSize:
+																			'11px',
+																		wordBreak:
+																			'break-all',
+																		margin: '4px 0',
+																	} }
+																>
+																	{
+																		layer.iconUrl
+																	}
 																</p>
 																<Button
 																	variant="link"
 																	isDestructive
 																	onClick={ () =>
-																		handleUpdateLayer( layerIdx, { iconUrl: '' } )
+																		handleUpdateLayer(
+																			layerIdx,
+																			{
+																				iconUrl:
+																					'',
+																			}
+																		)
 																	}
 																>
-																	{ __( 'Remove', 'blocks-for-leaflet-map' ) }
+																	{ __(
+																		'Remove',
+																		'blocks-for-leaflet-map'
+																	) }
 																</Button>
 															</>
 														) }
@@ -6032,76 +6463,206 @@ export default function Edit( {
 												) }
 											/>
 										</MediaUploadCheck>
-										<p style={ { margin: '12px 0 4px', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: '#1e1e1e' } }>
-											{ __( 'Icon Size (px)', 'blocks-for-leaflet-map' ) }
+										<p
+											style={ {
+												margin: '12px 0 4px',
+												fontSize: '11px',
+												fontWeight: 600,
+												textTransform: 'uppercase',
+												color: '#1e1e1e',
+											} }
+										>
+											{ __(
+												'Icon Size (px)',
+												'blocks-for-leaflet-map'
+											) }
 										</p>
-										<div style={ { display: 'flex', gap: '8px' } }>
+										<div
+											style={ {
+												display: 'flex',
+												gap: '8px',
+											} }
+										>
 											<NumberControl
-												label={ __( 'Width', 'blocks-for-leaflet-map' ) }
+												label={ __(
+													'Width',
+													'blocks-for-leaflet-map'
+												) }
 												value={ layer.iconWidth ?? '' }
 												min={ 1 }
 												onChange={ ( value ) => {
-													const val = parseInt( value, 10 );
-													if ( isNaN( val ) || val < 1 ) {
-														handleUpdateLayer( layerIdx, { iconWidth: isNaN( val ) ? null : val } );
+													const val = parseInt(
+														value,
+														10
+													);
+													if (
+														isNaN( val ) ||
+														val < 1
+													) {
+														handleUpdateLayer(
+															layerIdx,
+															{
+																iconWidth:
+																	isNaN( val )
+																		? null
+																		: val,
+															}
+														);
 														return;
 													}
-													if ( layer.lockIconAspectRatio !== false && layer.iconHeight >= 1 ) {
-														const result = computeProportionalResize( {
-															axis: 'w', newVal: val,
-															wKey: 'iconWidth', hKey: 'iconHeight',
-															origW: layer.iconOriginalWidth, origH: layer.iconOriginalHeight,
-															curW: layer.iconWidth, curH: layer.iconHeight,
-															anchors: [
-																{ key: 'iconAnchorX', val: layer.iconAnchorX, axis: 'w' },
-																{ key: 'iconAnchorY', val: layer.iconAnchorY, axis: 'h' },
-																{ key: 'popupAnchorX', val: layer.popupAnchorX, axis: 'w' },
-																{ key: 'popupAnchorY', val: layer.popupAnchorY, axis: 'h' },
-															],
-														} );
-														if ( result ) { handleUpdateLayer( layerIdx, result ); return; }
+													if (
+														layer.lockIconAspectRatio !==
+															false &&
+														layer.iconHeight >= 1
+													) {
+														const result =
+															computeProportionalResize(
+																{
+																	axis: 'w',
+																	newVal: val,
+																	wKey: 'iconWidth',
+																	hKey: 'iconHeight',
+																	origW: layer.iconOriginalWidth,
+																	origH: layer.iconOriginalHeight,
+																	curW: layer.iconWidth,
+																	curH: layer.iconHeight,
+																	anchors: [
+																		{
+																			key: 'iconAnchorX',
+																			val: layer.iconAnchorX,
+																			axis: 'w',
+																		},
+																		{
+																			key: 'iconAnchorY',
+																			val: layer.iconAnchorY,
+																			axis: 'h',
+																		},
+																		{
+																			key: 'popupAnchorX',
+																			val: layer.popupAnchorX,
+																			axis: 'w',
+																		},
+																		{
+																			key: 'popupAnchorY',
+																			val: layer.popupAnchorY,
+																			axis: 'h',
+																		},
+																	],
+																}
+															);
+														if ( result ) {
+															handleUpdateLayer(
+																layerIdx,
+																result
+															);
+															return;
+														}
 													}
-													handleUpdateLayer( layerIdx, { iconWidth: val } );
+													handleUpdateLayer(
+														layerIdx,
+														{ iconWidth: val }
+													);
 												} }
 												style={ { flex: 1 } }
 												__next40pxDefaultSize
 											/>
 											<NumberControl
-												label={ __( 'Height', 'blocks-for-leaflet-map' ) }
+												label={ __(
+													'Height',
+													'blocks-for-leaflet-map'
+												) }
 												value={ layer.iconHeight ?? '' }
 												min={ 1 }
 												onChange={ ( value ) => {
-													const val = parseInt( value, 10 );
-													if ( isNaN( val ) || val < 1 ) {
-														handleUpdateLayer( layerIdx, { iconHeight: isNaN( val ) ? null : val } );
+													const val = parseInt(
+														value,
+														10
+													);
+													if (
+														isNaN( val ) ||
+														val < 1
+													) {
+														handleUpdateLayer(
+															layerIdx,
+															{
+																iconHeight:
+																	isNaN( val )
+																		? null
+																		: val,
+															}
+														);
 														return;
 													}
-													if ( layer.lockIconAspectRatio !== false && layer.iconWidth >= 1 ) {
-														const result = computeProportionalResize( {
-															axis: 'h', newVal: val,
-															wKey: 'iconWidth', hKey: 'iconHeight',
-															origW: layer.iconOriginalWidth, origH: layer.iconOriginalHeight,
-															curW: layer.iconWidth, curH: layer.iconHeight,
-															anchors: [
-																{ key: 'iconAnchorX', val: layer.iconAnchorX, axis: 'w' },
-																{ key: 'iconAnchorY', val: layer.iconAnchorY, axis: 'h' },
-																{ key: 'popupAnchorX', val: layer.popupAnchorX, axis: 'w' },
-																{ key: 'popupAnchorY', val: layer.popupAnchorY, axis: 'h' },
-															],
-														} );
-														if ( result ) { handleUpdateLayer( layerIdx, result ); return; }
+													if (
+														layer.lockIconAspectRatio !==
+															false &&
+														layer.iconWidth >= 1
+													) {
+														const result =
+															computeProportionalResize(
+																{
+																	axis: 'h',
+																	newVal: val,
+																	wKey: 'iconWidth',
+																	hKey: 'iconHeight',
+																	origW: layer.iconOriginalWidth,
+																	origH: layer.iconOriginalHeight,
+																	curW: layer.iconWidth,
+																	curH: layer.iconHeight,
+																	anchors: [
+																		{
+																			key: 'iconAnchorX',
+																			val: layer.iconAnchorX,
+																			axis: 'w',
+																		},
+																		{
+																			key: 'iconAnchorY',
+																			val: layer.iconAnchorY,
+																			axis: 'h',
+																		},
+																		{
+																			key: 'popupAnchorX',
+																			val: layer.popupAnchorX,
+																			axis: 'w',
+																		},
+																		{
+																			key: 'popupAnchorY',
+																			val: layer.popupAnchorY,
+																			axis: 'h',
+																		},
+																	],
+																}
+															);
+														if ( result ) {
+															handleUpdateLayer(
+																layerIdx,
+																result
+															);
+															return;
+														}
 													}
-													handleUpdateLayer( layerIdx, { iconHeight: val } );
+													handleUpdateLayer(
+														layerIdx,
+														{ iconHeight: val }
+													);
 												} }
 												style={ { flex: 1 } }
 												__next40pxDefaultSize
 											/>
 										</div>
 										<ToggleControl
-											label={ __( 'Lock aspect ratio', 'blocks-for-leaflet-map' ) }
-											checked={ layer.lockIconAspectRatio !== false }
+											label={ __(
+												'Lock aspect ratio',
+												'blocks-for-leaflet-map'
+											) }
+											checked={
+												layer.lockIconAspectRatio !==
+												false
+											}
 											onChange={ ( v ) =>
-												handleUpdateLayer( layerIdx, { lockIconAspectRatio: v } )
+												handleUpdateLayer( layerIdx, {
+													lockIconAspectRatio: v,
+												} )
 											}
 											style={ { marginTop: '8px' } }
 											__nextHasNoMarginBottom
@@ -6115,86 +6676,283 @@ export default function Edit( {
 												isFinite( layer.iconHeight );
 											return (
 												<SelectControl
-													label={ __( 'Anchor position', 'blocks-for-leaflet-map' ) }
+													label={ __(
+														'Anchor position',
+														'blocks-for-leaflet-map'
+													) }
 													value={
 														iconDimValid
-															? getAnchorPreset( layer.iconAnchorX, layer.iconAnchorY, layer.iconWidth, layer.iconHeight )
+															? getAnchorPreset(
+																	layer.iconAnchorX,
+																	layer.iconAnchorY,
+																	layer.iconWidth,
+																	layer.iconHeight
+															  )
 															: ''
 													}
 													disabled={ ! iconDimValid }
 													help={
 														iconDimValid
-															? __( 'Quick-set common anchor positions', 'blocks-for-leaflet-map' )
-															: __( 'Set icon size first', 'blocks-for-leaflet-map' )
+															? __(
+																	'Quick-set common anchor positions',
+																	'blocks-for-leaflet-map'
+															  )
+															: __(
+																	'Set icon size first',
+																	'blocks-for-leaflet-map'
+															  )
 													}
 													options={ [
-														{ label: __( '— Select —', 'blocks-for-leaflet-map' ), value: '' },
-														{ label: __( 'Top left', 'blocks-for-leaflet-map' ), value: 'top-left' },
-														{ label: __( 'Top center', 'blocks-for-leaflet-map' ), value: 'top-center' },
-														{ label: __( 'Top right', 'blocks-for-leaflet-map' ), value: 'top-right' },
-														{ label: __( 'Middle left', 'blocks-for-leaflet-map' ), value: 'middle-left' },
-														{ label: __( 'Middle center', 'blocks-for-leaflet-map' ), value: 'middle-center' },
-														{ label: __( 'Middle right', 'blocks-for-leaflet-map' ), value: 'middle-right' },
-														{ label: __( 'Bottom left', 'blocks-for-leaflet-map' ), value: 'bottom-left' },
-														{ label: __( 'Bottom center', 'blocks-for-leaflet-map' ), value: 'bottom-center' },
-														{ label: __( 'Bottom right', 'blocks-for-leaflet-map' ), value: 'bottom-right' },
-														{ label: __( 'Custom', 'blocks-for-leaflet-map' ), value: 'custom', disabled: true },
+														{
+															label: __(
+																'— Select —',
+																'blocks-for-leaflet-map'
+															),
+															value: '',
+														},
+														{
+															label: __(
+																'Top left',
+																'blocks-for-leaflet-map'
+															),
+															value: 'top-left',
+														},
+														{
+															label: __(
+																'Top center',
+																'blocks-for-leaflet-map'
+															),
+															value: 'top-center',
+														},
+														{
+															label: __(
+																'Top right',
+																'blocks-for-leaflet-map'
+															),
+															value: 'top-right',
+														},
+														{
+															label: __(
+																'Middle left',
+																'blocks-for-leaflet-map'
+															),
+															value: 'middle-left',
+														},
+														{
+															label: __(
+																'Middle center',
+																'blocks-for-leaflet-map'
+															),
+															value: 'middle-center',
+														},
+														{
+															label: __(
+																'Middle right',
+																'blocks-for-leaflet-map'
+															),
+															value: 'middle-right',
+														},
+														{
+															label: __(
+																'Bottom left',
+																'blocks-for-leaflet-map'
+															),
+															value: 'bottom-left',
+														},
+														{
+															label: __(
+																'Bottom center',
+																'blocks-for-leaflet-map'
+															),
+															value: 'bottom-center',
+														},
+														{
+															label: __(
+																'Bottom right',
+																'blocks-for-leaflet-map'
+															),
+															value: 'bottom-right',
+														},
+														{
+															label: __(
+																'Custom',
+																'blocks-for-leaflet-map'
+															),
+															value: 'custom',
+															disabled: true,
+														},
 													] }
 													onChange={ ( presetId ) => {
-														const coords = computeAnchorFromPreset( presetId, layer.iconWidth, layer.iconHeight );
-														if ( coords ) handleUpdateLayer( layerIdx, { iconAnchorX: coords.x, iconAnchorY: coords.y } );
+														const coords =
+															computeAnchorFromPreset(
+																presetId,
+																layer.iconWidth,
+																layer.iconHeight
+															);
+														if ( coords )
+															handleUpdateLayer(
+																layerIdx,
+																{
+																	iconAnchorX:
+																		coords.x,
+																	iconAnchorY:
+																		coords.y,
+																}
+															);
 													} }
-													style={ { marginTop: '12px' } }
+													style={ {
+														marginTop: '12px',
+													} }
 													__next40pxDefaultSize
 													__nextHasNoMarginBottom
 												/>
 											);
 										} )() }
-										<p style={ { margin: '8px 0 4px', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: '#1e1e1e' } }>
-											{ __( 'Icon Anchor (px)', 'blocks-for-leaflet-map' ) }
+										<p
+											style={ {
+												margin: '8px 0 4px',
+												fontSize: '11px',
+												fontWeight: 600,
+												textTransform: 'uppercase',
+												color: '#1e1e1e',
+											} }
+										>
+											{ __(
+												'Icon Anchor (px)',
+												'blocks-for-leaflet-map'
+											) }
 										</p>
-										<div style={ { display: 'flex', gap: '8px' } }>
+										<div
+											style={ {
+												display: 'flex',
+												gap: '8px',
+											} }
+										>
 											<NumberControl
-												label={ __( 'X', 'blocks-for-leaflet-map' ) }
-												value={ layer.iconAnchorX ?? '' }
+												label={ __(
+													'X',
+													'blocks-for-leaflet-map'
+												) }
+												value={
+													layer.iconAnchorX ?? ''
+												}
 												onChange={ ( value ) => {
-													const val = parseInt( value, 10 );
-													handleUpdateLayer( layerIdx, { iconAnchorX: isNaN( val ) ? null : val } );
+													const val = parseInt(
+														value,
+														10
+													);
+													handleUpdateLayer(
+														layerIdx,
+														{
+															iconAnchorX: isNaN(
+																val
+															)
+																? null
+																: val,
+														}
+													);
 												} }
 												style={ { flex: 1 } }
 												__next40pxDefaultSize
 											/>
 											<NumberControl
-												label={ __( 'Y', 'blocks-for-leaflet-map' ) }
-												value={ layer.iconAnchorY ?? '' }
+												label={ __(
+													'Y',
+													'blocks-for-leaflet-map'
+												) }
+												value={
+													layer.iconAnchorY ?? ''
+												}
 												onChange={ ( value ) => {
-													const val = parseInt( value, 10 );
-													handleUpdateLayer( layerIdx, { iconAnchorY: isNaN( val ) ? null : val } );
+													const val = parseInt(
+														value,
+														10
+													);
+													handleUpdateLayer(
+														layerIdx,
+														{
+															iconAnchorY: isNaN(
+																val
+															)
+																? null
+																: val,
+														}
+													);
 												} }
 												style={ { flex: 1 } }
 												__next40pxDefaultSize
 											/>
 										</div>
-										<p style={ { margin: '12px 0 4px', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: '#1e1e1e' } }>
-											{ __( 'Popup Anchor (px)', 'blocks-for-leaflet-map' ) }
+										<p
+											style={ {
+												margin: '12px 0 4px',
+												fontSize: '11px',
+												fontWeight: 600,
+												textTransform: 'uppercase',
+												color: '#1e1e1e',
+											} }
+										>
+											{ __(
+												'Popup Anchor (px)',
+												'blocks-for-leaflet-map'
+											) }
 										</p>
-										<div style={ { display: 'flex', gap: '8px' } }>
+										<div
+											style={ {
+												display: 'flex',
+												gap: '8px',
+											} }
+										>
 											<NumberControl
-												label={ __( 'X', 'blocks-for-leaflet-map' ) }
-												value={ layer.popupAnchorX ?? '' }
+												label={ __(
+													'X',
+													'blocks-for-leaflet-map'
+												) }
+												value={
+													layer.popupAnchorX ?? ''
+												}
 												onChange={ ( value ) => {
-													const val = parseInt( value, 10 );
-													handleUpdateLayer( layerIdx, { popupAnchorX: isNaN( val ) ? null : val } );
+													const val = parseInt(
+														value,
+														10
+													);
+													handleUpdateLayer(
+														layerIdx,
+														{
+															popupAnchorX: isNaN(
+																val
+															)
+																? null
+																: val,
+														}
+													);
 												} }
 												style={ { flex: 1 } }
 												__next40pxDefaultSize
 											/>
 											<NumberControl
-												label={ __( 'Y', 'blocks-for-leaflet-map' ) }
-												value={ layer.popupAnchorY ?? '' }
+												label={ __(
+													'Y',
+													'blocks-for-leaflet-map'
+												) }
+												value={
+													layer.popupAnchorY ?? ''
+												}
 												onChange={ ( value ) => {
-													const val = parseInt( value, 10 );
-													handleUpdateLayer( layerIdx, { popupAnchorY: isNaN( val ) ? null : val } );
+													const val = parseInt(
+														value,
+														10
+													);
+													handleUpdateLayer(
+														layerIdx,
+														{
+															popupAnchorY: isNaN(
+																val
+															)
+																? null
+																: val,
+														}
+													);
 												} }
 												style={ { flex: 1 } }
 												__next40pxDefaultSize
@@ -6210,7 +6968,10 @@ export default function Edit( {
 								onClick={ () => handleRemoveLayer( layerIdx ) }
 								style={ { marginTop: '8px' } }
 							>
-								{ __( 'Remove this layer', 'blocks-for-leaflet-map' ) }
+								{ __(
+									'Remove this layer',
+									'blocks-for-leaflet-map'
+								) }
 							</Button>
 						</PanelBody>
 					) ) }
