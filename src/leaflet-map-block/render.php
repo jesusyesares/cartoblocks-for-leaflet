@@ -412,9 +412,6 @@ foreach ( $layers as $layer ) {
 	if ( ! empty( $layer['fitbounds'] ) ) {
 		$l_open .= ' fitbounds="true"';
 	}
-	if ( ! empty( $layer['circleMarker'] ) ) {
-		$l_open .= ' circleMarker="true"';
-	}
 	if ( isset( $layer['popupText'] ) && '' !== trim( $layer['popupText'] ) ) {
 		$l_open .= sprintf( ' popup_text="%s"', esc_attr( trim( $layer['popupText'] ) ) );
 	}
@@ -448,7 +445,7 @@ foreach ( $layers as $layer ) {
 	if ( isset( $layer['fillOpacity'] ) && is_numeric( $layer['fillOpacity'] ) ) {
 		$l_open .= sprintf( ' fillopacity="%s"', esc_attr( (string) (float) $layer['fillOpacity'] ) );
 	}
-	if ( ! empty( $layer['useCustomIcon'] ) && empty( $layer['circleMarker'] ) ) {
+	if ( ! empty( $layer['useCustomIcon'] ) ) {
 		if ( ! empty( $layer['iconUrl'] ) ) {
 			$l_open .= sprintf( ' iconurl="%s"', esc_attr( $layer['iconUrl'] ) );
 		}

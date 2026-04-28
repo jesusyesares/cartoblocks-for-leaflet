@@ -195,17 +195,27 @@ describe( 'buildCircleShortcodes', () => {
 	} );
 
 	test( 'null/undefined lat skipped', () => {
-		expect( buildCircleShortcodes( [ { lat: null, lng: 1, radius: 500 } ] ) ).toBe( '' );
-		expect( buildCircleShortcodes( [ { lat: 1, lng: undefined, radius: 500 } ] ) ).toBe( '' );
+		expect(
+			buildCircleShortcodes( [ { lat: null, lng: 1, radius: 500 } ] )
+		).toBe( '' );
+		expect(
+			buildCircleShortcodes( [ { lat: 1, lng: undefined, radius: 500 } ] )
+		).toBe( '' );
 	} );
 
 	test( 'zero or negative radius skipped', () => {
-		expect( buildCircleShortcodes( [ { lat: 1, lng: 1, radius: 0 } ] ) ).toBe( '' );
-		expect( buildCircleShortcodes( [ { lat: 1, lng: 1, radius: -100 } ] ) ).toBe( '' );
+		expect(
+			buildCircleShortcodes( [ { lat: 1, lng: 1, radius: 0 } ] )
+		).toBe( '' );
+		expect(
+			buildCircleShortcodes( [ { lat: 1, lng: 1, radius: -100 } ] )
+		).toBe( '' );
 	} );
 
 	test( 'basic circle emits self-closing shortcode', () => {
-		const result = buildCircleShortcodes( [ { lat: 48.8566, lng: 2.3522, radius: 1000 } ] );
+		const result = buildCircleShortcodes( [
+			{ lat: 48.8566, lng: 2.3522, radius: 1000 },
+		] );
 		expect( result ).toContain( '[leaflet-circle lat="48.8566"' );
 		expect( result ).toContain( 'lng="2.3522"' );
 		expect( result ).toContain( 'radius="1000"' );
@@ -213,29 +223,43 @@ describe( 'buildCircleShortcodes', () => {
 	} );
 
 	test( 'popup emits open/close tags', () => {
-		const result = buildCircleShortcodes( [ { lat: 1, lng: 2, radius: 500, popup: 'Hi there' } ] );
+		const result = buildCircleShortcodes( [
+			{ lat: 1, lng: 2, radius: 500, popup: 'Hi there' },
+		] );
 		expect( result ).toContain( ']Hi there[/leaflet-circle]' );
 	} );
 
 	test( 'attributes are lowercase (fillcolor, fillopacity, dasharray)', () => {
-		const result = buildCircleShortcodes( [ {
-			lat: 1, lng: 2, radius: 500,
-			fillColor: '#abc', fillOpacity: 0.3, dashArray: '5,10',
-		} ] );
+		const result = buildCircleShortcodes( [
+			{
+				lat: 1,
+				lng: 2,
+				radius: 500,
+				fillColor: '#abc',
+				fillOpacity: 0.3,
+				dashArray: '5,10',
+			},
+		] );
 		expect( result ).toContain( 'fillcolor="#abc"' );
 		expect( result ).toContain( 'fillopacity="0.3"' );
 		expect( result ).toContain( 'dasharray="5,10"' );
 	} );
 
 	test( 'fill + fitbounds flags emitted', () => {
-		const result = buildCircleShortcodes( [ { lat: 1, lng: 2, radius: 500, fill: true, fitbounds: true } ] );
+		const result = buildCircleShortcodes( [
+			{ lat: 1, lng: 2, radius: 500, fill: true, fitbounds: true },
+		] );
 		expect( result ).toContain( 'fill="true"' );
 		expect( result ).toContain( 'fitbounds="true"' );
 	} );
 
 	test( 'visible only emitted when popup present', () => {
-		const withPopup = buildCircleShortcodes( [ { lat: 1, lng: 2, radius: 500, visible: true, popup: 'x' } ] );
-		const noPopup   = buildCircleShortcodes( [ { lat: 1, lng: 2, radius: 500, visible: true } ] );
+		const withPopup = buildCircleShortcodes( [
+			{ lat: 1, lng: 2, radius: 500, visible: true, popup: 'x' },
+		] );
+		const noPopup = buildCircleShortcodes( [
+			{ lat: 1, lng: 2, radius: 500, visible: true },
+		] );
 		expect( withPopup ).toContain( 'visible="1"' );
 		expect( noPopup ).not.toContain( 'visible' );
 	} );
@@ -273,14 +297,15 @@ function buildLayerShortcodes( layers ) {
 
 		let attrs = ` src="${ src }"`;
 		if ( layer.fitbounds ) attrs += ` fitbounds="true"`;
-		if ( layer.circleMarker ) attrs += ` circleMarker="true"`;
 
 		const sanitize = ( s ) =>
 			s.replace( /"/g, '&quot;' ).replace( /\]/g, '&#93;' );
 		if ( layer.popupText && layer.popupText.trim() )
 			attrs += ` popup_text="${ sanitize( layer.popupText.trim() ) }"`;
 		if ( layer.popupProperty && layer.popupProperty.trim() )
-			attrs += ` popup_property="${ sanitize( layer.popupProperty.trim() ) }"`;
+			attrs += ` popup_property="${ sanitize(
+				layer.popupProperty.trim()
+			) }"`;
 		if ( layer.tableView ) attrs += ` table_view="1"`;
 
 		if ( layer.color && layer.color.trim() )
@@ -297,7 +322,7 @@ function buildLayerShortcodes( layers ) {
 		if ( layer.fillOpacity != null )
 			attrs += ` fillopacity="${ layer.fillOpacity }"`;
 
-		if ( layer.useCustomIcon && ! layer.circleMarker ) {
+		if ( layer.useCustomIcon ) {
 			if ( layer.iconUrl ) attrs += ` iconurl="${ layer.iconUrl }"`;
 			if (
 				layer.iconWidth != null &&
@@ -325,106 +350,150 @@ describe( 'buildLayerShortcodes', () => {
 	} );
 
 	test( 'layer with no src → skipped', () => {
-		expect( buildLayerShortcodes( [ { type: 'geojson', src: '' } ] ) ).toBe( '' );
+		expect( buildLayerShortcodes( [ { type: 'geojson', src: '' } ] ) ).toBe(
+			''
+		);
 		expect( buildLayerShortcodes( [ { type: 'geojson' } ] ) ).toBe( '' );
 	} );
 
 	test( 'type geojson → leaflet-geojson tag', () => {
-		const result = buildLayerShortcodes( [ { type: 'geojson', src: 'https://example.com/a.geojson' } ] );
+		const result = buildLayerShortcodes( [
+			{ type: 'geojson', src: 'https://example.com/a.geojson' },
+		] );
 		expect( result ).toContain( '[leaflet-geojson' );
 	} );
 
 	test( 'type gpx → leaflet-gpx tag', () => {
-		const result = buildLayerShortcodes( [ { type: 'gpx', src: 'https://example.com/a.gpx' } ] );
+		const result = buildLayerShortcodes( [
+			{ type: 'gpx', src: 'https://example.com/a.gpx' },
+		] );
 		expect( result ).toContain( '[leaflet-gpx' );
 	} );
 
 	test( 'type kml → leaflet-kml tag', () => {
-		const result = buildLayerShortcodes( [ { type: 'kml', src: 'https://example.com/a.kml' } ] );
+		const result = buildLayerShortcodes( [
+			{ type: 'kml', src: 'https://example.com/a.kml' },
+		] );
 		expect( result ).toContain( '[leaflet-kml' );
 	} );
 
 	test( 'unknown type falls back to leaflet-geojson', () => {
-		const result = buildLayerShortcodes( [ { type: 'csv', src: 'https://example.com/a.csv' } ] );
+		const result = buildLayerShortcodes( [
+			{ type: 'csv', src: 'https://example.com/a.csv' },
+		] );
 		expect( result ).toContain( '[leaflet-geojson' );
 	} );
 
 	test( 'popup_text emitted', () => {
-		const result = buildLayerShortcodes( [ { type: 'geojson', src: 'https://x.com/a.geojson', popupText: 'Name: {name}' } ] );
+		const result = buildLayerShortcodes( [
+			{
+				type: 'geojson',
+				src: 'https://x.com/a.geojson',
+				popupText: 'Name: {name}',
+			},
+		] );
 		expect( result ).toContain( 'popup_text="Name: {name}"' );
 	} );
 
 	test( 'popup_property emitted', () => {
-		const result = buildLayerShortcodes( [ { type: 'geojson', src: 'https://x.com/a.geojson', popupProperty: 'name' } ] );
+		const result = buildLayerShortcodes( [
+			{
+				type: 'geojson',
+				src: 'https://x.com/a.geojson',
+				popupProperty: 'name',
+			},
+		] );
 		expect( result ).toContain( 'popup_property="name"' );
 	} );
 
 	test( 'tableView: true → table_view="1"', () => {
-		const result = buildLayerShortcodes( [ { type: 'geojson', src: 'https://x.com/a.geojson', tableView: true } ] );
+		const result = buildLayerShortcodes( [
+			{
+				type: 'geojson',
+				src: 'https://x.com/a.geojson',
+				tableView: true,
+			},
+		] );
 		expect( result ).toContain( 'table_view="1"' );
 	} );
 
 	test( 'style attrs are lowercased (dasharray, fillcolor, fillopacity)', () => {
-		const result = buildLayerShortcodes( [ {
-			type: 'geojson', src: 'https://x.com/a.geojson',
-			dashArray: '5,5', fillColor: '#abc', fillOpacity: 0.4,
-		} ] );
+		const result = buildLayerShortcodes( [
+			{
+				type: 'geojson',
+				src: 'https://x.com/a.geojson',
+				dashArray: '5,5',
+				fillColor: '#abc',
+				fillOpacity: 0.4,
+			},
+		] );
 		expect( result ).toContain( 'dasharray="5,5"' );
 		expect( result ).toContain( 'fillcolor="#abc"' );
 		expect( result ).toContain( 'fillopacity="0.4"' );
 	} );
 
-	test( 'custom icon attrs emitted when useCustomIcon true and circleMarker false', () => {
-		const result = buildLayerShortcodes( [ {
-			type: 'geojson', src: 'https://x.com/a.geojson',
-			useCustomIcon: true, iconUrl: 'https://x.com/pin.png',
-			iconWidth: 32, iconHeight: 48,
-			iconAnchorX: 16, iconAnchorY: 48,
-			popupAnchorX: 0, popupAnchorY: -48,
-		} ] );
+	test( 'custom icon attrs emitted when useCustomIcon true', () => {
+		const result = buildLayerShortcodes( [
+			{
+				type: 'geojson',
+				src: 'https://x.com/a.geojson',
+				useCustomIcon: true,
+				iconUrl: 'https://x.com/pin.png',
+				iconWidth: 32,
+				iconHeight: 48,
+				iconAnchorX: 16,
+				iconAnchorY: 48,
+				popupAnchorX: 0,
+				popupAnchorY: -48,
+			},
+		] );
 		expect( result ).toContain( 'iconurl="https://x.com/pin.png"' );
 		expect( result ).toContain( 'iconsize="32,48"' );
 		expect( result ).toContain( 'iconanchor="16,48"' );
 		expect( result ).toContain( 'popupanchor="0,-48"' );
 	} );
 
-	test( 'circleMarker=true suppresses icon attrs even when useCustomIcon=true', () => {
-		const result = buildLayerShortcodes( [ {
-			type: 'geojson', src: 'https://x.com/a.geojson',
-			circleMarker: true, useCustomIcon: true, iconUrl: 'https://x.com/pin.png',
-		} ] );
-		expect( result ).not.toContain( 'iconurl' );
-		expect( result ).toContain( 'circleMarker="true"' );
-	} );
-
 	test( 'iconsize not emitted when only width set', () => {
-		const result = buildLayerShortcodes( [ {
-			type: 'geojson', src: 'https://x.com/a.geojson',
-			useCustomIcon: true, iconUrl: 'https://x.com/pin.png',
-			iconWidth: 32, iconHeight: null,
-		} ] );
+		const result = buildLayerShortcodes( [
+			{
+				type: 'geojson',
+				src: 'https://x.com/a.geojson',
+				useCustomIcon: true,
+				iconUrl: 'https://x.com/pin.png',
+				iconWidth: 32,
+				iconHeight: null,
+			},
+		] );
 		expect( result ).not.toContain( 'iconsize' );
 	} );
 
 	test( 'popup_text with double-quote escaped to &quot;', () => {
-		const result = buildLayerShortcodes( [ {
-			type: 'geojson', src: 'https://x.com/a.geojson',
-			popupText: 'Say "hello"',
-		} ] );
+		const result = buildLayerShortcodes( [
+			{
+				type: 'geojson',
+				src: 'https://x.com/a.geojson',
+				popupText: 'Say "hello"',
+			},
+		] );
 		expect( result ).toContain( 'popup_text="Say &quot;hello&quot;"' );
 		expect( result ).not.toContain( '"hello"' );
 	} );
 
 	test( 'popup_text with ] escaped to &#93;', () => {
-		const result = buildLayerShortcodes( [ {
-			type: 'geojson', src: 'https://x.com/a.geojson',
-			popupText: 'Close]bracket',
-		} ] );
+		const result = buildLayerShortcodes( [
+			{
+				type: 'geojson',
+				src: 'https://x.com/a.geojson',
+				popupText: 'Close]bracket',
+			},
+		] );
 		expect( result ).toContain( 'popup_text="Close&#93;bracket"' );
 	} );
 
 	test( 'all emissions are self-closing', () => {
-		const result = buildLayerShortcodes( [ { type: 'geojson', src: 'https://x.com/a.geojson' } ] );
+		const result = buildLayerShortcodes( [
+			{ type: 'geojson', src: 'https://x.com/a.geojson' },
+		] );
 		expect( result ).toMatch( / \/\]$/ );
 		expect( result ).not.toContain( '[/leaflet-' );
 	} );
