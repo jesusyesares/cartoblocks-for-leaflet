@@ -788,6 +788,91 @@ function computeAnchorFromPreset( presetId, width, height ) {
 }
 
 /**
+ * Visual 3×3 anchor preset picker.
+ *
+ * @param {Object}   props
+ * @param {*}        props.anchorX      Current anchor X (may be null).
+ * @param {*}        props.anchorY      Current anchor Y (may be null).
+ * @param {*}        props.width        Icon width (must be ≥1 to enable).
+ * @param {*}        props.height       Icon height (must be ≥1 to enable).
+ * @param {boolean}  props.disabled     Force-disable all cells.
+ * @param {string}   props.label        Field label text.
+ * @param {string}   props.disabledHelp Help text shown when disabled.
+ * @param {Function} props.onChange     Called with preset id string on click.
+ */
+function AnchorGrid( {
+	anchorX,
+	anchorY,
+	width,
+	height,
+	disabled = false,
+	label,
+	disabledHelp,
+	onChange,
+} ) {
+	const dimValid =
+		width >= 1 && isFinite( width ) && height >= 1 && isFinite( height );
+	const isDisabled = disabled || ! dimValid;
+	const activePreset = dimValid
+		? getAnchorPreset( anchorX, anchorY, width, height )
+		: null;
+
+	// keyboard navigation: arrow keys move focus within the 3×3 grid
+	function handleKeyDown( e, idx ) {
+		const moves = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: 3, ArrowUp: -3 };
+		const delta = moves[ e.key ];
+		if ( delta == null ) return;
+		e.preventDefault();
+		const next = idx + delta;
+		if ( next < 0 || next > 8 ) return;
+		const grid = e.currentTarget.parentElement;
+		const cells = grid.querySelectorAll( 'button' );
+		if ( cells[ next ] ) cells[ next ].focus();
+	}
+
+	return (
+		<div className="bflm-anchor-grid">
+			{ label && (
+				<span className="bflm-anchor-grid__label">{ label }</span>
+			) }
+			<div
+				className="bflm-anchor-grid__grid"
+				role="radiogroup"
+				aria-label={ label }
+			>
+				{ ANCHOR_PRESETS.map( ( preset, idx ) => {
+					const isActive = activePreset === preset.id;
+					return (
+						<button
+							key={ preset.id }
+							type="button"
+							role="radio"
+							aria-checked={ isActive }
+							aria-label={ preset.id.replace( /-/g, ' ' ) }
+							disabled={ isDisabled }
+							className={
+								'bflm-anchor-grid__cell' +
+								( isActive ? ' bflm-anchor-grid__cell--active' : '' )
+							}
+							onClick={ () => {
+								if ( ! isDisabled ) onChange( preset.id );
+							} }
+							onKeyDown={ ( e ) => handleKeyDown( e, idx ) }
+							tabIndex={ isActive ? 0 : -1 }
+						>
+							<span className="bflm-anchor-grid__dot" />
+						</button>
+					);
+				} ) }
+			</div>
+			{ isDisabled && disabledHelp && (
+				<span className="bflm-anchor-grid__help">{ disabledHelp }</span>
+			) }
+		</div>
+	);
+}
+
+/**
  * Build the full preview iframe src URL from block attributes.
  * All attributes are included so the map initialises at the correct position
  * on every full reload (mount or structural change).
@@ -4013,147 +4098,33 @@ export default function Edit( {
 											__nextHasNoMarginBottom
 										/>
 										{ /* Icon Anchor */ }
-										{ ( () => {
-											const iconDimValid =
-												marker.iconWidth >= 1 &&
-												isFinite( marker.iconWidth ) &&
-												marker.iconHeight >= 1 &&
-												isFinite( marker.iconHeight );
-											return (
-												<SelectControl
-													label={ __(
-														'Anchor position',
-														'blocks-for-leaflet-map'
-													) }
-													value={
-														iconDimValid
-															? getAnchorPreset(
-																	marker.iconAnchorX,
-																	marker.iconAnchorY,
-																	marker.iconWidth,
-																	marker.iconHeight
-															  )
-															: ''
-													}
-													disabled={ ! iconDimValid }
-													help={
-														iconDimValid
-															? __(
-																	'Quick-set common anchor positions',
-																	'blocks-for-leaflet-map'
-															  )
-															: __(
-																	'Set icon size first',
-																	'blocks-for-leaflet-map'
-															  )
-													}
-													options={ [
-														{
-															label: __(
-																'— Select —',
-																'blocks-for-leaflet-map'
-															),
-															value: '',
-														},
-														{
-															label: __(
-																'Top left',
-																'blocks-for-leaflet-map'
-															),
-															value: 'top-left',
-														},
-														{
-															label: __(
-																'Top center',
-																'blocks-for-leaflet-map'
-															),
-															value: 'top-center',
-														},
-														{
-															label: __(
-																'Top right',
-																'blocks-for-leaflet-map'
-															),
-															value: 'top-right',
-														},
-														{
-															label: __(
-																'Middle left',
-																'blocks-for-leaflet-map'
-															),
-															value: 'middle-left',
-														},
-														{
-															label: __(
-																'Middle center',
-																'blocks-for-leaflet-map'
-															),
-															value: 'middle-center',
-														},
-														{
-															label: __(
-																'Middle right',
-																'blocks-for-leaflet-map'
-															),
-															value: 'middle-right',
-														},
-														{
-															label: __(
-																'Bottom left',
-																'blocks-for-leaflet-map'
-															),
-															value: 'bottom-left',
-														},
-														{
-															label: __(
-																'Bottom center',
-																'blocks-for-leaflet-map'
-															),
-															value: 'bottom-center',
-														},
-														{
-															label: __(
-																'Bottom right',
-																'blocks-for-leaflet-map'
-															),
-															value: 'bottom-right',
-														},
-														{
-															label: __(
-																'Custom',
-																'blocks-for-leaflet-map'
-															),
-															value: 'custom',
-															disabled: true,
-														},
-													] }
-													onChange={ ( presetId ) => {
-														const coords =
-															computeAnchorFromPreset(
-																presetId,
-																marker.iconWidth,
-																marker.iconHeight
-															);
-														if ( coords ) {
-															handleUpdateMarker(
-																index,
-																{
-																	iconAnchorX:
-																		coords.x,
-																	iconAnchorY:
-																		coords.y,
-																}
-															);
-														}
-													} }
-													style={ {
-														marginTop: '12px',
-													} }
-													__next40pxDefaultSize
-													__nextHasNoMarginBottom
-												/>
-											);
-										} )() }
+										<AnchorGrid
+											label={ __(
+												'Anchor position',
+												'blocks-for-leaflet-map'
+											) }
+											anchorX={ marker.iconAnchorX }
+											anchorY={ marker.iconAnchorY }
+											width={ marker.iconWidth }
+											height={ marker.iconHeight }
+											disabledHelp={ __(
+												'Set icon size first',
+												'blocks-for-leaflet-map'
+											) }
+											onChange={ ( presetId ) => {
+												const coords = computeAnchorFromPreset(
+													presetId,
+													marker.iconWidth,
+													marker.iconHeight
+												);
+												if ( coords ) {
+													handleUpdateMarker( index, {
+														iconAnchorX: coords.x,
+														iconAnchorY: coords.y,
+													} );
+												}
+											} }
+										/>
 										<p
 											style={ {
 												margin: '8px 0 4px',
@@ -4645,158 +4616,33 @@ export default function Edit( {
 													__nextHasNoMarginBottom
 												/>
 												{ /* Shadow Anchor */ }
-												{ ( () => {
-													const shadowDimValid =
-														marker.shadowWidth >=
-															1 &&
-														isFinite(
-															marker.shadowWidth
-														) &&
-														marker.shadowHeight >=
-															1 &&
-														isFinite(
+												<AnchorGrid
+													label={ __(
+														'Anchor position',
+														'blocks-for-leaflet-map'
+													) }
+													anchorX={ marker.shadowAnchorX }
+													anchorY={ marker.shadowAnchorY }
+													width={ marker.shadowWidth }
+													height={ marker.shadowHeight }
+													disabledHelp={ __(
+														'Set shadow size first',
+														'blocks-for-leaflet-map'
+													) }
+													onChange={ ( presetId ) => {
+														const coords = computeAnchorFromPreset(
+															presetId,
+															marker.shadowWidth,
 															marker.shadowHeight
 														);
-													return (
-														<SelectControl
-															label={ __(
-																'Anchor position',
-																'blocks-for-leaflet-map'
-															) }
-															value={
-																shadowDimValid
-																	? getAnchorPreset(
-																			marker.shadowAnchorX,
-																			marker.shadowAnchorY,
-																			marker.shadowWidth,
-																			marker.shadowHeight
-																	  )
-																	: ''
-															}
-															disabled={
-																! shadowDimValid
-															}
-															help={
-																shadowDimValid
-																	? __(
-																			'Quick-set common anchor positions',
-																			'blocks-for-leaflet-map'
-																	  )
-																	: __(
-																			'Set shadow size first',
-																			'blocks-for-leaflet-map'
-																	  )
-															}
-															options={ [
-																{
-																	label: __(
-																		'— Select —',
-																		'blocks-for-leaflet-map'
-																	),
-																	value: '',
-																},
-																{
-																	label: __(
-																		'Top left',
-																		'blocks-for-leaflet-map'
-																	),
-																	value: 'top-left',
-																},
-																{
-																	label: __(
-																		'Top center',
-																		'blocks-for-leaflet-map'
-																	),
-																	value: 'top-center',
-																},
-																{
-																	label: __(
-																		'Top right',
-																		'blocks-for-leaflet-map'
-																	),
-																	value: 'top-right',
-																},
-																{
-																	label: __(
-																		'Middle left',
-																		'blocks-for-leaflet-map'
-																	),
-																	value: 'middle-left',
-																},
-																{
-																	label: __(
-																		'Middle center',
-																		'blocks-for-leaflet-map'
-																	),
-																	value: 'middle-center',
-																},
-																{
-																	label: __(
-																		'Middle right',
-																		'blocks-for-leaflet-map'
-																	),
-																	value: 'middle-right',
-																},
-																{
-																	label: __(
-																		'Bottom left',
-																		'blocks-for-leaflet-map'
-																	),
-																	value: 'bottom-left',
-																},
-																{
-																	label: __(
-																		'Bottom center',
-																		'blocks-for-leaflet-map'
-																	),
-																	value: 'bottom-center',
-																},
-																{
-																	label: __(
-																		'Bottom right',
-																		'blocks-for-leaflet-map'
-																	),
-																	value: 'bottom-right',
-																},
-																{
-																	label: __(
-																		'Custom',
-																		'blocks-for-leaflet-map'
-																	),
-																	value: 'custom',
-																	disabled: true,
-																},
-															] }
-															onChange={ (
-																presetId
-															) => {
-																const coords =
-																	computeAnchorFromPreset(
-																		presetId,
-																		marker.shadowWidth,
-																		marker.shadowHeight
-																	);
-																if ( coords ) {
-																	handleUpdateMarker(
-																		index,
-																		{
-																			shadowAnchorX:
-																				coords.x,
-																			shadowAnchorY:
-																				coords.y,
-																		}
-																	);
-																}
-															} }
-															style={ {
-																marginTop:
-																	'12px',
-															} }
-															__next40pxDefaultSize
-															__nextHasNoMarginBottom
-														/>
-													);
-												} )() }
+														if ( coords ) {
+															handleUpdateMarker( index, {
+																shadowAnchorX: coords.x,
+																shadowAnchorY: coords.y,
+															} );
+														}
+													} }
+												/>
 												<p
 													style={ {
 														margin: '8px 0 4px',
@@ -7090,146 +6936,33 @@ export default function Edit( {
 											__nextHasNoMarginBottom
 										/>
 										{ /* Icon Anchor */ }
-										{ ( () => {
-											const iconDimValid =
-												layer.iconWidth >= 1 &&
-												isFinite( layer.iconWidth ) &&
-												layer.iconHeight >= 1 &&
-												isFinite( layer.iconHeight );
-											return (
-												<SelectControl
-													label={ __(
-														'Anchor position',
-														'blocks-for-leaflet-map'
-													) }
-													value={
-														iconDimValid
-															? getAnchorPreset(
-																	layer.iconAnchorX,
-																	layer.iconAnchorY,
-																	layer.iconWidth,
-																	layer.iconHeight
-															  )
-															: ''
-													}
-													disabled={ ! iconDimValid }
-													help={
-														iconDimValid
-															? __(
-																	'Quick-set common anchor positions',
-																	'blocks-for-leaflet-map'
-															  )
-															: __(
-																	'Set icon size first',
-																	'blocks-for-leaflet-map'
-															  )
-													}
-													options={ [
-														{
-															label: __(
-																'— Select —',
-																'blocks-for-leaflet-map'
-															),
-															value: '',
-														},
-														{
-															label: __(
-																'Top left',
-																'blocks-for-leaflet-map'
-															),
-															value: 'top-left',
-														},
-														{
-															label: __(
-																'Top center',
-																'blocks-for-leaflet-map'
-															),
-															value: 'top-center',
-														},
-														{
-															label: __(
-																'Top right',
-																'blocks-for-leaflet-map'
-															),
-															value: 'top-right',
-														},
-														{
-															label: __(
-																'Middle left',
-																'blocks-for-leaflet-map'
-															),
-															value: 'middle-left',
-														},
-														{
-															label: __(
-																'Middle center',
-																'blocks-for-leaflet-map'
-															),
-															value: 'middle-center',
-														},
-														{
-															label: __(
-																'Middle right',
-																'blocks-for-leaflet-map'
-															),
-															value: 'middle-right',
-														},
-														{
-															label: __(
-																'Bottom left',
-																'blocks-for-leaflet-map'
-															),
-															value: 'bottom-left',
-														},
-														{
-															label: __(
-																'Bottom center',
-																'blocks-for-leaflet-map'
-															),
-															value: 'bottom-center',
-														},
-														{
-															label: __(
-																'Bottom right',
-																'blocks-for-leaflet-map'
-															),
-															value: 'bottom-right',
-														},
-														{
-															label: __(
-																'Custom',
-																'blocks-for-leaflet-map'
-															),
-															value: 'custom',
-															disabled: true,
-														},
-													] }
-													onChange={ ( presetId ) => {
-														const coords =
-															computeAnchorFromPreset(
-																presetId,
-																layer.iconWidth,
-																layer.iconHeight
-															);
-														if ( coords )
-															handleUpdateLayer(
-																layerIdx,
-																{
-																	iconAnchorX:
-																		coords.x,
-																	iconAnchorY:
-																		coords.y,
-																}
-															);
-													} }
-													style={ {
-														marginTop: '12px',
-													} }
-													__next40pxDefaultSize
-													__nextHasNoMarginBottom
-												/>
-											);
-										} )() }
+										<AnchorGrid
+											label={ __(
+												'Anchor position',
+												'blocks-for-leaflet-map'
+											) }
+											anchorX={ layer.iconAnchorX }
+											anchorY={ layer.iconAnchorY }
+											width={ layer.iconWidth }
+											height={ layer.iconHeight }
+											disabledHelp={ __(
+												'Set icon size first',
+												'blocks-for-leaflet-map'
+											) }
+											onChange={ ( presetId ) => {
+												const coords = computeAnchorFromPreset(
+													presetId,
+													layer.iconWidth,
+													layer.iconHeight
+												);
+												if ( coords ) {
+													handleUpdateLayer( layerIdx, {
+														iconAnchorX: coords.x,
+														iconAnchorY: coords.y,
+													} );
+												}
+											} }
+										/>
 										<p
 											style={ {
 												margin: '8px 0 4px',
