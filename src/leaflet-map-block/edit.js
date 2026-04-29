@@ -1016,6 +1016,31 @@ export default function Edit( {
 	const [ localTilesize, setLocalTilesize ] = useState( tilesize );
 	const [ localZoomoffset, setLocalZoomoffset ] = useState( zoomoffset );
 
+	// On first insert, apply Leaflet Map plugin defaults (from Settings page) if
+	// the block attributes still equal the block.json placeholder values. Existing
+	// saved blocks will have already-persisted values and are never touched.
+	useEffect( () => {
+		const ld = window.bflmEditor?.leafletDefaults;
+		if ( ! ld ) return;
+
+		const BLOCK_JSON_LAT  = 37.1773;
+		const BLOCK_JSON_LNG  = -3.5986;
+		const BLOCK_JSON_ZOOM = 13;
+
+		if (
+			lat  === BLOCK_JSON_LAT &&
+			lng  === BLOCK_JSON_LNG &&
+			zoom === BLOCK_JSON_ZOOM
+		) {
+			const updates = {};
+			if ( ld.lat  !== BLOCK_JSON_LAT )  updates.lat  = ld.lat;
+			if ( ld.lng  !== BLOCK_JSON_LNG )  updates.lng  = ld.lng;
+			if ( ld.zoom !== BLOCK_JSON_ZOOM ) updates.zoom = ld.zoom;
+			if ( ld.height ) updates.height = String( ld.height ).includes( 'px' ) || String( ld.height ).includes( '%' ) ? ld.height : ld.height + 'px';
+			if ( Object.keys( updates ).length ) setAttributes( updates );
+		}
+	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
+
 	// Sync local state when the block attribute changes externally (undo/redo, block switch).
 	useEffect( () => {
 		setLocalTilesize( tilesize );
