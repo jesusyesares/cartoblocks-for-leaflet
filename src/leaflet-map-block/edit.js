@@ -144,6 +144,14 @@ const LEAFLET_MAP_DESCRIPTORS = [
 	},
 	{ key: 'height', attr: 'height', serialize: ( v ) => normalizeHeight( v ) },
 	{
+		key: 'width',
+		attr: 'width',
+		serialize: ( v ) => {
+			const w = v || '100%';
+			return w;
+		},
+	},
+	{
 		key: 'scrollwheel',
 		attr: 'scrollWheelZoom',
 		serialize: ( v ) => ( v ? 'true' : 'false' ),
@@ -1015,6 +1023,8 @@ export default function Edit( {
 	// This prevents iframe rebuilds on every keystroke/arrow-click with intermediate values.
 	const [ localTilesize, setLocalTilesize ] = useState( tilesize );
 	const [ localZoomoffset, setLocalZoomoffset ] = useState( zoomoffset );
+	// Key incremented to force UnitControl re-mount when % value is clamped to 100.
+	const [ widthControlKey, setWidthControlKey ] = useState( 0 );
 
 	// On first insert, apply Leaflet Map plugin defaults (from Settings page) if
 	// the block attributes still equal the block.json placeholder values. Existing
@@ -1039,6 +1049,10 @@ export default function Edit( {
 			if ( ld.height ) {
 				const h = String( ld.height );
 				updates.height = ( h.includes( 'px' ) || h.includes( '%' ) || h.includes( 'vh' ) ) ? h : h + 'px';
+			}
+			if ( ld.width ) {
+				const w = String( ld.width );
+				updates.width = ( w.includes( 'px' ) || w.includes( '%' ) || w.includes( 'vh' ) ) ? w : w + 'px';
 			}
 			if ( ld.fitMarkers )      updates.fitMarkers      = true;
 			if ( ld.zoomControl     !== undefined ) updates.zoomControl     = ld.zoomControl;
@@ -1319,7 +1333,9 @@ export default function Edit( {
 	// because it doesn't affect the rendered map.
 	// imageZoom changes the fitImage() view but not the shortcode (zoom="0" is hardcoded),
 	// so append it explicitly when in image mode so the iframe reloads on slider change.
-	const previewUrlKey = imageMap ? shortcode + '|iz=' + ( imageZoom ?? 0 ) : shortcode;
+	// Width changes resize the iframe container; Leaflet won't auto-recalculate tile
+	// positions, so include normalizedWidth in the key to force a full iframe reload.
+	const previewUrlKey = ( imageMap ? shortcode + '|iz=' + ( imageZoom ?? 0 ) : shortcode ) + '|w=' + normalizedWidth;
 
 	useEffect( () => {
 		// Skip on first render — mount effect already set iframe.src.
@@ -2758,8 +2774,8 @@ export default function Edit( {
 							onChange={ ( value ) =>
 								setAttributes( { zoom: value } )
 							}
-							min={ 1 }
-							max={ 20 }
+							min={ minZoom ? parseInt( minZoom, 10 ) : 1 }
+							max={ maxZoom ? parseInt( maxZoom, 10 ) : 20 }
 							__next40pxDefaultSize
 							__nextHasNoMarginBottom
 						/>
@@ -2799,13 +2815,24 @@ export default function Edit( {
 						__next40pxDefaultSize
 					/>
 					<UnitControl
+						key={ widthControlKey }
 						label={ __( 'Width', 'blocks-for-leaflet-map' ) }
 						value={ normalizedWidth }
 						units={ DIMENSION_UNITS }
 						min={ 0 }
-						onChange={ ( value ) =>
-							setAttributes( { width: value } )
-						}
+						onChange={ ( value ) => {
+							// Clamp % values to 100 and force re-mount so the
+							// input resets to the clamped value.
+							if ( value && value.endsWith( '%' ) ) {
+								const n = parseFloat( value );
+								if ( ! isNaN( n ) && n > 100 ) {
+									setAttributes( { width: '100%' } );
+									setWidthControlKey( ( k ) => k + 1 );
+									return;
+								}
+							}
+							setAttributes( { width: value } );
+						} }
 						__next40pxDefaultSize
 					/>
 				</PanelBody>
@@ -7532,6 +7559,8 @@ export default function Edit( {
 				style={ {
 					...( blockProps.style || {} ),
 					width: normalizedWidth,
+					marginLeft: 'auto',
+					marginRight: 'auto',
 				} }
 			>
 				<div style={ { position: 'relative' } }>

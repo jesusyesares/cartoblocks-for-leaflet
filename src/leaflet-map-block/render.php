@@ -31,10 +31,13 @@ if ( ! preg_match( '/^\d+(\.\d+)?(px|%|vh|vw|em|rem)$/', $height ) ) {
 	$height = '400px';
 }
 
-// Width: accept string with unit, default 100%.
+// Width: accept string with unit, default 100%. Clamp % to 100.
 $width_raw = isset( $attributes['width'] ) ? $attributes['width'] : '100%';
 $width     = is_numeric( $width_raw ) ? $width_raw . 'px' : sanitize_text_field( $width_raw );
 if ( ! preg_match( '/^\d+(\.\d+)?(px|%|vh|vw|em|rem)$/', $width ) ) {
+	$width = '100%';
+}
+if ( str_ends_with( $width, '%' ) && (float) $width > 100 ) {
 	$width = '100%';
 }
 $is_image_map = ! empty( $attributes['imageMap'] );
@@ -94,14 +97,15 @@ $markers = isset( $attributes['markers'] ) && is_array( $attributes['markers'] )
 // (LEAFLET_MAP_DESCRIPTORS table + buildShortcode function). Any attribute
 // change here must be mirrored there (and vice versa) or the editor shortcode
 // strip will drift from the frontend output.
-// Width is not passed to the shortcode — it is applied to the wrapper div instead
-// so the Leaflet Map shortcode always renders at 100% of its container.
+// Pass width directly to the shortcode — bozdoz applies it to the map container.
+// The wrapper div has no width style; bozdoz's container IS the sizing element.
 $map_shortcode = sprintf(
-	'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" scrollwheel="%5$s" zoomcontrol="%6$s" fitbounds="%7$s" show_scale="%8$s"',
+	'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" width="%5$s" scrollwheel="%6$s" zoomcontrol="%7$s" fitbounds="%8$s" show_scale="%9$s"',
 	esc_attr( (string) $lat ),
 	esc_attr( (string) $lng ),
 	$zoom,
 	esc_attr( $height ),
+	esc_attr( $width ),
 	$scroll_wheel_zoom,
 	$zoom_control,
 	$fit_markers,
@@ -170,11 +174,12 @@ $map_shortcode .= ']';
 // Emits the same base lat/lng/zoom/height attrs as [leaflet-map], plus src/layer/crs.
 if ( $wms_enabled ) {
 	$wms_shortcode = sprintf(
-		'[leaflet-wms lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" scrollwheel="%5$s" zoomcontrol="%6$s"',
+		'[leaflet-wms lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" width="%5$s" scrollwheel="%6$s" zoomcontrol="%7$s"',
 		esc_attr( (string) $lat ),
 		esc_attr( (string) $lng ),
 		$zoom,
 		esc_attr( $height ),
+		esc_attr( $width ),
 		$scroll_wheel_zoom,
 		$zoom_control
 	);
@@ -543,7 +548,6 @@ foreach ( $overlays as $overlay ) {
 $wrapper_attributes = get_block_wrapper_attributes(
 	array(
 		'class' => 'bflm-leaflet-map-block',
-		'style' => sprintf( 'width:%s;', esc_attr( $width ) ),
 	)
 );
 
@@ -593,15 +597,19 @@ if ( $is_image_map && '' !== $image_src ) {
 </div>
 	<?php
 } elseif ( $wms_enabled ) {
+	$bflm_wrap_id = 'bflm-wrap-' . esc_attr( uniqid() );
 	?>
-<div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitized by get_block_wrapper_attributes(). ?>>
+<div id="<?php echo $bflm_wrap_id; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_attr applied above. ?>" <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitized by get_block_wrapper_attributes(). ?>>
 	<?php echo do_shortcode( $wms_shortcode . $marker_shortcodes . $line_shortcodes . $circle_shortcodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted output from registered shortcodes. ?>
 </div>
+<script>( function(){ var w=document.getElementById('<?php echo $bflm_wrap_id; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_attr applied above. ?>'),a=0; function r(){ var p=window.WPLeafletMapPlugin; if(!p||!p.maps||!p.maps.length){if(++a<50){setTimeout(r,100);}return;} var m=p.maps.find(function(x){return x&&x.getContainer&&w&&w.contains(x.getContainer());}); setTimeout(function(){if(m&&m.invalidateSize){m.invalidateSize();}},0); } r(); }() );</script>
 	<?php
 } else {
+	$bflm_wrap_id = 'bflm-wrap-' . esc_attr( uniqid() );
 	?>
-<div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitized by get_block_wrapper_attributes(). ?>>
+<div id="<?php echo $bflm_wrap_id; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_attr applied above. ?>" <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitized by get_block_wrapper_attributes(). ?>>
 	<?php echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes . $circle_shortcodes . $layer_shortcodes . $overlay_shortcodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted output from registered shortcodes; escaping would corrupt the map HTML and inline scripts. ?>
 </div>
+<script>( function(){ var w=document.getElementById('<?php echo $bflm_wrap_id; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_attr applied above. ?>'),a=0; function r(){ var p=window.WPLeafletMapPlugin; if(!p||!p.maps||!p.maps.length){if(++a<50){setTimeout(r,100);}return;} var m=p.maps.find(function(x){return x&&x.getContainer&&w&&w.contains(x.getContainer());}); setTimeout(function(){if(m&&m.invalidateSize){m.invalidateSize();}},0); } r(); }() );</script>
 	<?php
 }
