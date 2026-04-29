@@ -1,11 +1,14 @@
 .claude
+.DS_Store
 .editorconfig
 .git
 .github
 .gitignore
+AUDIT-*.md
 CHANGELOG.md
 CLAUDE.md
 node_modules
 src
 package.json
 package-lock.json
+*.zip
