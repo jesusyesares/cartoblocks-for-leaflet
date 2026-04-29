@@ -12,3 +12,4 @@ parameters:
         - build
     bootstrapFiles:
         - vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
+        - includes/class-tgm-plugin-activation.php
