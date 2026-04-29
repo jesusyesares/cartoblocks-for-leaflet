@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.0
 Tested up to:      6.9
-Stable tag:        0.10.0
+Stable tag:        1.0.0
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -140,6 +140,11 @@ Yes. All user-facing strings are wrapped in `__()` with the `blocks-for-leaflet-
 7. Frontend rendering — map with markers, lines, and a GeoJSON layer.
 
 == Changelog ==
+
+= 1.0.0 =
+* Full feature parity with the Leaflet Map plugin — all shortcodes wrapped: markers, lines, polygons, circles, GeoJSON/GPX/KML data layers, image map, WMS, image overlay, video overlay.
+* Added: Full internationalisation (264 translatable strings, .pot file included).
+* Added: wp_set_script_translations() wired for block editor translation loading.
 
 = 0.10.0 =
 * Added: `[leaflet-image-overlay]` and `[leaflet-video-overlay]` shortcode support via new "Overlays" panel. Pin raster images or videos to geo coordinates with configurable bounds, opacity, interactivity, z-index, CSS class, alt text, and aspect-ratio lock (image only).
