@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.0
 Tested up to:      6.9
-Stable tag:        1.0.0
+Stable tag:        1.0.1
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -140,6 +140,9 @@ Yes. All user-facing strings are wrapped in `__()` with the `blocks-for-leaflet-
 7. Frontend rendering — map with markers, lines, and a GeoJSON layer.
 
 == Changelog ==
+
+= 1.0.1 =
+* Added: TGM Plugin Activation — guided one-click install of the required Leaflet Map plugin when not present.
 
 = 1.0.0 =
 * Full feature parity with the Leaflet Map plugin — all shortcodes wrapped: markers, lines, polygons, circles, GeoJSON/GPX/KML data layers, image map, WMS, image overlay, video overlay.
