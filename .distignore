@@ -1,14 +1,53 @@
-.claude
+# General
 .DS_Store
-.editorconfig
-.git
+composer.json
+composer.lock
+
+# Version Control
 .github
 .gitignore
-AUDIT-*.md
-CHANGELOG.md
-CLAUDE.md
-node_modules
-src
+.distignore
+.editorconfig
+.git
+.gitignore
+
+# Develop
+node_modules/
 package.json
 package-lock.json
+
+# WordPress
+.wordpress-org
+
+# Testing
+.travis.yml
+circle.yml
+.phpcs.xml.dist
+.phpunit.result.cache
+phpunit.xml.dist
+phpcs.xml.dist
+.phpcs.xml.dist
+phpstan.neon.dist
+tests/
+bin/
+.wp-env.json
+
+# Build config
+phpcs.xml
+phpstan.neon
+phpcs.xml.dist
+phpstan.neon.dist
+
+# Source / dev files
+src/
+vendor/
+CHANGELOG.md
+AUDIT-*.md
 *.zip
+
+# AI
+AGENTS.md
+CLAUDE.md
+.claude/
+.cursor/
+docs/
