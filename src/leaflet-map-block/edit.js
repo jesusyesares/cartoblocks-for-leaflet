@@ -77,9 +77,9 @@ import './editor.scss';
  * Allowed CSS units for map dimension controls.
  */
 const DIMENSION_UNITS = [
-	{ value: 'px', label: 'px', default: 400 },
-	{ value: '%', label: '%', default: 100 },
-	{ value: 'vh', label: 'vh', default: 50 },
+	{ value: 'px', label: __( 'px', 'blocks-for-leaflet-map' ), default: 400 },
+	{ value: '%', label: __( '%', 'blocks-for-leaflet-map' ), default: 100 },
+	{ value: 'vh', label: __( 'vh', 'blocks-for-leaflet-map' ), default: 50 },
 ];
 
 /**
@@ -87,9 +87,9 @@ const DIMENSION_UNITS = [
  * Empty string = "Default" (omit from shortcode, use Leaflet Map global settings).
  */
 const THREE_STATE_OPTIONS = [
-	{ value: '', label: 'Default' },
-	{ value: 'true', label: 'Enabled' },
-	{ value: 'false', label: 'Disabled' },
+	{ value: '', label: __( 'Default', 'blocks-for-leaflet-map' ) },
+	{ value: 'true', label: __( 'Enabled', 'blocks-for-leaflet-map' ) },
+	{ value: 'false', label: __( 'Disabled', 'blocks-for-leaflet-map' ) },
 ];
 
 // ── Shortcode builder ─────────────────────────────────────────────────────────
@@ -6017,9 +6017,9 @@ export default function Edit( {
 											<SelectControl
 												value={ radiusUnit }
 												options={ [
-													{ label: 'm', value: 'm' },
+													{ label: __( 'm', 'blocks-for-leaflet-map' ), value: 'm' },
 													{
-														label: 'km',
+														label: __( 'km', 'blocks-for-leaflet-map' ),
 														value: 'km',
 													},
 												] }
@@ -6414,9 +6414,9 @@ export default function Edit( {
 								label={ __( 'Type', 'blocks-for-leaflet-map' ) }
 								value={ layer.type || 'geojson' }
 								options={ [
-									{ label: 'GeoJSON', value: 'geojson' },
-									{ label: 'GPX', value: 'gpx' },
-									{ label: 'KML', value: 'kml' },
+									{ label: __( 'GeoJSON', 'blocks-for-leaflet-map' ), value: 'geojson' },
+									{ label: __( 'GPX', 'blocks-for-leaflet-map' ), value: 'gpx' },
+									{ label: __( 'KML', 'blocks-for-leaflet-map' ), value: 'kml' },
 								] }
 								onChange={ ( v ) =>
 									handleUpdateLayer( layerIdx, { type: v } )
