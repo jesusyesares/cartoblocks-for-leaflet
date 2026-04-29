@@ -1040,6 +1040,10 @@ export default function Edit( {
 				const h = String( ld.height );
 				updates.height = ( h.includes( 'px' ) || h.includes( '%' ) || h.includes( 'vh' ) ) ? h : h + 'px';
 			}
+			if ( ld.width ) {
+				const w = String( ld.width );
+				updates.width = ( w.includes( 'px' ) || w.includes( '%' ) || w.includes( 'vh' ) ) ? w : w + 'px';
+			}
 			if ( ld.fitMarkers )      updates.fitMarkers      = true;
 			if ( ld.zoomControl     !== undefined ) updates.zoomControl     = ld.zoomControl;
 			if ( ld.scrollWheelZoom !== undefined ) updates.scrollWheelZoom = ld.scrollWheelZoom;
@@ -2758,8 +2762,8 @@ export default function Edit( {
 							onChange={ ( value ) =>
 								setAttributes( { zoom: value } )
 							}
-							min={ 1 }
-							max={ 20 }
+							min={ minZoom ? parseInt( minZoom, 10 ) : 1 }
+							max={ maxZoom ? parseInt( maxZoom, 10 ) : 20 }
 							__next40pxDefaultSize
 							__nextHasNoMarginBottom
 						/>
