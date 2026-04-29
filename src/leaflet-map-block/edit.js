@@ -1036,7 +1036,17 @@ export default function Edit( {
 			if ( ld.lat  !== BLOCK_JSON_LAT )  updates.lat  = ld.lat;
 			if ( ld.lng  !== BLOCK_JSON_LNG )  updates.lng  = ld.lng;
 			if ( ld.zoom !== BLOCK_JSON_ZOOM ) updates.zoom = ld.zoom;
-			if ( ld.height ) updates.height = String( ld.height ).includes( 'px' ) || String( ld.height ).includes( '%' ) ? ld.height : ld.height + 'px';
+			if ( ld.height ) {
+				const h = String( ld.height );
+				updates.height = ( h.includes( 'px' ) || h.includes( '%' ) || h.includes( 'vh' ) ) ? h : h + 'px';
+			}
+			if ( ld.fitMarkers )      updates.fitMarkers      = true;
+			if ( ld.zoomControl     !== undefined ) updates.zoomControl     = ld.zoomControl;
+			if ( ld.scrollWheelZoom !== undefined ) updates.scrollWheelZoom = ld.scrollWheelZoom;
+			// doubleClickZoom is a three-state string: '' / 'true' / 'false'
+			if ( ld.doubleClickZoom ) updates.doubleClickZoom = 'true';
+			if ( ld.minZoom ) updates.minZoom = String( ld.minZoom );
+			if ( ld.maxZoom ) updates.maxZoom = String( ld.maxZoom );
 			if ( Object.keys( updates ).length ) setAttributes( updates );
 		}
 	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps

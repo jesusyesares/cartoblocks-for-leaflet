@@ -3,7 +3,7 @@
  * Plugin Name:       Blocks for Leaflet Map
  * Plugin URI:        https://github.com/jesusyesares/blocks-for-leaflet-map
  * Description:       A dynamic Gutenberg block that wraps the Leaflet Map plugin shortcodes. Requires the "Leaflet Map" plugin to be installed and active.
- * Version:           1.0.2
+ * Version:           1.0.3
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Jesús Yesares García
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-define( 'BFLM_VERSION', '1.0.2' );
+define( 'BFLM_VERSION', '1.0.3' );
 define( 'BFLM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BFLM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BFLM_LEAFLET_MAP_PLUGIN', 'leaflet-map/leaflet-map.php' );
@@ -1235,12 +1235,22 @@ add_action( 'wp_ajax_bflm_preview', 'bflm_preview_map' );
  * Runs on enqueue_block_editor_assets (outer admin frame only).
  */
 function bflm_localise_editor_script(): void {
+	$min_zoom = get_option( 'leaflet_default_min_zoom', '0' );
+	$max_zoom = get_option( 'leaflet_default_max_zoom', '19' );
+
 	$leaflet_defaults = array(
-		'lat'    => (float) get_option( 'leaflet_default_lat', '44.67' ),
-		'lng'    => (float) get_option( 'leaflet_default_lng', '-63.61' ),
-		'zoom'   => (int) get_option( 'leaflet_default_zoom', '12' ),
-		'height' => sanitize_text_field( (string) get_option( 'leaflet_default_height', '250' ) ),
-		'width'  => sanitize_text_field( (string) get_option( 'leaflet_default_width', '100%' ) ),
+		'lat'             => (float) get_option( 'leaflet_default_lat', '44.67' ),
+		'lng'             => (float) get_option( 'leaflet_default_lng', '-63.61' ),
+		'zoom'            => (int) get_option( 'leaflet_default_zoom', '12' ),
+		'height'          => sanitize_text_field( (string) get_option( 'leaflet_default_height', '250' ) ),
+		'width'           => sanitize_text_field( (string) get_option( 'leaflet_default_width', '100%' ) ),
+		'fitMarkers'      => (bool) get_option( 'leaflet_fit_markers', '0' ),
+		'zoomControl'     => (bool) get_option( 'leaflet_show_zoom_controls', '0' ),
+		'scrollWheelZoom' => (bool) get_option( 'leaflet_scroll_wheel_zoom', '0' ),
+		'doubleClickZoom' => (bool) get_option( 'leaflet_double_click_zoom', '0' ),
+		// Only pass non-default min/max zoom so empty-string "omit" behaviour is preserved.
+		'minZoom'         => ( '' !== $min_zoom && '0' !== $min_zoom ) ? sanitize_text_field( (string) $min_zoom ) : '',
+		'maxZoom'         => ( '' !== $max_zoom && '19' !== $max_zoom ) ? sanitize_text_field( (string) $max_zoom ) : '',
 	);
 
 	wp_localize_script(
