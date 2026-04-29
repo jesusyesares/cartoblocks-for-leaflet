@@ -11,7 +11,7 @@
 		"lint:css": "wp-scripts lint-style",
 		"lint:js": "wp-scripts lint-js",
 		"packages-update": "wp-scripts packages-update",
-		"plugin-zip": "wp dist-archive wp-content/plugins/blocks-for-leaflet-map . --filename-format=\"{name}-{version}\"",
+		"plugin-zip": "cd ../../.. && rm -f blocks-for-leaflet-map-*.zip && wp dist-archive wp-content/plugins/blocks-for-leaflet-map . --filename-format=\"{name}-{version}\"",
 		"start": "wp-scripts start --webpack-copy-php --blocks-manifest",
 		"make-pot": "wp i18n make-pot . languages/blocks-for-leaflet-map.pot --domain=blocks-for-leaflet-map --exclude=node_modules,vendor,build",
 		"test": "wp-scripts test-unit-js"
