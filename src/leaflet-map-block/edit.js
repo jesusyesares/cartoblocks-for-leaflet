@@ -144,6 +144,14 @@ const LEAFLET_MAP_DESCRIPTORS = [
 	},
 	{ key: 'height', attr: 'height', serialize: ( v ) => normalizeHeight( v ) },
 	{
+		key: 'width',
+		attr: 'width',
+		serialize: ( v ) => {
+			const w = v || '100%';
+			return w;
+		},
+	},
+	{
 		key: 'scrollwheel',
 		attr: 'scrollWheelZoom',
 		serialize: ( v ) => ( v ? 'true' : 'false' ),
@@ -1015,6 +1023,8 @@ export default function Edit( {
 	// This prevents iframe rebuilds on every keystroke/arrow-click with intermediate values.
 	const [ localTilesize, setLocalTilesize ] = useState( tilesize );
 	const [ localZoomoffset, setLocalZoomoffset ] = useState( zoomoffset );
+	// Key incremented to force UnitControl re-mount when % value is clamped to 100.
+	const [ widthControlKey, setWidthControlKey ] = useState( 0 );
 
 	// On first insert, apply Leaflet Map plugin defaults (from Settings page) if
 	// the block attributes still equal the block.json placeholder values. Existing
@@ -2805,13 +2815,24 @@ export default function Edit( {
 						__next40pxDefaultSize
 					/>
 					<UnitControl
+						key={ widthControlKey }
 						label={ __( 'Width', 'blocks-for-leaflet-map' ) }
 						value={ normalizedWidth }
 						units={ DIMENSION_UNITS }
 						min={ 0 }
-						onChange={ ( value ) =>
-							setAttributes( { width: value } )
-						}
+						onChange={ ( value ) => {
+							// Clamp % values to 100 and force re-mount so the
+							// input resets to the clamped value.
+							if ( value && value.endsWith( '%' ) ) {
+								const n = parseFloat( value );
+								if ( ! isNaN( n ) && n > 100 ) {
+									setAttributes( { width: '100%' } );
+									setWidthControlKey( ( k ) => k + 1 );
+									return;
+								}
+							}
+							setAttributes( { width: value } );
+						} }
 						__next40pxDefaultSize
 					/>
 				</PanelBody>

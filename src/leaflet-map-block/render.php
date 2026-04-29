@@ -31,10 +31,13 @@ if ( ! preg_match( '/^\d+(\.\d+)?(px|%|vh|vw|em|rem)$/', $height ) ) {
 	$height = '400px';
 }
 
-// Width: accept string with unit, default 100%.
+// Width: accept string with unit, default 100%. Clamp % to 100.
 $width_raw = isset( $attributes['width'] ) ? $attributes['width'] : '100%';
 $width     = is_numeric( $width_raw ) ? $width_raw . 'px' : sanitize_text_field( $width_raw );
 if ( ! preg_match( '/^\d+(\.\d+)?(px|%|vh|vw|em|rem)$/', $width ) ) {
+	$width = '100%';
+}
+if ( str_ends_with( $width, '%' ) && (float) $width > 100 ) {
 	$width = '100%';
 }
 $is_image_map = ! empty( $attributes['imageMap'] );
@@ -94,14 +97,15 @@ $markers = isset( $attributes['markers'] ) && is_array( $attributes['markers'] )
 // (LEAFLET_MAP_DESCRIPTORS table + buildShortcode function). Any attribute
 // change here must be mirrored there (and vice versa) or the editor shortcode
 // strip will drift from the frontend output.
-// Width is applied to the wrapper div. The shortcode always gets width="100%" so
-// the Leaflet map container fills the wrapper exactly — no double-percentage shrink.
+// Pass width directly to the shortcode — bozdoz applies it to the map container.
+// The wrapper div has no width style; bozdoz's container IS the sizing element.
 $map_shortcode = sprintf(
-	'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" width="100%%" scrollwheel="%5$s" zoomcontrol="%6$s" fitbounds="%7$s" show_scale="%8$s"',
+	'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" width="%5$s" scrollwheel="%6$s" zoomcontrol="%7$s" fitbounds="%8$s" show_scale="%9$s"',
 	esc_attr( (string) $lat ),
 	esc_attr( (string) $lng ),
 	$zoom,
 	esc_attr( $height ),
+	esc_attr( $width ),
 	$scroll_wheel_zoom,
 	$zoom_control,
 	$fit_markers,
@@ -170,11 +174,12 @@ $map_shortcode .= ']';
 // Emits the same base lat/lng/zoom/height attrs as [leaflet-map], plus src/layer/crs.
 if ( $wms_enabled ) {
 	$wms_shortcode = sprintf(
-		'[leaflet-wms lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" width="100%%" scrollwheel="%5$s" zoomcontrol="%6$s"',
+		'[leaflet-wms lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" width="%5$s" scrollwheel="%6$s" zoomcontrol="%7$s"',
 		esc_attr( (string) $lat ),
 		esc_attr( (string) $lng ),
 		$zoom,
 		esc_attr( $height ),
+		esc_attr( $width ),
 		$scroll_wheel_zoom,
 		$zoom_control
 	);
@@ -543,7 +548,6 @@ foreach ( $overlays as $overlay ) {
 $wrapper_attributes = get_block_wrapper_attributes(
 	array(
 		'class' => 'bflm-leaflet-map-block',
-		'style' => sprintf( 'width:%s;', esc_attr( $width ) ),
 	)
 );
 
