@@ -24,7 +24,42 @@ define( 'BFLM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BFLM_LEAFLET_MAP_PLUGIN', 'leaflet-map/leaflet-map.php' );
 
 // ---------------------------------------------------------------------------
-// Dependency check: "Leaflet Map" plugin must be active.
+// Dependency management via TGM Plugin Activation.
+// ---------------------------------------------------------------------------
+
+require_once BFLM_PLUGIN_DIR . 'includes/class-tgm-plugin-activation.php';
+
+/**
+ * Register required plugins with TGMPA.
+ */
+function bflm_register_required_plugins(): void {
+	$plugins = array(
+		array(
+			'name'     => 'Leaflet Map',
+			'slug'     => 'leaflet-map',
+			'required' => true,
+		),
+	);
+
+	$config = array(
+		'id'           => 'blocks-for-leaflet-map',
+		'default_path' => '',
+		'menu'         => 'tgmpa-install-plugins',
+		'parent_slug'  => 'plugins.php',
+		'capability'   => 'manage_options',
+		'has_notices'  => true,
+		'dismissable'  => false,
+		'dismiss_msg'  => '',
+		'is_automatic' => false,
+		'message'      => '',
+	);
+
+	tgmpa( $plugins, $config );
+}
+add_action( 'tgmpa_register', 'bflm_register_required_plugins' );
+
+// ---------------------------------------------------------------------------
+// Dependency check: "Leaflet Map" plugin must be active to register the block.
 // ---------------------------------------------------------------------------
 
 /**
@@ -40,39 +75,8 @@ function bflm_is_leaflet_map_active(): bool {
 	return is_plugin_active( BFLM_LEAFLET_MAP_PLUGIN );
 }
 
-/**
- * Display an admin notice when the Leaflet Map plugin is missing or inactive.
- */
-function bflm_missing_dependency_notice(): void {
-	$plugin_link = sprintf(
-		'<a href="%s" target="_blank" rel="noopener noreferrer">%s</a>',
-		esc_url( 'https://wordpress.org/plugins/leaflet-map/' ),
-		esc_html__( 'Leaflet Map', 'blocks-for-leaflet-map' )
-	);
-
-	printf(
-		'<div class="notice notice-error"><p>%s</p></div>',
-		wp_kses(
-			sprintf(
-				/* translators: %s: linked plugin name */
-				__( '<strong>Blocks for Leaflet Map</strong> requires the %s plugin to be installed and active.', 'blocks-for-leaflet-map' ),
-				$plugin_link
-			),
-			array(
-				'strong' => array(),
-				'a'      => array(
-					'href'   => array(),
-					'target' => array(),
-					'rel'    => array(),
-				),
-			)
-		)
-	);
-}
-
 if ( ! bflm_is_leaflet_map_active() ) {
-	add_action( 'admin_notices', 'bflm_missing_dependency_notice' );
-	return; // Stop loading — do not register the block.
+	return; // Stop loading — TGMPA notice handles the rest.
 }
 
 // ---------------------------------------------------------------------------
