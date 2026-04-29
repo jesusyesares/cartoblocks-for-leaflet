@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.0
 Tested up to:      6.9
-Stable tag:        1.0.4
+Stable tag:        1.0.5
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -140,6 +140,10 @@ Yes. All user-facing strings are wrapped in `__()` with the `blocks-for-leaflet-
 7. Frontend rendering — map with markers, lines, and a GeoJSON layer.
 
 == Changelog ==
+
+= 1.0.5 =
+* Fixed: Map container now fills the block wrapper exactly — width applied to wrapper div, shortcode always gets width="100%" to prevent tile gap.
+* Fixed: invalidateSize called via WPLeafletMapPlugin.push so Leaflet recalculates tile layout after CSS settles.
 
 = 1.0.4 =
 * Fixed: New blocks now inherit the Default Width from Leaflet Map Settings.
