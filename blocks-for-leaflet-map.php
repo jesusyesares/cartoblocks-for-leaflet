@@ -195,9 +195,10 @@ function bflm_preview_map(): void {
 	}
 
 	// Build shortcodes (same logic as render.php).
-	// Width is applied to the editor block container, not the shortcode.
+	// Always pass width="100%" so the Leaflet map container fills the iframe —
+	// the iframe itself is sized by the editor block container.
 	$map_shortcode = sprintf(
-		'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" scrollwheel="%5$s" zoomcontrol="%6$s" fitbounds="%7$s" show_scale="%8$s"',
+		'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" width="100%%" scrollwheel="%5$s" zoomcontrol="%6$s" fitbounds="%7$s" show_scale="%8$s"',
 		esc_attr( (string) $lat ),
 		esc_attr( (string) $lng ),
 		$zoom,
@@ -270,7 +271,7 @@ function bflm_preview_map(): void {
 	// Build [leaflet-wms] shortcode when wmsEnabled (mirrors render.php logic).
 	if ( $wms_enabled ) {
 		$wms_shortcode = sprintf(
-			'[leaflet-wms lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" scrollwheel="%5$s" zoomcontrol="%6$s"',
+			'[leaflet-wms lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" width="100%%" scrollwheel="%5$s" zoomcontrol="%6$s"',
 			esc_attr( (string) $lat ),
 			esc_attr( (string) $lng ),
 			$zoom,
@@ -973,6 +974,10 @@ function bflm_preview_map(): void {
 
 		var map     = plugin.maps[ 0 ];
 		var markers = plugin.markers || [];
+
+		// Force Leaflet to recalculate tile layout after the browser has finished
+		// laying out the container (fixes tile gap when width is a percentage).
+		setTimeout( function () { map.invalidateSize(); }, 0 );
 
 		// Apply zoom & bounds constraints if set.
 		if ( minZoom !== null ) {

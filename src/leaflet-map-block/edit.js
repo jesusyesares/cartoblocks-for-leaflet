@@ -1323,7 +1323,9 @@ export default function Edit( {
 	// because it doesn't affect the rendered map.
 	// imageZoom changes the fitImage() view but not the shortcode (zoom="0" is hardcoded),
 	// so append it explicitly when in image mode so the iframe reloads on slider change.
-	const previewUrlKey = imageMap ? shortcode + '|iz=' + ( imageZoom ?? 0 ) : shortcode;
+	// Width changes resize the iframe container; Leaflet won't auto-recalculate tile
+	// positions, so include normalizedWidth in the key to force a full iframe reload.
+	const previewUrlKey = ( imageMap ? shortcode + '|iz=' + ( imageZoom ?? 0 ) : shortcode ) + '|w=' + normalizedWidth;
 
 	useEffect( () => {
 		// Skip on first render — mount effect already set iframe.src.
@@ -7536,6 +7538,8 @@ export default function Edit( {
 				style={ {
 					...( blockProps.style || {} ),
 					width: normalizedWidth,
+					marginLeft: 'auto',
+					marginRight: 'auto',
 				} }
 			>
 				<div style={ { position: 'relative' } }>
