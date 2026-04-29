@@ -1240,6 +1240,11 @@ function bflm_localise_editor_script(): void {
 			'geocodeNonce' => wp_create_nonce( 'bflm_geocode_nonce' ),
 		)
 	);
+	wp_set_script_translations(
+		'blocks-for-leaflet-map-leaflet-map-block-editor-script',
+		'blocks-for-leaflet-map',
+		BFLM_PLUGIN_DIR . 'languages'
+	);
 }
 add_action( 'enqueue_block_editor_assets', 'bflm_localise_editor_script' );
 
@@ -1293,7 +1298,7 @@ function bflm_geocode_address(): void {
 	if ( empty( $contact_email ) ) {
 		$contact_email = get_bloginfo( 'admin_email' );
 	}
-	$contact_email   = apply_filters( 'leaflet_map_nominatim_contact_email', $contact_email );
+	$contact_email   = apply_filters( 'bflm_nominatim_contact_email', $contact_email );
 	$accept_language = str_replace( '_', '-', get_locale() );
 	$user_agent      = 'Nominatim query for ' . get_bloginfo( 'url' ) . '; contact ' . $contact_email;
 
