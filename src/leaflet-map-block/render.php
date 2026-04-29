@@ -94,10 +94,10 @@ $markers = isset( $attributes['markers'] ) && is_array( $attributes['markers'] )
 // (LEAFLET_MAP_DESCRIPTORS table + buildShortcode function). Any attribute
 // change here must be mirrored there (and vice versa) or the editor shortcode
 // strip will drift from the frontend output.
-// Width is not passed to the shortcode — it is applied to the wrapper div instead
-// so the Leaflet Map shortcode always renders at 100% of its container.
+// Width is applied to the wrapper div. The shortcode always gets width="100%" so
+// the Leaflet map container fills the wrapper exactly — no double-percentage shrink.
 $map_shortcode = sprintf(
-	'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" scrollwheel="%5$s" zoomcontrol="%6$s" fitbounds="%7$s" show_scale="%8$s"',
+	'[leaflet-map lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" width="100%%" scrollwheel="%5$s" zoomcontrol="%6$s" fitbounds="%7$s" show_scale="%8$s"',
 	esc_attr( (string) $lat ),
 	esc_attr( (string) $lng ),
 	$zoom,
@@ -170,7 +170,7 @@ $map_shortcode .= ']';
 // Emits the same base lat/lng/zoom/height attrs as [leaflet-map], plus src/layer/crs.
 if ( $wms_enabled ) {
 	$wms_shortcode = sprintf(
-		'[leaflet-wms lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" scrollwheel="%5$s" zoomcontrol="%6$s"',
+		'[leaflet-wms lat="%1$s" lng="%2$s" zoom="%3$d" height="%4$s" width="100%%" scrollwheel="%5$s" zoomcontrol="%6$s"',
 		esc_attr( (string) $lat ),
 		esc_attr( (string) $lng ),
 		$zoom,
@@ -593,15 +593,19 @@ if ( $is_image_map && '' !== $image_src ) {
 </div>
 	<?php
 } elseif ( $wms_enabled ) {
+	$bflm_wrap_id = 'bflm-wrap-' . esc_attr( uniqid() );
 	?>
-<div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitized by get_block_wrapper_attributes(). ?>>
+<div id="<?php echo $bflm_wrap_id; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_attr applied above. ?>" <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitized by get_block_wrapper_attributes(). ?>>
 	<?php echo do_shortcode( $wms_shortcode . $marker_shortcodes . $line_shortcodes . $circle_shortcodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted output from registered shortcodes. ?>
 </div>
+<script>( function(){ var w=document.getElementById('<?php echo $bflm_wrap_id; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_attr applied above. ?>'),a=0; function r(){ var p=window.WPLeafletMapPlugin; if(!p||!p.maps||!p.maps.length){if(++a<50){setTimeout(r,100);}return;} var m=p.maps.find(function(x){return x&&x.getContainer&&w&&w.contains(x.getContainer());}); setTimeout(function(){if(m&&m.invalidateSize){m.invalidateSize();}},0); } r(); }() );</script>
 	<?php
 } else {
+	$bflm_wrap_id = 'bflm-wrap-' . esc_attr( uniqid() );
 	?>
-<div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitized by get_block_wrapper_attributes(). ?>>
+<div id="<?php echo $bflm_wrap_id; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_attr applied above. ?>" <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitized by get_block_wrapper_attributes(). ?>>
 	<?php echo do_shortcode( $map_shortcode . $marker_shortcodes . $line_shortcodes . $circle_shortcodes . $layer_shortcodes . $overlay_shortcodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted output from registered shortcodes; escaping would corrupt the map HTML and inline scripts. ?>
 </div>
+<script>( function(){ var w=document.getElementById('<?php echo $bflm_wrap_id; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_attr applied above. ?>'),a=0; function r(){ var p=window.WPLeafletMapPlugin; if(!p||!p.maps||!p.maps.length){if(++a<50){setTimeout(r,100);}return;} var m=p.maps.find(function(x){return x&&x.getContainer&&w&&w.contains(x.getContainer());}); setTimeout(function(){if(m&&m.invalidateSize){m.invalidateSize();}},0); } r(); }() );</script>
 	<?php
 }
