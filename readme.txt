@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.0
 Tested up to:      6.9
-Stable tag:        1.0.5
+Stable tag:        1.0.6
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -139,7 +139,10 @@ Yes. All user-facing strings are wrapped in `__()` with the `blocks-for-leaflet-
 6. Shortcode Viewer toolbar popover showing the generated shortcode.
 7. Frontend rendering — map with markers, lines, and a GeoJSON layer.
 
-== Changelog ==
+== Changelog ==\
+\
+= 1.0.6 =\
+* Improved: Replaced "Anchor position" dropdown selects with a visual 3×3 grid for marker icon, shadow, and data-layer icon anchors.
 
 = 1.0.5 =
 * Fixed: Map container now fills the block wrapper exactly — width applied to wrapper div, shortcode always gets width="100%" to prevent tile gap.
