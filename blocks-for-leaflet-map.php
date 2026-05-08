@@ -24,6 +24,20 @@ define( 'BFLM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BFLM_LEAFLET_MAP_PLUGIN', 'leaflet-map/leaflet-map.php' );
 
 // ---------------------------------------------------------------------------
+// Shared shortcode builders. Pure functions used by render.php (frontend) and
+// the bflm_preview_map() editor iframe endpoint to avoid duplicating the
+// shortcode-assembly logic.
+// ---------------------------------------------------------------------------
+
+require_once BFLM_PLUGIN_DIR . 'includes/shortcodes/attrs.php';
+require_once BFLM_PLUGIN_DIR . 'includes/shortcodes/map.php';
+require_once BFLM_PLUGIN_DIR . 'includes/shortcodes/marker.php';
+require_once BFLM_PLUGIN_DIR . 'includes/shortcodes/line.php';
+require_once BFLM_PLUGIN_DIR . 'includes/shortcodes/circle.php';
+require_once BFLM_PLUGIN_DIR . 'includes/shortcodes/layer.php';
+require_once BFLM_PLUGIN_DIR . 'includes/shortcodes/overlay.php';
+
+// ---------------------------------------------------------------------------
 // Dependency management via TGM Plugin Activation.
 // ---------------------------------------------------------------------------
 
