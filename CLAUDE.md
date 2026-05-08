@@ -27,13 +27,42 @@ converting its shortcodes into a single configurable Gutenberg block.
 - **Plugin slug:** `blocks-for-leaflet-map`
 - **Block:** `leaflet-map-block`
 - **Repo:** https://github.com/jesusyesares/blocks-for-leaflet-map
-- **Current version:** 0.3.5
+- **Current version:** 1.0.6 (next release: 1.0.7 — internal modularization)
 - **Goal:** Public release, eventually WordPress.org submission
 - **Requires:** "Leaflet Map" plugin by bozdoz installed and active
 - **Build tooling:** `wp-scripts` (`npm run build`, `npm run plugin-zip`)
 - **Local dev environment:** Laravel Herd
 
 ## Architecture
+
+### File layout (post v1.1.0 modularization)
+
+```
+blocks-for-leaflet-map.php           ~95 lines, bootstrap only
+includes/
+├── class-tgm-plugin-activation.php  vendored upstream library — DO NOT MODIFY
+├── tgm-config.php                   TGMPA load + bflm_register_required_plugins()
+├── filetypes.php                    upload_mimes / wp_check_filetype_and_ext filters
+├── geocoder.php                     bflm_geocode_address() + AJAX hook
+├── editor-assets.php                bflm_localise_editor_script() + hook
+├── preview/
+│   ├── input.php                    bflm_preview_normalise_input() — pure $_GET sanitiser
+│   ├── template.php                 bflm_preview_render_template() — full HTML page emission
+│   └── endpoint.php                 bflm_preview_map() — nonce verification + orchestration
+└── shortcodes/
+    ├── attrs.php                    bflm_normalise_map_attrs() + interaction/zoom/tile helpers
+    ├── map.php                      [leaflet-map] / [leaflet-wms] / [leaflet-image]
+    ├── marker.php                   [leaflet-marker]
+    ├── line.php                     [leaflet-line] / [leaflet-polygon] + draw-mode helpers
+    ├── circle.php                   [leaflet-circle]
+    ├── layer.php                    [leaflet-geojson] / [leaflet-gpx] / [leaflet-kml]
+    └── overlay.php                  [leaflet-image-overlay] / [leaflet-video-overlay]
+src/leaflet-map-block/
+├── render.php                       ~105 lines, frontend template (calls shared builders)
+├── edit.js                          7457 lines (defer to v1.2.0 modularization)
+├── editor.scss
+└── block.json
+```
 
 ### Iframe-based preview in the block editor
 The block editor preview uses an iframe loaded via a `wp_ajax_bflm_preview` AJAX
@@ -42,9 +71,24 @@ the block editor context. Multiple blocks on the same page are isolated using
 Gutenberg's `clientId` as `blockId` in all postMessage calls. A transparent
 overlay restores block re-selectability after the iframe captures focus.
 
-### Shortcode generation
-The block builds a Leaflet Map shortcode string from block attributes and passes
-it to the existing Leaflet Map plugin for rendering.
+### Shortcode generation — shared builders
+Both `src/leaflet-map-block/render.php` (frontend) and
+`includes/preview/template.php` (editor iframe) call the **same**
+`bflm_build_*_shortcodes()` helpers in `includes/shortcodes/`. Any new
+shortcode attribute must be added in one place — the corresponding builder
+file — never duplicated inline.
+
+### Preview-endpoint security boundary
+Nonce verification lives in `includes/preview/endpoint.php` and runs **before**
+any `$_GET` parsing. `includes/preview/input.php` is a pure sanitiser — no
+`wp_die`, no `header`, no `echo`, no hook registration. This makes the input
+function trivially testable and keeps the security check in one place.
+
+### Vendored TGM library
+`includes/class-tgm-plugin-activation.php` is upstream code at version 2.6.1 —
+**never modify it**. All BFLM integration lives in `includes/tgm-config.php`.
+PHPCS / PHPStan warnings against the vendored file (e.g., PR #20 review
+comments) are upstream concerns and the file carries `phpcs:ignoreFile`.
 
 ## Key Technical Decisions
 
@@ -96,17 +140,18 @@ Mandatory for every feature:
 Use `npm run plugin-zip` (wp-scripts plugin-zip) with `.distignore`.
 Excluded: `node_modules/`, `src/`, `.git/`, `.claude/`, config files, `CHANGELOG.md`.
 
-## Current Milestone: v0.3.x
-- ✅ Issue #3 — Zoom & Bounds (closed, merged)
-- 🔲 Issue #7 — Address geocoding
-- 🔲 Issue #5 — Tile layer overrides
+## Current Milestone: v1.1.0 (lands as 1.0.7 — internal refactor only)
+- ✅ PR #21 — Extract shortcode builders to `includes/shortcodes/`
+- ✅ PR #22 — Slim `render.php` to use shared builders (614 → 105 lines)
+- ✅ PR #24 — Split `blocks-for-leaflet-map.php` into per-feature includes (1450 → 95 lines)
+- 🔲 Final docs PR + version bump to 1.0.7
+- 🔲 Issue #23 — fitMarkers + lines/polygons editor zoom oscillation
 
 ## Roadmap
-- v0.4.0 — `[leaflet-marker]` support
-- v0.5.0 — `[leaflet-line]` support
-- v0.6.0 — `[leaflet-circle]` support
-- v0.7.0 — `[leaflet-polygon]` support
-- v1.0.0 — Full feature parity with Leaflet Map plugin
+- v0.4.0 → v1.0.0 — completed (full shortcode parity)
+- **v1.1.0 — internal modularization (in progress on `develop`)**
+- v1.2.0 — split `edit.js` into smaller modules
+- v1.3.0+ — i18n completion + WordPress.org submission
 
 ## Before WordPress.org Submission
 - Full internationalisation required (all user-facing strings)
