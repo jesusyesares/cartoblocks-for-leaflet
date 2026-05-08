@@ -1,4 +1,21 @@
 <?php
+// phpcs:ignoreFile
+/**
+ * BFLM NOTICE — vendored upstream library, do not modify.
+ *
+ * Source:  https://github.com/TGMPA/TGM-Plugin-Activation
+ * Version: 2.6.1
+ * License: GPL-2.0-or-later
+ *
+ * This is an unmodified vendored copy of TGMPA. All BFLM integration lives in
+ * `includes/tgm-config.php` (config + `bflm_register_required_plugins()`).
+ * PHPCS / PHPStan warnings reported against this file are upstream concerns;
+ * fixes belong in upstream pull requests, not local edits. The
+ * `phpcs:ignoreFile` directive above is intentional and exists solely to
+ * silence the lint output on this third-party file. See PR #20 review
+ * comments for the original discussion.
+ */
+
 /**
  * Plugin installation and activation for WordPress themes.
  *
