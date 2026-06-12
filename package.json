@@ -17,9 +17,9 @@
 		"test": "wp-scripts test-unit-js"
 	},
 	"dependencies": {
-		"@wordpress/block-editor": "latest",
-		"@wordpress/blocks": "latest",
-		"@wordpress/i18n": "latest"
+		"@wordpress/block-editor": "^15.16.0",
+		"@wordpress/blocks": "^15.16.0",
+		"@wordpress/i18n": "^6.16.0"
 	},
 	"devDependencies": {
 		"@wordpress/scripts": "^31.8.0"
