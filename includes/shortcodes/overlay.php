@@ -36,7 +36,7 @@ function bflm_build_overlay_shortcodes( array $overlays ): string {
 		$tag = sprintf(
 			'[%s src="%s" bounds="%s"',
 			$tag_name,
-			esc_attr( $src ),
+			esc_url( $src ),
 			esc_attr( $bounds )
 		);
 
