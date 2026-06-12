@@ -37,6 +37,7 @@ phpcs.xml
 phpstan.neon
 phpcs.xml.dist
 phpstan.neon.dist
+phpstan-stubs.php
 
 # Source / dev files
 src/

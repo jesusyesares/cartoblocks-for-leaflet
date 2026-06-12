@@ -12,6 +12,8 @@ parameters:
         - node_modules
         - build
         - includes/class-tgm-plugin-activation.php
+    scanFiles:
+        - phpstan-stubs.php
     bootstrapFiles:
         - vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
         - includes/class-tgm-plugin-activation.php
