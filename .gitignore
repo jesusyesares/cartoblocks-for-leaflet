@@ -51,6 +51,7 @@ Thumbs.db
 vendor/
 /coverage/
 *.log
+.phpunit.result.cache
 
 # -----------------------------------------------------------------------
 # Claude Code — local session settings (permissions, not project config)
