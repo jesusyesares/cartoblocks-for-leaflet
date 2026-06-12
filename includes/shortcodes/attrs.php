@@ -15,17 +15,17 @@ defined( 'ABSPATH' ) || exit;
  * Normalise a height/width dimension value.
  *
  * Accepts a numeric value (interpreted as pixels) or a string with a CSS unit
- * (px, %, vh, vw, em, rem). Falls back to $default when the input is invalid.
+ * (px, %, vh, vw, em, rem). Falls back to $fallback when the input is invalid.
  * Clamps "%" values above 100 to "100%".
  *
- * @param mixed  $raw     Raw value from attributes or GET.
- * @param string $default Default value when input is invalid.
+ * @param mixed  $raw      Raw value from attributes or GET.
+ * @param string $fallback Default value when input is invalid.
  * @return string Normalised dimension (e.g. "400px", "100%").
  */
-function bflm_normalise_dimension( $raw, string $default ): string {
+function bflm_normalise_dimension( $raw, string $fallback ): string {
 	$value = is_numeric( $raw ) ? $raw . 'px' : sanitize_text_field( (string) $raw );
 	if ( ! preg_match( '/^\d+(\.\d+)?(px|%|vh|vw|em|rem)$/', $value ) ) {
-		return $default;
+		return $fallback;
 	}
 	if ( str_ends_with( $value, '%' ) && (float) $value > 100 ) {
 		return '100%';
