@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Blocks for Leaflet Map 0.10.0\n"
+"Project-Id-Version: Blocks for Leaflet Map 1.0.7\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/blocks-for-leaflet-map\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-04-29T09:05:57+00:00\n"
+"POT-Creation-Date: 2026-06-12T15:50:12+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: blocks-for-leaflet-map\n"
@@ -34,39 +34,29 @@ msgstr ""
 msgid "Jesús Yesares García"
 msgstr ""
 
-#: blocks-for-leaflet-map.php:50
-msgid "Leaflet Map"
-msgstr ""
-
-#. translators: %s: linked plugin name
-#: blocks-for-leaflet-map.php:58
-#, php-format
-msgid "<strong>Blocks for Leaflet Map</strong> requires the %s plugin to be installed and active."
-msgstr ""
-
-#: blocks-for-leaflet-map.php:112
-msgid "Invalid or expired preview token."
-msgstr ""
-
-#: blocks-for-leaflet-map.php:1267
+#: includes/geocoder.php:29
 msgid "You do not have permission to perform this action."
 msgstr ""
 
-#: blocks-for-leaflet-map.php:1274
+#: includes/geocoder.php:36
 msgid "The Leaflet Map plugin is not active."
 msgstr ""
 
-#: blocks-for-leaflet-map.php:1282
+#: includes/geocoder.php:44
 msgid "Please enter an address to search."
 msgstr ""
 
-#: blocks-for-leaflet-map.php:1317
+#: includes/geocoder.php:79
 msgid "Geocoding request failed. Please try again."
 msgstr ""
 
-#: blocks-for-leaflet-map.php:1326
-#: blocks-for-leaflet-map.php:1344
+#: includes/geocoder.php:88
+#: includes/geocoder.php:106
 msgid "No results found for that address."
+msgstr ""
+
+#: includes/preview/endpoint.php:27
+msgid "Invalid or expired preview token."
 msgstr ""
 
 #: src/leaflet-map-block/edit.js:80
@@ -93,1084 +83,1012 @@ msgstr ""
 msgid "Disabled"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:917
+#: src/leaflet-map-block/edit.js:1010
 msgid "Geocoding is not available. Please reload the editor."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:938
+#: src/leaflet-map-block/edit.js:1031
 msgid "An unexpected error occurred. Please try again."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:948
+#: src/leaflet-map-block/edit.js:1041
 msgid "Geocoding request failed. Please check your connection and try again."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2363
+#: src/leaflet-map-block/edit.js:2506
 msgid "View shortcode"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2384
+#: src/leaflet-map-block/edit.js:2527
 msgid "Shortcode"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2393
+#: src/leaflet-map-block/edit.js:2536
 msgid "Copied!"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2394
+#: src/leaflet-map-block/edit.js:2537
 msgid "Copy"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2407
+#: src/leaflet-map-block/edit.js:2550
 msgid "Location"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2411
+#: src/leaflet-map-block/edit.js:2554
 msgid "Image map mode"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2415
+#: src/leaflet-map-block/edit.js:2558
 msgid "Replace tile layer with a flat image. Coordinates become pixel positions."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2462
-#: src/leaflet-map-block/edit.js:3699
-#: src/leaflet-map-block/edit.js:4318
-#: src/leaflet-map-block/edit.js:6778
+#: src/leaflet-map-block/edit.js:2605
+#: src/leaflet-map-block/edit.js:3853
+#: src/leaflet-map-block/edit.js:4358
+#: src/leaflet-map-block/edit.js:6693
 msgid "Replace image"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2466
-#: src/leaflet-map-block/edit.js:3703
-#: src/leaflet-map-block/edit.js:4322
-#: src/leaflet-map-block/edit.js:6782
+#: src/leaflet-map-block/edit.js:2609
+#: src/leaflet-map-block/edit.js:3857
+#: src/leaflet-map-block/edit.js:4362
+#: src/leaflet-map-block/edit.js:6697
 msgid "Select image"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2476
+#: src/leaflet-map-block/edit.js:2619
 msgid "Image URL"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2480
+#: src/leaflet-map-block/edit.js:2623
 msgid "Paste an external image URL, or use the picker above."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2493
+#: src/leaflet-map-block/edit.js:2636
 msgid "Center X (pixels)"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2507
+#: src/leaflet-map-block/edit.js:2650
 msgid "Center Y (pixels)"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2521
-#: src/leaflet-map-block/edit.js:2721
+#: src/leaflet-map-block/edit.js:2664
+#: src/leaflet-map-block/edit.js:2864
 msgid "Zoom Level"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2525
+#: src/leaflet-map-block/edit.js:2668
 msgid "0 = fit image to block. Positive = zoom in, negative = zoom out."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2544
+#: src/leaflet-map-block/edit.js:2687
 msgid "Input mode"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2548
+#: src/leaflet-map-block/edit.js:2691
 msgid "Coordinates"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2555
-#: src/leaflet-map-block/edit.js:2606
+#: src/leaflet-map-block/edit.js:2698
+#: src/leaflet-map-block/edit.js:2749
 msgid "Address"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2573
-#: src/leaflet-map-block/edit.js:3421
-#: src/leaflet-map-block/edit.js:5182
-#: src/leaflet-map-block/edit.js:5792
+#: src/leaflet-map-block/edit.js:2716
+#: src/leaflet-map-block/edit.js:3575
+#: src/leaflet-map-block/edit.js:5097
+#: src/leaflet-map-block/edit.js:5707
 msgid "Latitude"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2587
-#: src/leaflet-map-block/edit.js:3435
-#: src/leaflet-map-block/edit.js:5205
-#: src/leaflet-map-block/edit.js:5809
+#: src/leaflet-map-block/edit.js:2730
+#: src/leaflet-map-block/edit.js:3589
+#: src/leaflet-map-block/edit.js:5120
+#: src/leaflet-map-block/edit.js:5724
 msgid "Longitude"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2611
-#: src/leaflet-map-block/edit.js:3289
+#: src/leaflet-map-block/edit.js:2754
+#: src/leaflet-map-block/edit.js:3443
 msgid "Enter an address…"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2647
-#: src/leaflet-map-block/edit.js:3328
-#: src/leaflet-map-block/edit.js:5313
-#: src/leaflet-map-block/edit.js:5891
+#: src/leaflet-map-block/edit.js:2790
+#: src/leaflet-map-block/edit.js:3482
+#: src/leaflet-map-block/edit.js:5228
+#: src/leaflet-map-block/edit.js:5806
 msgid "Search"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2684
-#: src/leaflet-map-block/edit.js:3373
+#: src/leaflet-map-block/edit.js:2827
+#: src/leaflet-map-block/edit.js:3527
 msgid "Select a location:"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2734
+#: src/leaflet-map-block/edit.js:2877
 msgid "Fit to Markers"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2738
+#: src/leaflet-map-block/edit.js:2881
 msgid "Automatically adjust the map view to contain all markers."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2753
+#: src/leaflet-map-block/edit.js:2896
 msgid "Dimensions"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2757
-#: src/leaflet-map-block/edit.js:3851
-#: src/leaflet-map-block/edit.js:4475
-#: src/leaflet-map-block/edit.js:6930
+#: src/leaflet-map-block/edit.js:2900
+#: src/leaflet-map-block/edit.js:4005
+#: src/leaflet-map-block/edit.js:4515
+#: src/leaflet-map-block/edit.js:6845
 msgid "Height"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2767
-#: src/leaflet-map-block/edit.js:3769
-#: src/leaflet-map-block/edit.js:4389
-#: src/leaflet-map-block/edit.js:6847
+#: src/leaflet-map-block/edit.js:2911
+#: src/leaflet-map-block/edit.js:3923
+#: src/leaflet-map-block/edit.js:4429
+#: src/leaflet-map-block/edit.js:6762
 msgid "Width"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2780
+#: src/leaflet-map-block/edit.js:2934
 msgid "Interaction"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2784
+#: src/leaflet-map-block/edit.js:2938
 msgid "Scroll Wheel Zoom"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2795
+#: src/leaflet-map-block/edit.js:2949
 msgid "Dragging"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2805
+#: src/leaflet-map-block/edit.js:2959
 msgid "Keyboard Navigation"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2818
+#: src/leaflet-map-block/edit.js:2972
 msgid "Double Click Zoom"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2831
+#: src/leaflet-map-block/edit.js:2985
 msgid "Box Zoom"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2832
+#: src/leaflet-map-block/edit.js:2986
 msgid "Shift + drag to zoom to area."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2845
+#: src/leaflet-map-block/edit.js:2999
 msgid "Close Popup on Click"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2858
+#: src/leaflet-map-block/edit.js:3012
 msgid "Tap"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2859
+#: src/leaflet-map-block/edit.js:3013
 msgid "Mobile tap interaction."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2872
+#: src/leaflet-map-block/edit.js:3026
 msgid "Inertia"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2873
+#: src/leaflet-map-block/edit.js:3027
 msgid "Pan inertia after dragging."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2889
+#: src/leaflet-map-block/edit.js:3043
 msgid "Zoom & Bounds"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2893
+#: src/leaflet-map-block/edit.js:3047
 msgid "Min Zoom"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2894
+#: src/leaflet-map-block/edit.js:3048
 msgid "Minimum zoom level allowed. Leave empty for global default."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2910
+#: src/leaflet-map-block/edit.js:3064
 msgid "Max Zoom"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2911
+#: src/leaflet-map-block/edit.js:3065
 msgid "Maximum zoom level allowed. Leave empty for global default."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2927
+#: src/leaflet-map-block/edit.js:3081
 msgid "Max Bounds"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2928
+#: src/leaflet-map-block/edit.js:3082
 msgid "Restrict the map view to a bounding box. Format: lat,lng;lat,lng (southwest;northeast). Example: 40.0,-4.0;38.0,-3.0"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2943
+#: src/leaflet-map-block/edit.js:3097
 msgid "Tile Layer"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2947
+#: src/leaflet-map-block/edit.js:3101
 msgid "Override the global Leaflet Map tile settings for this specific map."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2953
+#: src/leaflet-map-block/edit.js:3107
 msgid "Use WMS tile source"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2954
+#: src/leaflet-map-block/edit.js:3108
 msgid "Replaces the standard tile layer with a WMS (Web Map Service) source. Emits [leaflet-wms] instead of [leaflet-map]."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2967
+#: src/leaflet-map-block/edit.js:3121
 msgid "WMS URL"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2969
+#: src/leaflet-map-block/edit.js:3123
 msgid "The WMS service endpoint URL. Must end with ? or &."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2981
+#: src/leaflet-map-block/edit.js:3135
 msgid "Layer"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2983
+#: src/leaflet-map-block/edit.js:3137
 msgid "WMS layer name. Leave empty to use the bozdoz default (TOPO-OSM-WMS)."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2995
+#: src/leaflet-map-block/edit.js:3149
 msgid "CRS"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:2997
+#: src/leaflet-map-block/edit.js:3151
 msgid "Coordinate Reference System (e.g. EPSG:3857, EPSG:4326). Leave empty to use the bozdoz default."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3013
+#: src/leaflet-map-block/edit.js:3167
 msgid "Tile URL"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3017
+#: src/leaflet-map-block/edit.js:3171
 msgid "Browse providers: "
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3026
-#: src/leaflet-map-block/edit.js:3048
-#: src/leaflet-map-block/edit.js:3070
+#: src/leaflet-map-block/edit.js:3180
+#: src/leaflet-map-block/edit.js:3202
+#: src/leaflet-map-block/edit.js:3224
 #, js-format
 msgid "%s (opens in new tab)"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3030
-#: src/leaflet-map-block/edit.js:3036
+#: src/leaflet-map-block/edit.js:3184
+#: src/leaflet-map-block/edit.js:3190
 msgid "Free Tile Services"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3052
-#: src/leaflet-map-block/edit.js:3058
+#: src/leaflet-map-block/edit.js:3206
+#: src/leaflet-map-block/edit.js:3212
 msgid "Leaflet Providers Preview"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3074
-#: src/leaflet-map-block/edit.js:3080
+#: src/leaflet-map-block/edit.js:3228
+#: src/leaflet-map-block/edit.js:3234
 msgid "OSM Wiki"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3096
+#: src/leaflet-map-block/edit.js:3250
 msgid "Tile Size"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3097
+#: src/leaflet-map-block/edit.js:3251
 msgid "Default: 256. Most providers (OpenStreetMap, ArcGIS, CartoDB) use 256 — leave empty unless your provider's documentation explicitly requires a different value (e.g., Mapbox: 512). Changing this incorrectly will distort the map."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3113
+#: src/leaflet-map-block/edit.js:3267
 msgid "Subdomains"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3114
+#: src/leaflet-map-block/edit.js:3268
 msgid "Comma-separated list (e.g., a,b,c) matching the {s} placeholder in the Tile URL. Leave empty if not used."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3126
+#: src/leaflet-map-block/edit.js:3280
 msgid "Map ID"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3127
+#: src/leaflet-map-block/edit.js:3281
 msgid "Required only for Mapbox tiles. Leave empty for other providers."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3139
+#: src/leaflet-map-block/edit.js:3293
 msgid "Access Token"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3140
+#: src/leaflet-map-block/edit.js:3294
 msgid "Required only for providers that need authentication (e.g., Mapbox, Stadia, Thunderforest). This token will be visible in the page's HTML source — restrict it to your domain in the provider's dashboard."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3152
+#: src/leaflet-map-block/edit.js:3306
 msgid "Zoom Offset"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3153
+#: src/leaflet-map-block/edit.js:3307
 msgid "Default: 0. Only change for specific providers (Mapbox typically requires -1 when Tile Size is 512)."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3168
+#: src/leaflet-map-block/edit.js:3322
 msgid "No Wrap"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3169
+#: src/leaflet-map-block/edit.js:3323
 msgid "Prevents the map from repeating horizontally when scrolled past the edges. Default: off."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3182
+#: src/leaflet-map-block/edit.js:3336
 msgid "Detect Retina"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3186
+#: src/leaflet-map-block/edit.js:3340
 msgid "Loads higher-resolution tiles on Retina/HiDPI screens. Only enable if the provider serves @2x tiles, otherwise the map will fail on those screens."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3199
+#: src/leaflet-map-block/edit.js:3353
 msgid "Attribution"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3200
+#: src/leaflet-map-block/edit.js:3354
 msgid "Custom attribution HTML. Leave empty to use the default from Leaflet Map settings."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3216
+#: src/leaflet-map-block/edit.js:3370
 msgid "Map Controls"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3220
+#: src/leaflet-map-block/edit.js:3374
 msgid "Zoom Control"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3228
+#: src/leaflet-map-block/edit.js:3382
 msgid "Show Scale"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3229
+#: src/leaflet-map-block/edit.js:3383
 msgid "Display a scale indicator on the map."
 msgstr ""
 
 #. translators: %d: number of markers on the map.
-#: src/leaflet-map-block/edit.js:3245
+#: src/leaflet-map-block/edit.js:3399
 #, js-format
 msgid "Markers (%d)"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3259
+#: src/leaflet-map-block/edit.js:3413
 msgid "+ Add Marker at Center"
 msgstr ""
 
 #. translators: %d: 1-based marker number.
-#: src/leaflet-map-block/edit.js:3270
+#: src/leaflet-map-block/edit.js:3424
 #, js-format
 msgid "Marker %d"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3284
-#: src/leaflet-map-block/edit.js:5251
-#: src/leaflet-map-block/edit.js:5846
+#: src/leaflet-map-block/edit.js:3438
+#: src/leaflet-map-block/edit.js:5166
+#: src/leaflet-map-block/edit.js:5761
 msgid "Search by address"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3420
-#: src/leaflet-map-block/edit.js:5181
-#: src/leaflet-map-block/edit.js:5791
+#: src/leaflet-map-block/edit.js:3574
+#: src/leaflet-map-block/edit.js:5096
+#: src/leaflet-map-block/edit.js:5706
 msgid "Y (pixels)"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3434
-#: src/leaflet-map-block/edit.js:5204
-#: src/leaflet-map-block/edit.js:5808
+#: src/leaflet-map-block/edit.js:3588
+#: src/leaflet-map-block/edit.js:5119
+#: src/leaflet-map-block/edit.js:5723
 msgid "X (pixels)"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3447
+#: src/leaflet-map-block/edit.js:3601
 msgid "Title"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3451
+#: src/leaflet-map-block/edit.js:3605
 msgid "Browser tooltip shown on hover. Also used as the marker's accessible name."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3465
+#: src/leaflet-map-block/edit.js:3619
 msgid "Popup Content"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3469
+#: src/leaflet-map-block/edit.js:3623
 msgid "HTML is supported."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3484
+#: src/leaflet-map-block/edit.js:3638
 msgid "Advanced"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3491
+#: src/leaflet-map-block/edit.js:3645
 msgid "Alt Text"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3495
+#: src/leaflet-map-block/edit.js:3649
 msgid "Alternative text for the marker image. Improves accessibility for screen reader users."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3509
+#: src/leaflet-map-block/edit.js:3663
 msgid "Auto-open Popup"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3513
+#: src/leaflet-map-block/edit.js:3667
 msgid "Open the popup automatically when the page loads."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3526
+#: src/leaflet-map-block/edit.js:3680
 msgid "Draggable"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3530
+#: src/leaflet-map-block/edit.js:3684
 msgid "Allow visitors to drag the marker. The new position is logged to the browser console."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3543
-#: src/leaflet-map-block/edit.js:5557
-#: src/leaflet-map-block/edit.js:6161
-#: src/leaflet-map-block/edit.js:7420
+#: src/leaflet-map-block/edit.js:3697
+#: src/leaflet-map-block/edit.js:5472
+#: src/leaflet-map-block/edit.js:6076
+#: src/leaflet-map-block/edit.js:7222
 msgid "Opacity"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3547
+#: src/leaflet-map-block/edit.js:3701
 msgid "Marker icon opacity. Default: 1 (fully opaque)."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3568
+#: src/leaflet-map-block/edit.js:3722
 msgid "Z-Index Offset"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3572
+#: src/leaflet-map-block/edit.js:3726
 msgid "Raise or lower this marker relative to others. Leaflet already offsets markers by latitude, so you may need values of 10+ (or higher when markers are close together) to visibly change the stacking order."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3591
+#: src/leaflet-map-block/edit.js:3745
 msgid "Custom Icon"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3598
-#: src/leaflet-map-block/edit.js:6716
+#: src/leaflet-map-block/edit.js:3752
+#: src/leaflet-map-block/edit.js:6631
 msgid "Use custom icon"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3630
+#: src/leaflet-map-block/edit.js:3784
 msgid "SVG marker mode was automatically disabled — SVG and custom-image markers cannot be combined. Your SVG settings have been preserved and will resume when you disable custom icon mode."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3648
+#: src/leaflet-map-block/edit.js:3802
 msgid "Icon"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3736
-#: src/leaflet-map-block/edit.js:4355
-#: src/leaflet-map-block/edit.js:6815
+#: src/leaflet-map-block/edit.js:3890
+#: src/leaflet-map-block/edit.js:4395
+#: src/leaflet-map-block/edit.js:6730
 msgid "Remove"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3757
-#: src/leaflet-map-block/edit.js:6835
+#: src/leaflet-map-block/edit.js:3911
+#: src/leaflet-map-block/edit.js:6750
 msgid "Icon Size (px)"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3937
-#: src/leaflet-map-block/edit.js:4563
-#: src/leaflet-map-block/edit.js:7014
+#: src/leaflet-map-block/edit.js:4091
+#: src/leaflet-map-block/edit.js:4603
+#: src/leaflet-map-block/edit.js:6929
 msgid "Lock aspect ratio"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3962
-#: src/leaflet-map-block/edit.js:4600
-#: src/leaflet-map-block/edit.js:7039
+#: src/leaflet-map-block/edit.js:4109
+#: src/leaflet-map-block/edit.js:4627
+#: src/leaflet-map-block/edit.js:6947
 msgid "Anchor position"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3979
-#: src/leaflet-map-block/edit.js:4619
-#: src/leaflet-map-block/edit.js:7056
-msgid "Quick-set common anchor positions"
-msgstr ""
-
-#: src/leaflet-map-block/edit.js:3983
-#: src/leaflet-map-block/edit.js:7060
+#: src/leaflet-map-block/edit.js:4117
+#: src/leaflet-map-block/edit.js:6955
 msgid "Set icon size first"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:3990
-#: src/leaflet-map-block/edit.js:4630
-#: src/leaflet-map-block/edit.js:7067
-msgid "— Select —"
-msgstr ""
-
-#: src/leaflet-map-block/edit.js:3997
-#: src/leaflet-map-block/edit.js:4637
-#: src/leaflet-map-block/edit.js:7074
-msgid "Top left"
-msgstr ""
-
-#: src/leaflet-map-block/edit.js:4004
-#: src/leaflet-map-block/edit.js:4644
-#: src/leaflet-map-block/edit.js:7081
-msgid "Top center"
-msgstr ""
-
-#: src/leaflet-map-block/edit.js:4011
-#: src/leaflet-map-block/edit.js:4651
-#: src/leaflet-map-block/edit.js:7088
-msgid "Top right"
-msgstr ""
-
-#: src/leaflet-map-block/edit.js:4018
-#: src/leaflet-map-block/edit.js:4658
-#: src/leaflet-map-block/edit.js:7095
-msgid "Middle left"
-msgstr ""
-
-#: src/leaflet-map-block/edit.js:4025
-#: src/leaflet-map-block/edit.js:4665
-#: src/leaflet-map-block/edit.js:7102
-msgid "Middle center"
-msgstr ""
-
-#: src/leaflet-map-block/edit.js:4032
-#: src/leaflet-map-block/edit.js:4672
-#: src/leaflet-map-block/edit.js:7109
-msgid "Middle right"
-msgstr ""
-
-#: src/leaflet-map-block/edit.js:4039
-#: src/leaflet-map-block/edit.js:4679
-#: src/leaflet-map-block/edit.js:7116
-msgid "Bottom left"
-msgstr ""
-
-#: src/leaflet-map-block/edit.js:4046
-#: src/leaflet-map-block/edit.js:4686
-#: src/leaflet-map-block/edit.js:7123
-msgid "Bottom center"
-msgstr ""
-
-#: src/leaflet-map-block/edit.js:4053
-#: src/leaflet-map-block/edit.js:4693
-#: src/leaflet-map-block/edit.js:7130
-msgid "Bottom right"
-msgstr ""
-
-#: src/leaflet-map-block/edit.js:4060
-#: src/leaflet-map-block/edit.js:4700
-#: src/leaflet-map-block/edit.js:7137
-msgid "Custom"
-msgstr ""
-
-#: src/leaflet-map-block/edit.js:4104
-#: src/leaflet-map-block/edit.js:7180
+#: src/leaflet-map-block/edit.js:4144
+#: src/leaflet-map-block/edit.js:6982
 msgid "Icon Anchor (px)"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:4116
-#: src/leaflet-map-block/edit.js:4186
-#: src/leaflet-map-block/edit.js:4760
-#: src/leaflet-map-block/edit.js:7192
-#: src/leaflet-map-block/edit.js:7267
+#: src/leaflet-map-block/edit.js:4156
+#: src/leaflet-map-block/edit.js:4226
+#: src/leaflet-map-block/edit.js:4675
+#: src/leaflet-map-block/edit.js:6994
+#: src/leaflet-map-block/edit.js:7069
 msgid "X"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:4140
-#: src/leaflet-map-block/edit.js:4210
-#: src/leaflet-map-block/edit.js:4792
-#: src/leaflet-map-block/edit.js:7219
-#: src/leaflet-map-block/edit.js:7294
+#: src/leaflet-map-block/edit.js:4180
+#: src/leaflet-map-block/edit.js:4250
+#: src/leaflet-map-block/edit.js:4707
+#: src/leaflet-map-block/edit.js:7021
+#: src/leaflet-map-block/edit.js:7096
 msgid "Y"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:4174
-#: src/leaflet-map-block/edit.js:7255
+#: src/leaflet-map-block/edit.js:4214
+#: src/leaflet-map-block/edit.js:7057
 msgid "Popup Anchor (px)"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:4236
+#: src/leaflet-map-block/edit.js:4276
 msgid "Add shadow"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:4264
+#: src/leaflet-map-block/edit.js:4304
 msgid "Shadow"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:4377
+#: src/leaflet-map-block/edit.js:4417
 msgid "Shadow Size (px)"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:4623
+#: src/leaflet-map-block/edit.js:4635
 msgid "Set shadow size first"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:4748
+#: src/leaflet-map-block/edit.js:4663
 msgid "Shadow Anchor (px)"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:4831
+#: src/leaflet-map-block/edit.js:4746
 msgid "SVG Marker"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:4838
+#: src/leaflet-map-block/edit.js:4753
 msgid "Use SVG marker"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:4868
+#: src/leaflet-map-block/edit.js:4783
 msgid "Custom icon mode was automatically disabled — SVG and custom-image markers cannot be combined. Your custom icon settings have been preserved and will resume when you disable SVG marker mode."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:4886
+#: src/leaflet-map-block/edit.js:4801
 msgid "Background Color"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:4898
+#: src/leaflet-map-block/edit.js:4813
 msgid "Default: #2b82cb"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:4917
+#: src/leaflet-map-block/edit.js:4832
 msgid "Icon CSS Class"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:4927
+#: src/leaflet-map-block/edit.js:4842
 msgid "CSS class for an icon font glyph (e.g. 'fas fa-star' for Font Awesome). Requires the icon font to be enqueued by your theme or another plugin — Leaflet Map does not load any icon font."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:4943
+#: src/leaflet-map-block/edit.js:4858
 msgid "Icon Color"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:4955
+#: src/leaflet-map-block/edit.js:4870
 msgid "Default: white"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:4980
+#: src/leaflet-map-block/edit.js:4895
 msgid "Remove Marker"
 msgstr ""
 
 #. translators: %d: number of shapes
-#: src/leaflet-map-block/edit.js:4993
+#: src/leaflet-map-block/edit.js:4908
 #, js-format
 msgid "Lines & Polygons (%d)"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5010
+#: src/leaflet-map-block/edit.js:4925
 msgid "+ Line"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5017
+#: src/leaflet-map-block/edit.js:4932
 msgid "+ Polygon"
 msgstr ""
 
 #. translators: 1: index, 2: point count
-#: src/leaflet-map-block/edit.js:5026
+#: src/leaflet-map-block/edit.js:4941
 #, js-format
 msgid "Polygon %1$d (%2$d pts)"
 msgstr ""
 
 #. translators: 1: index, 2: point count
-#: src/leaflet-map-block/edit.js:5030
+#: src/leaflet-map-block/edit.js:4945
 #, js-format
 msgid "Line %1$d (%2$d pts)"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5045
-#: src/leaflet-map-block/edit.js:6414
-#: src/leaflet-map-block/edit.js:7383
+#: src/leaflet-map-block/edit.js:4960
+#: src/leaflet-map-block/edit.js:6329
+#: src/leaflet-map-block/edit.js:7185
 msgid "Type"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5050
+#: src/leaflet-map-block/edit.js:4965
 msgid "Line (polyline)"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5057
+#: src/leaflet-map-block/edit.js:4972
 msgid "Polygon"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5078
+#: src/leaflet-map-block/edit.js:4993
 msgid "Points"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5088
+#: src/leaflet-map-block/edit.js:5003
 msgid "No points. Add at least 2 to draw the shape."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5151
+#: src/leaflet-map-block/edit.js:5066
 #, js-format
 msgid "Point %d"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5240
-#: src/leaflet-map-block/edit.js:5837
+#: src/leaflet-map-block/edit.js:5155
+#: src/leaflet-map-block/edit.js:5752
 msgid "📍 Locate on map"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5255
-#: src/leaflet-map-block/edit.js:5850
+#: src/leaflet-map-block/edit.js:5170
+#: src/leaflet-map-block/edit.js:5765
 msgid "e.g. Paris, France"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5309
-#: src/leaflet-map-block/edit.js:5887
+#: src/leaflet-map-block/edit.js:5224
+#: src/leaflet-map-block/edit.js:5802
 msgid "Searching…"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5351
-#: src/leaflet-map-block/edit.js:5919
+#: src/leaflet-map-block/edit.js:5266
+#: src/leaflet-map-block/edit.js:5834
 msgid "Select a result:"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5407
+#: src/leaflet-map-block/edit.js:5322
 msgid "Remove Point"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5422
+#: src/leaflet-map-block/edit.js:5337
 msgid "Click \"Draw on map\" to add points by clicking on the map, or use \"+ Add Point\" to enter coordinates manually."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5442
+#: src/leaflet-map-block/edit.js:5357
 msgid "+ Add Point"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5456
-#: src/leaflet-map-block/edit.js:6059
+#: src/leaflet-map-block/edit.js:5371
+#: src/leaflet-map-block/edit.js:5974
 msgid "⏹ Stop drawing"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5472
-#: src/leaflet-map-block/edit.js:6077
+#: src/leaflet-map-block/edit.js:5387
+#: src/leaflet-map-block/edit.js:5992
 msgid "✏ Draw on map"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5488
+#: src/leaflet-map-block/edit.js:5403
 msgid "🖱 Click on the map to add points. Double-click to finish."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5496
+#: src/leaflet-map-block/edit.js:5411
 msgid "Fit map to this shape"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5511
-#: src/leaflet-map-block/edit.js:6115
+#: src/leaflet-map-block/edit.js:5426
+#: src/leaflet-map-block/edit.js:6030
 msgid "Style"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5523
-#: src/leaflet-map-block/edit.js:6127
-#: src/leaflet-map-block/edit.js:6570
+#: src/leaflet-map-block/edit.js:5438
+#: src/leaflet-map-block/edit.js:6042
+#: src/leaflet-map-block/edit.js:6485
 msgid "Stroke color"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5538
-#: src/leaflet-map-block/edit.js:6142
+#: src/leaflet-map-block/edit.js:5453
+#: src/leaflet-map-block/edit.js:6057
 msgid "Weight (px)"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5576
-#: src/leaflet-map-block/edit.js:6180
-#: src/leaflet-map-block/edit.js:6620
+#: src/leaflet-map-block/edit.js:5491
+#: src/leaflet-map-block/edit.js:6095
+#: src/leaflet-map-block/edit.js:6535
 msgid "Dash array"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5590
-#: src/leaflet-map-block/edit.js:6194
-#: src/leaflet-map-block/edit.js:6635
-#: src/leaflet-map-block/edit.js:7475
+#: src/leaflet-map-block/edit.js:5505
+#: src/leaflet-map-block/edit.js:6109
+#: src/leaflet-map-block/edit.js:6550
+#: src/leaflet-map-block/edit.js:7277
 msgid "CSS class"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5606
-#: src/leaflet-map-block/edit.js:6209
-#: src/leaflet-map-block/edit.js:6649
+#: src/leaflet-map-block/edit.js:5521
+#: src/leaflet-map-block/edit.js:6124
+#: src/leaflet-map-block/edit.js:6564
 msgid "Fill"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5610
+#: src/leaflet-map-block/edit.js:5525
 msgid "Fill shape"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5628
-#: src/leaflet-map-block/edit.js:6236
-#: src/leaflet-map-block/edit.js:6670
+#: src/leaflet-map-block/edit.js:5543
+#: src/leaflet-map-block/edit.js:6151
+#: src/leaflet-map-block/edit.js:6585
 msgid "Fill color"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5645
-#: src/leaflet-map-block/edit.js:6258
-#: src/leaflet-map-block/edit.js:6684
+#: src/leaflet-map-block/edit.js:5560
+#: src/leaflet-map-block/edit.js:6173
+#: src/leaflet-map-block/edit.js:6599
 msgid "Fill opacity"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5669
-#: src/leaflet-map-block/edit.js:6289
+#: src/leaflet-map-block/edit.js:5584
+#: src/leaflet-map-block/edit.js:6204
 msgid "Popup"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5676
-#: src/leaflet-map-block/edit.js:6296
+#: src/leaflet-map-block/edit.js:5591
+#: src/leaflet-map-block/edit.js:6211
 msgid "Popup content (HTML allowed)"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5691
-#: src/leaflet-map-block/edit.js:6311
+#: src/leaflet-map-block/edit.js:5606
+#: src/leaflet-map-block/edit.js:6226
 msgid "Open popup on load"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5713
+#: src/leaflet-map-block/edit.js:5628
 msgid "Remove Polygon"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5717
+#: src/leaflet-map-block/edit.js:5632
 msgid "Remove Line"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5728
+#: src/leaflet-map-block/edit.js:5643
 msgid "Circles"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5740
+#: src/leaflet-map-block/edit.js:5655
 msgid "+ Circle"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5763
+#: src/leaflet-map-block/edit.js:5678
 msgid "Circle"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5783
+#: src/leaflet-map-block/edit.js:5698
 msgid "Click \"Draw on map\" to set center + radius by clicking on the map, or enter coordinates manually."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:5971
+#: src/leaflet-map-block/edit.js:5886
 msgid "Radius"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6012
+#: src/leaflet-map-block/edit.js:5927
 msgid "Unit"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6020
+#: src/leaflet-map-block/edit.js:5935
 msgid "m"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6022
+#: src/leaflet-map-block/edit.js:5937
 msgid "km"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6093
+#: src/leaflet-map-block/edit.js:6008
 msgid "🖱 Click map to set center, then click again to set radius."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6101
+#: src/leaflet-map-block/edit.js:6016
 msgid "Fit map to this circle"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6216
+#: src/leaflet-map-block/edit.js:6131
 msgid "Fill circle"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6335
+#: src/leaflet-map-block/edit.js:6250
 msgid "Remove Circle"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6347
+#: src/leaflet-map-block/edit.js:6262
 msgid "Data Layers"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6357
+#: src/leaflet-map-block/edit.js:6272
 msgid "Load GeoJSON, GPX, or KML data from a URL. Each layer renders on the map as vector features."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6374
+#: src/leaflet-map-block/edit.js:6289
 msgid "+ GeoJSON"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6381
+#: src/leaflet-map-block/edit.js:6296
 msgid "+ GPX"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6388
+#: src/leaflet-map-block/edit.js:6303
 msgid "+ KML"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6417
+#: src/leaflet-map-block/edit.js:6332
 msgid "GeoJSON"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6418
+#: src/leaflet-map-block/edit.js:6333
 msgid "GPX"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6419
+#: src/leaflet-map-block/edit.js:6334
 msgid "KML"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6428
-#: src/leaflet-map-block/edit.js:7396
+#: src/leaflet-map-block/edit.js:6343
+#: src/leaflet-map-block/edit.js:7198
 msgid "Source URL"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6434
+#: src/leaflet-map-block/edit.js:6349
 msgid "Full URL to a .geojson, .gpx, or .kml file. Must be publicly accessible (CORS-enabled)."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6445
+#: src/leaflet-map-block/edit.js:6360
 msgid "Fit map to layer bounds"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6459
+#: src/leaflet-map-block/edit.js:6374
 msgid "Popup configuration"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6472
+#: src/leaflet-map-block/edit.js:6387
 msgid "Precedence (highest first): Show all properties as table → Single property → Popup template. GPX/KML files rarely expose feature properties — popup config is most useful for GeoJSON."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6478
+#: src/leaflet-map-block/edit.js:6393
 msgid "Popup template"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6483
+#: src/leaflet-map-block/edit.js:6398
 msgid "Use {property_name} placeholders to interpolate feature properties. E.g. \"Name: {name}\"."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6495
+#: src/leaflet-map-block/edit.js:6410
 msgid "Single property to display"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6500
+#: src/leaflet-map-block/edit.js:6415
 msgid "Bare property name (e.g. \"ciudad\", not \"{ciudad}\"). When set, overrides the popup template above."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6513
+#: src/leaflet-map-block/edit.js:6428
 msgid "Show all properties as table"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6517
+#: src/leaflet-map-block/edit.js:6432
 msgid "Displays every feature property as an HTML table in the popup. Overrides the two fields above."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6533
+#: src/leaflet-map-block/edit.js:6448
 msgid "Default feature style"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6546
+#: src/leaflet-map-block/edit.js:6461
 msgid "Applied as the default layer style. Feature properties (e.g. geojson.io stroke/fill) override these defaults per-feature."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6558
+#: src/leaflet-map-block/edit.js:6473
 msgid "Style applies to line and polygon features only. Point markers are not affected — use Custom point icon to customise them."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6584
+#: src/leaflet-map-block/edit.js:6499
 msgid "Weight"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6602
+#: src/leaflet-map-block/edit.js:6517
 msgid "Stroke opacity"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:6709
+#: src/leaflet-map-block/edit.js:6624
 msgid "Custom point icon"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:7331
+#: src/leaflet-map-block/edit.js:7133
 msgid "Remove this layer"
 msgstr ""
 
 #. translators: %d: number of overlays.
-#: src/leaflet-map-block/edit.js:7344
+#: src/leaflet-map-block/edit.js:7146
 #, js-format
 msgid "Overlays (%d)"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:7349
+#: src/leaflet-map-block/edit.js:7151
 msgid "Add image or video layers pinned to map coordinates."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:7355
+#: src/leaflet-map-block/edit.js:7157
 msgid "+ Image"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:7361
+#: src/leaflet-map-block/edit.js:7163
 msgid "+ Video"
 msgstr ""
 
 #. translators: 1: overlay type, 2: index number.
-#: src/leaflet-map-block/edit.js:7369
+#: src/leaflet-map-block/edit.js:7171
 #, js-format
 msgid "%1$s overlay %2$d"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:7371
+#: src/leaflet-map-block/edit.js:7173
 msgid "Video"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:7372
+#: src/leaflet-map-block/edit.js:7174
 msgid "Image"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:7386
+#: src/leaflet-map-block/edit.js:7188
 msgid "Image overlay"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:7387
+#: src/leaflet-map-block/edit.js:7189
 msgid "Video overlay"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:7409
+#: src/leaflet-map-block/edit.js:7211
 msgid "Bounds"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:7411
+#: src/leaflet-map-block/edit.js:7213
 msgid "SW corner ; NE corner: lat1,lng1;lat2,lng2"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:7432
+#: src/leaflet-map-block/edit.js:7234
 msgid "Interactive"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:7433
+#: src/leaflet-map-block/edit.js:7235
 msgid "Allow mouse/touch events on this overlay."
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:7443
+#: src/leaflet-map-block/edit.js:7245
 msgid "Alt text"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:7452
+#: src/leaflet-map-block/edit.js:7254
 msgid "Keep aspect ratio"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:7462
+#: src/leaflet-map-block/edit.js:7264
 msgid "Z-Index"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:7488
+#: src/leaflet-map-block/edit.js:7290
 msgid "Remove this overlay"
 msgstr ""
 
-#: src/leaflet-map-block/edit.js:7526
+#: src/leaflet-map-block/edit.js:7330
 msgid "Map preview"
 msgstr ""
 
