@@ -32,9 +32,9 @@ function bflm_preview_normalise_input( array $get ): array {
 	$attrs['lng']  = isset( $get['lng'] ) ? (float) $get['lng'] : 0.0;
 	$attrs['zoom'] = isset( $get['zoom'] ) ? absint( $get['zoom'] ) : 12;
 
-	$height_raw       = isset( $get['height'] ) ? sanitize_text_field( wp_unslash( $get['height'] ) ) : '400px';
-	$attrs['height']  = bflm_normalise_dimension( $height_raw, '400px' );
-	$attrs['width']   = '100%';
+	$height_raw      = isset( $get['height'] ) ? sanitize_text_field( wp_unslash( $get['height'] ) ) : '400px';
+	$attrs['height'] = bflm_normalise_dimension( $height_raw, '400px' );
+	$attrs['width']  = '100%';
 
 	$attrs['scrollWheelZoom'] = ! empty( $get['scrollWheelZoom'] ) && 'true' === $get['scrollWheelZoom'];
 	$attrs['zoomControl']     = ! ( isset( $get['zoomControl'] ) && 'false' === $get['zoomControl'] );
@@ -66,7 +66,7 @@ function bflm_preview_normalise_input( array $get ): array {
 
 	// Interaction attrs — pass through as raw 'true'/'false'/'' strings; bflm_build_interaction_attrs() handles them.
 	foreach ( array( 'dragging', 'keyboard', 'doubleClickZoom', 'boxZoom', 'closePopupOnClick', 'tap', 'inertia' ) as $key ) {
-		$value = isset( $get[ $key ] ) ? sanitize_text_field( wp_unslash( $get[ $key ] ) ) : '';
+		$value         = isset( $get[ $key ] ) ? sanitize_text_field( wp_unslash( $get[ $key ] ) ) : '';
 		$attrs[ $key ] = in_array( $value, array( 'true', 'false' ), true ) ? $value : '';
 	}
 

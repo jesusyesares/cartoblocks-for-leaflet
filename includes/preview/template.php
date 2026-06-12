@@ -24,10 +24,10 @@ defined( 'ABSPATH' ) || exit;
  */
 function bflm_preview_render_template( array $attrs ): void {
 	// Shortcode strings to feed do_shortcode().
-	$marker_shortcodes = bflm_build_marker_shortcodes( isset( $attrs['markers'] ) && is_array( $attrs['markers'] ) ? $attrs['markers'] : array() );
-	$line_shortcodes   = bflm_build_line_shortcodes( isset( $attrs['lines'] ) && is_array( $attrs['lines'] ) ? $attrs['lines'] : array() );
-	$circle_shortcodes = bflm_build_circle_shortcodes( isset( $attrs['circles'] ) && is_array( $attrs['circles'] ) ? $attrs['circles'] : array() );
-	$layer_shortcodes  = bflm_build_layer_shortcodes( isset( $attrs['layers'] ) && is_array( $attrs['layers'] ) ? $attrs['layers'] : array() );
+	$marker_shortcodes  = bflm_build_marker_shortcodes( isset( $attrs['markers'] ) && is_array( $attrs['markers'] ) ? $attrs['markers'] : array() );
+	$line_shortcodes    = bflm_build_line_shortcodes( isset( $attrs['lines'] ) && is_array( $attrs['lines'] ) ? $attrs['lines'] : array() );
+	$circle_shortcodes  = bflm_build_circle_shortcodes( isset( $attrs['circles'] ) && is_array( $attrs['circles'] ) ? $attrs['circles'] : array() );
+	$layer_shortcodes   = bflm_build_layer_shortcodes( isset( $attrs['layers'] ) && is_array( $attrs['layers'] ) ? $attrs['layers'] : array() );
 	$overlay_shortcodes = bflm_build_overlay_shortcodes( isset( $attrs['overlays'] ) && is_array( $attrs['overlays'] ) ? $attrs['overlays'] : array() );
 
 	// Editor-only draw-mode helper pins (markers shown for partially-drawn lines).
@@ -47,19 +47,19 @@ function bflm_preview_render_template( array $attrs ): void {
 	}
 
 	// Build the right top-level shortcode for the chosen mode.
-	$is_image_map  = ! empty( $attrs['imageMap'] ) && '' !== $attrs['imageSrc'];
-	$wms_enabled   = ! $is_image_map && ! empty( $attrs['wmsEnabled'] );
-	$map_shortcode = bflm_build_map_shortcode( $attrs );
-	$wms_shortcode = $wms_enabled ? bflm_build_wms_shortcode( $attrs ) : '';
+	$is_image_map    = ! empty( $attrs['imageMap'] ) && '' !== $attrs['imageSrc'];
+	$wms_enabled     = ! $is_image_map && ! empty( $attrs['wmsEnabled'] );
+	$map_shortcode   = bflm_build_map_shortcode( $attrs );
+	$wms_shortcode   = $wms_enabled ? bflm_build_wms_shortcode( $attrs ) : '';
 	$image_shortcode = $is_image_map ? bflm_build_image_shortcode( $attrs ) : '';
 
 	// JSON values pre-computed for the inline JS.
-	$block_id     = isset( $attrs['blockId'] ) ? (string) $attrs['blockId'] : '';
-	$min_zoom     = isset( $attrs['minZoom'] ) ? (string) $attrs['minZoom'] : '';
-	$max_zoom     = isset( $attrs['maxZoom'] ) ? (string) $attrs['maxZoom'] : '';
-	$max_bounds   = isset( $attrs['maxBounds'] ) ? (string) $attrs['maxBounds'] : '';
-	$fit_markers  = ! empty( $attrs['fitMarkers'] );
-	$image_zoom   = isset( $attrs['imageZoom'] ) ? (float) $attrs['imageZoom'] : 0.0;
+	$block_id    = isset( $attrs['blockId'] ) ? (string) $attrs['blockId'] : '';
+	$min_zoom    = isset( $attrs['minZoom'] ) ? (string) $attrs['minZoom'] : '';
+	$max_zoom    = isset( $attrs['maxZoom'] ) ? (string) $attrs['maxZoom'] : '';
+	$max_bounds  = isset( $attrs['maxBounds'] ) ? (string) $attrs['maxBounds'] : '';
+	$fit_markers = ! empty( $attrs['fitMarkers'] );
+	$image_zoom  = isset( $attrs['imageZoom'] ) ? (float) $attrs['imageZoom'] : 0.0;
 
 	// Render a complete, self-contained HTML page.
 	// wp_head() / wp_footer() let the Leaflet Map plugin load its own assets.
