@@ -1500,6 +1500,13 @@ export default function Edit( {
 		 * @param {MessageEvent} event Browser message event.
 		 */
 		function handleMessage( event ) {
+			// Reject messages from any origin other than this site — the
+			// preview iframe is always same-origin (admin-ajax.php on this
+			// WordPress site).
+			if ( event.origin !== window.location.origin ) {
+				return;
+			}
+
 			const msg = event.data;
 			if ( ! msg || typeof msg.type !== 'string' ) {
 				return;
