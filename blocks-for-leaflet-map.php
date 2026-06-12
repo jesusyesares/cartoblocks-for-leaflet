@@ -4,7 +4,7 @@
  * Plugin URI:        https://github.com/jesusyesares/blocks-for-leaflet-map
  * Description:       A dynamic Gutenberg block that wraps the Leaflet Map plugin shortcodes. Requires the "Leaflet Map" plugin to be installed and active.
  * Version:           1.0.7
- * Requires at least: 6.0
+ * Requires at least: 6.8
  * Requires PHP:      7.4
  * Author:            Jesús Yesares García
  * License:           GPL-2.0-or-later
