@@ -5,11 +5,13 @@
     <!-- Files to analyse -->
     <file>blocks-for-leaflet-map.php</file>
     <file>src/leaflet-map-block/render.php</file>
+    <file>includes</file>
 
     <!-- Exclude build output and vendor -->
     <exclude-pattern>build/*</exclude-pattern>
     <exclude-pattern>vendor/*</exclude-pattern>
     <exclude-pattern>node_modules/*</exclude-pattern>
+    <exclude-pattern>includes/class-tgm-plugin-activation.php</exclude-pattern>
 
     <!-- WordPress Coding Standards -->
     <rule ref="WordPress">
