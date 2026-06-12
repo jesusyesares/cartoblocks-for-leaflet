@@ -64,7 +64,7 @@ function bflm_geocode_address(): void {
 		rawurlencode( $address )
 	);
 
-	$response = wp_remote_get(
+	$response = wp_safe_remote_get(
 		$request_url,
 		array(
 			'user-agent' => $user_agent,
