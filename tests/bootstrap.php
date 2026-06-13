@@ -149,6 +149,22 @@ if ( ! function_exists( 'wp_kses' ) ) {
 	}
 }
 
+/**
+ * Shim: esc_attr().
+ * Core behaviour: htmlspecialchars() with ENT_QUOTES, plus a filter hook
+ * (`attribute_escape`) and a check for already-escaped `&#0-9;` sequences.
+ * SIMPLIFICATION: this shim is htmlspecialchars( $str, ENT_QUOTES ) only —
+ * no filter hook (no `apply_filters` shim exists or is needed for these
+ * tests) and no special-casing of pre-escaped entities. Sufficient for all
+ * test inputs in this suite, which are plain strings/numerics without
+ * pre-existing HTML entities.
+ */
+if ( ! function_exists( 'esc_attr' ) ) {
+	function esc_attr( $text ) {
+		return htmlspecialchars( (string) $text, ENT_QUOTES );
+	}
+}
+
 // Load the files under test.
 require_once dirname( __DIR__ ) . '/includes/shortcodes/attrs.php';
 require_once dirname( __DIR__ ) . '/includes/preview/input.php';
