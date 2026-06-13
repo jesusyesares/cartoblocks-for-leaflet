@@ -453,9 +453,11 @@ function bflm_preview_render_template( array $attrs ): void {
 		} );
 
 		// fitBounds: when enabled, adjust the map to contain all markers.
-		// Intentionally not guarded by isProgrammaticMove — the resulting moveend
-		// fires bflm_map_update so the editor lat/lng/zoom attributes reflect the
-		// computed view (the user delegated view control to the map contents).
+		// Guarded by isProgrammaticMove (same pattern as bflm_set_view) so the
+		// resulting moveend does not post bflm_map_update back to the editor —
+		// otherwise the editor would update lat/lng/zoom attributes, which changes
+		// the preview URL, which reloads the iframe, which calls fitBounds again,
+		// looping forever (see issue #23).
 		var fitMarkersEnabled = <?php echo wp_json_encode( (bool) $fit_markers ); ?>;
 		if ( fitMarkersEnabled && markers.length > 0 ) {
 			var bounds = [];
@@ -464,6 +466,10 @@ function bflm_preview_render_template( array $attrs ): void {
 				bounds.push( [ ll.lat, ll.lng ] );
 			} );
 			if ( bounds.length > 0 ) {
+				isProgrammaticMove = true;
+				map.once( 'moveend', function () {
+					isProgrammaticMove = false;
+				} );
 				map.fitBounds( bounds, { padding: [ 30, 30 ] } );
 			}
 		}
