@@ -83,6 +83,30 @@ Blocks for Leaflet Map adds a native Gutenberg block that wraps the [Leaflet Map
 3. Activate the plugin through the Plugins screen.
 4. In the block editor, search for "Leaflet Map Block" and add it to your page or post.
 
+== External services ==
+
+This plugin connects to one external service: the Nominatim geocoding API
+operated by the OpenStreetMap Foundation. It is used **only** in the block
+editor, and **only** when you click the address search button to look up the
+coordinates of a place name. It is never called on the frontend of your site
+and is never called automatically.
+
+When you perform an address search, the text you type into the search field is
+sent to `https://nominatim.openstreetmap.org/search` so it can be matched
+against OpenStreetMap data and returned as a list of candidate locations. The
+request also includes your site URL and administrator contact email in the
+User-Agent header, following Nominatim's usage policy for attribution. No other
+personal data is transmitted. If you have configured a Nominatim contact email
+in the Leaflet Map plugin settings, that value is used instead.
+
+* Service provider: OpenStreetMap Foundation (Nominatim)
+* Terms / usage policy: https://operations.osmfoundation.org/policies/nominatim/
+* Privacy policy: https://wiki.osmfoundation.org/wiki/Privacy_Policy
+
+Note: GeoJSON, GPX, and KML data layers, and any map tiles, are loaded by the
+Leaflet Map plugin (and your browser) from whatever URLs **you** enter. Those
+requests are made by the Leaflet Map plugin, not by Blocks for Leaflet Map.
+
 == Frequently Asked Questions ==
 
 = Does this plugin replace the Leaflet Map plugin? =
