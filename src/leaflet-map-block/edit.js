@@ -24,6 +24,8 @@
  *     type: 'bflm_map_update'       — user pan/zoom → update lat/lng/zoom attrs
  *     type: 'bflm_marker_update'    — marker drag   → update marker lat/lng attr
  *     type: 'bflm_linepoint_update' — line-point drag → update line point lat/lng
+ *     type: 'bflm_map_drag_start'   — user starts dragging map → suppress overlay
+ *     type: 'bflm_map_drag_end'     — user releases map drag   → restore overlay
  *
  * SRC REBUILD vs. postMessage
  * ───────────────────────────
@@ -1316,6 +1318,15 @@ export default function Edit( {
 	const iframeRef = useRef( null );
 
 	/**
+	 * Whether the user is mid-drag/mid-interaction inside the iframe overlay.
+	 * Gutenberg's `isSelected` flips to false as soon as focus crosses into
+	 * the iframe's separate browsing context, which would otherwise remount
+	 * the focus-restoring overlay on top of the iframe mid-drag and cut the
+	 * gesture short. This flag keeps the overlay hidden until mouseup.
+	 */
+	const [ isOverlayInteracting, setIsOverlayInteracting ] = useState( false );
+
+	/**
 	 * Always-current snapshot of all block attributes. Debounced callbacks in
 	 * structural and view effects capture this ref to avoid stale closures.
 	 *
@@ -1338,6 +1349,20 @@ export default function Edit( {
 	 * @type {React.MutableRefObject<boolean>}
 	 */
 	const isIframeUpdateRef = useRef( false );
+
+	/**
+	 * Set true before setAttributes() calls triggered by incoming iframe
+	 * postMessages (e.g. drag-driven lat/lng/zoom updates) so the structural
+	 * src-rebuild effect skips reloading the iframe. Without this, dragging
+	 * the map fires moveend → bflm_map_update → setAttributes(lat/lng/zoom) →
+	 * shortcode changes → the 500ms debounced rebuild reassigns iframe.src,
+	 * reloading the iframe mid/post-drag and resetting Leaflet's grab cursor.
+	 * Separate from isIframeUpdateRef because both effects run on the same
+	 * render and would otherwise race to consume a single shared flag.
+	 *
+	 * @type {React.MutableRefObject<boolean>}
+	 */
+	const skipNextSrcRebuildRef = useRef( false );
 
 	// Keep drawingLineIndexRef in sync with state so postMessage callbacks can
 	// read the current value without stale closures.
@@ -1434,6 +1459,13 @@ export default function Edit( {
 		if ( drawingCircleIndexRef.current !== null ) {
 			return;
 		}
+		// Skip rebuild when lat/lng/zoom changed because of a drag/pan/zoom
+		// that already happened live inside the iframe — reloading would
+		// kill the in-progress interaction and reset Leaflet's cursor state.
+		if ( skipNextSrcRebuildRef.current ) {
+			skipNextSrcRebuildRef.current = false;
+			return;
+		}
 		clearTimeout( srcDebounceRef.current );
 		srcDebounceRef.current = setTimeout( () => {
 			const iframe = iframeRef.current;
@@ -1517,9 +1549,27 @@ export default function Edit( {
 				return;
 			}
 
+			// User starts/ends dragging the map inside the iframe. Suppress
+			// the focus-restoring overlay for the duration of the drag so it
+			// doesn't remount on top of the iframe mid-gesture when
+			// Gutenberg's isSelected flips false (focus moved into the
+			// iframe's separate browsing context) and cut the drag short.
+			if ( msg.type === 'bflm_map_drag_start' ) {
+				setIsOverlayInteracting( true );
+				return;
+			}
+
+			if ( msg.type === 'bflm_map_drag_end' ) {
+				setIsOverlayInteracting( false );
+				return;
+			}
+
 			if ( msg.type === 'bflm_map_update' ) {
-				// Flag the update so the lat/lng/zoom effect skips the echo.
+				// Flag the update so the lat/lng/zoom effect skips the echo,
+				// and so the structural rebuild effect skips reloading the
+				// iframe (the change already happened live inside it).
 				isIframeUpdateRef.current = true;
+				skipNextSrcRebuildRef.current = true;
 				setAttributes( {
 					lat: parseFloat( msg.lat.toFixed( 6 ) ),
 					lng: parseFloat( msg.lng.toFixed( 6 ) ),
@@ -7329,7 +7379,7 @@ export default function Edit( {
 						sandbox="allow-scripts allow-same-origin"
 						title={ __( 'Map preview', 'blocks-for-leaflet-map' ) }
 					/>
-					{ ! isSelected && (
+					{ ! isSelected && ! isOverlayInteracting && (
 						<div
 							style={ {
 								position: 'absolute',

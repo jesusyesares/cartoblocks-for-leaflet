@@ -410,6 +410,17 @@ function bflm_preview_render_template( array $attrs ): void {
 			map.setMaxBounds( null );
 		}
 
+		// User starts/ends a drag → tell the editor to suppress the
+		// focus-restoring overlay so it doesn't get remounted on top of the
+		// iframe mid-gesture (Gutenberg's isSelected flips false the moment
+		// focus crosses into this iframe's separate browsing context).
+		map.on( 'dragstart', function () {
+			window.top.postMessage( { type: 'bflm_map_drag_start', blockId: blockId }, '*' );
+		} );
+		map.on( 'dragend', function () {
+			window.top.postMessage( { type: 'bflm_map_drag_end', blockId: blockId }, '*' );
+		} );
+
 		// User pans / zooms → notify the editor.
 		map.on( 'moveend zoomend', function () {
 			if ( isProgrammaticMove ) {
