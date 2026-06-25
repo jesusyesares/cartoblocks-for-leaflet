@@ -131,6 +131,12 @@ function bflm_preview_render_template( array $attrs ): void {
 				map.setMinZoom( fitZoom + zoomOffset );
 				map.setMaxBounds( null );
 				map.setView( [ 0, 0 ], fitZoom + zoomOffset, { animate: false } );
+
+				// Stash fitZoom on the map instance so the moveend/zoomend
+				// listener (in the other inline script below) can convert the
+				// real Leaflet zoom back into the block's imageZoom offset
+				// when the user pans/zooms the image map by hand.
+				map.bflmFitZoom = fitZoom;
 			}
 			fitImage();
 		} )();
@@ -428,16 +434,32 @@ function bflm_preview_render_template( array $attrs ): void {
 			window.top.postMessage( { type: 'bflm_map_drag_end', blockId: blockId }, '*' );
 		} );
 
-		// User pans / zooms → notify the editor. Skip for image maps: their
-		// fitImage() calls map.setView() with the real internal Leaflet zoom
-		// (fitZoom + imageZoom offset), which would otherwise overwrite the
-		// block's zoom attribute — image maps always keep zoom="0" in the
-		// shortcode and use imageZoom as the only user-facing zoom control.
+		// User pans / zooms → notify the editor. Image maps report through a
+		// separate message (bflm_image_update): their shortcode always keeps
+		// zoom="0" and uses imageX/imageY/imageZoom instead of lat/lng/zoom,
+		// so the real Leaflet zoom (fitZoom + imageZoom offset) must be
+		// converted back to an offset using the fitZoom stashed by fitImage().
 		map.on( 'moveend zoomend', function () {
-			if ( isProgrammaticMove || map.is_image_map ) {
+			if ( isProgrammaticMove ) {
 				return;
 			}
 			var center = map.getCenter();
+			if ( map.is_image_map ) {
+				if ( 'number' !== typeof map.bflmFitZoom ) {
+					return;
+				}
+				window.top.postMessage(
+					{
+						type:      'bflm_image_update',
+						blockId:   blockId,
+						imageX:    center.lat,
+						imageY:    center.lng,
+						imageZoom: map.getZoom() - map.bflmFitZoom,
+					},
+					'*'
+				);
+				return;
+			}
 			window.top.postMessage(
 				{ type: 'bflm_map_update', blockId: blockId, lat: center.lat, lng: center.lng, zoom: map.getZoom() },
 				'*'
@@ -624,6 +646,18 @@ function bflm_preview_render_template( array $attrs ): void {
 					isProgrammaticMove = false;
 				} );
 				map.setView( [ msg.lat, msg.lng ], msg.zoom, { animate: true } );
+				return;
+			}
+
+			if ( msg.type === 'bflm_set_image_view' ) {
+				if ( 'number' !== typeof map.bflmFitZoom ) {
+					return;
+				}
+				isProgrammaticMove = true;
+				map.once( 'moveend', function () {
+					isProgrammaticMove = false;
+				} );
+				map.setView( [ msg.imageX, msg.imageY ], map.bflmFitZoom + msg.imageZoom, { animate: true } );
 				return;
 			}
 

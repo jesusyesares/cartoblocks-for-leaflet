@@ -1381,6 +1381,20 @@ export default function Edit( {
 	/** setTimeout handle for the 100 ms view postMessage debounce. */
 	const viewDebounceRef = useRef( null );
 
+	/** setTimeout handle for the 100 ms image-map view postMessage debounce. */
+	const imageViewDebounceRef = useRef( null );
+
+	/**
+	 * Set true before setAttributes() calls triggered by incoming
+	 * bflm_image_update postMessages so the image-view effect does not echo
+	 * back to the iframe. Separate from isIframeUpdateRef/skipNextSrcRebuildRef
+	 * because all three effects run on the same render and would otherwise
+	 * race to consume shared flags.
+	 *
+	 * @type {React.MutableRefObject<boolean>}
+	 */
+	const isIframeImageUpdateRef = useRef( false );
+
 	/**
 	 * True after the component has mounted. Used to skip the previewUrlKey
 	 * effect on the very first render (mount effect already set iframe.src).
@@ -1524,6 +1538,44 @@ export default function Edit( {
 		return () => clearTimeout( viewDebounceRef.current );
 	}, [ lat, lng, zoom ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
+	// ── Image map view changes (sidebar) → postMessage to iframe (100 ms) ────
+	//
+	// Mirrors the lat/lng/zoom effect above, but for image maps: imageX/
+	// imageY/imageZoom changes from the sidebar send bflm_set_image_view so
+	// the iframe calls map.setView() without a full reload. Skip when the
+	// change originated from the iframe itself (echo prevention).
+	useEffect( () => {
+		if ( isIframeImageUpdateRef.current ) {
+			isIframeImageUpdateRef.current = false;
+			return;
+		}
+
+		clearTimeout( imageViewDebounceRef.current );
+		imageViewDebounceRef.current = setTimeout( () => {
+			const iframe = iframeRef.current;
+			if ( ! iframe?.contentWindow ) {
+				return;
+			}
+			const {
+				imageX: currentImageX,
+				imageY: currentImageY,
+				imageZoom: currentImageZoom,
+			} = attributesRef.current;
+			iframe.contentWindow.postMessage(
+				{
+					type: 'bflm_set_image_view',
+					blockId: clientIdRef.current,
+					imageX: currentImageX ?? 0,
+					imageY: currentImageY ?? 0,
+					imageZoom: currentImageZoom ?? 0,
+				},
+				'*'
+			);
+		}, 100 );
+
+		return () => clearTimeout( imageViewDebounceRef.current );
+	}, [ imageX, imageY, imageZoom ] ); // eslint-disable-line react-hooks/exhaustive-deps
+
 	// ── Incoming postMessages from the preview iframe ─────────────────────────
 	useEffect( () => {
 		/**
@@ -1581,6 +1633,20 @@ export default function Edit( {
 					lat: parseFloat( msg.lat.toFixed( 6 ) ),
 					lng: parseFloat( msg.lng.toFixed( 6 ) ),
 					zoom: msg.zoom,
+				} );
+				return;
+			}
+
+			if ( msg.type === 'bflm_image_update' ) {
+				// Flag the update so the image-view effect skips the echo,
+				// and so the structural rebuild effect skips reloading the
+				// iframe (the change already happened live inside it).
+				isIframeImageUpdateRef.current = true;
+				skipNextSrcRebuildRef.current = true;
+				setAttributes( {
+					imageX: parseFloat( msg.imageX.toFixed( 6 ) ),
+					imageY: parseFloat( msg.imageY.toFixed( 6 ) ),
+					imageZoom: parseFloat( msg.imageZoom.toFixed( 6 ) ),
 				} );
 				return;
 			}
