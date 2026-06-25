@@ -1565,6 +1565,13 @@ export default function Edit( {
 			}
 
 			if ( msg.type === 'bflm_map_update' ) {
+				// Image maps always keep zoom="0" in the shortcode — imageZoom
+				// is the only user-facing zoom control for them. The preview
+				// iframe already skips posting this message for image maps,
+				// but guard here too in case of stale iframes or future call sites.
+				if ( attributesRef.current.imageMap ) {
+					return;
+				}
 				// Flag the update so the lat/lng/zoom effect skips the echo,
 				// and so the structural rebuild effect skips reloading the
 				// iframe (the change already happened live inside it).

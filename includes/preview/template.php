@@ -93,7 +93,7 @@ function bflm_preview_render_template( array $attrs ): void {
 			function fitImage() {
 				var plugin = window.WPLeafletMapPlugin;
 				if ( ! plugin || ! plugin.maps || ! plugin.maps[ 0 ] ) {
-					if ( ++attempts < 50 ) { setTimeout( fitImage, 100 ); }
+					if ( 50 > ++attempts ) { setTimeout( fitImage, 100 ); }
 					return;
 				}
 				var map = plugin.maps[ 0 ];
@@ -103,14 +103,14 @@ function bflm_preview_render_template( array $attrs ): void {
 				var overlay = null;
 				map.eachLayer( function ( l ) { if ( ! overlay && l.getBounds && l.getElement ) { overlay = l; } } );
 				if ( ! overlay ) {
-					if ( ++attempts < 50 ) { setTimeout( fitImage, 100 ); }
+					if ( 50 > ++attempts ) { setTimeout( fitImage, 100 ); }
 					return;
 				}
 
 				// Need image natural dimensions — wait until loaded.
 				var img = overlay.getElement();
 				if ( ! img || ! img.naturalWidth ) {
-					if ( ++attempts < 50 ) { setTimeout( fitImage, 100 ); }
+					if ( 50 > ++attempts ) { setTimeout( fitImage, 100 ); }
 					return;
 				}
 
@@ -235,7 +235,7 @@ function bflm_preview_render_template( array $attrs ): void {
 				interactive: false,
 			} ).addTo( map );
 		}
-		if ( drawState.points.length < 1 ) {
+		if ( 1 > drawState.points.length ) {
 			drawState.shape.setLatLngs( [] );
 		}
 
@@ -376,7 +376,7 @@ function bflm_preview_render_template( array $attrs ): void {
 	function init() {
 		var plugin = window.WPLeafletMapPlugin;
 		if ( ! plugin || ! plugin.maps || ! plugin.maps[ 0 ] ) {
-			if ( ++attempts < MAX_ATTEMPTS ) {
+			if ( MAX_ATTEMPTS > ++attempts ) {
 				setTimeout( init, 200 );
 			}
 			return;
@@ -389,25 +389,32 @@ function bflm_preview_render_template( array $attrs ): void {
 		// final percentage-width size so invalidateSize gets the correct dimensions.
 		setTimeout( function () { map.invalidateSize(); }, 200 );
 
-		// Apply zoom & bounds constraints if set.
-		if ( minZoom !== null ) {
-			map.setMinZoom( minZoom );
-		}
-		if ( maxZoom !== null ) {
-			map.setMaxZoom( maxZoom );
-		}
-		if ( maxBoundsRaw ) {
-			try {
-				var parts  = maxBoundsRaw.split( ';' );
-				var sw     = parts[ 0 ].split( ',' );
-				var ne     = parts[ 1 ].split( ',' );
-				var bounds = [ [ parseFloat( sw[ 0 ] ), parseFloat( sw[ 1 ] ) ], [ parseFloat( ne[ 0 ] ), parseFloat( ne[ 1 ] ) ] ];
-				if ( bounds.every( function ( p ) { return ! isNaN( p[ 0 ] ) && ! isNaN( p[ 1 ] ); } ) ) {
-					map.setMaxBounds( bounds );
-				}
-			} catch ( e ) { /* ignore malformed input */ }
-		} else {
-			map.setMaxBounds( null );
+		// Apply zoom & bounds constraints if set. Skip for image maps: their
+		// own fitImage() (in the WPLeafletImageShortcode script above) computes
+		// and sets minZoom/maxBounds from the image's real dimensions — these
+		// tile-map constraints (inherited from the block's regular minZoom/
+		// maxZoom attributes) would otherwise clobber that fit, since this
+		// init() poll has no guaranteed ordering against fitImage()'s own poll.
+		if ( ! map.is_image_map ) {
+			if ( minZoom !== null ) {
+				map.setMinZoom( minZoom );
+			}
+			if ( maxZoom !== null ) {
+				map.setMaxZoom( maxZoom );
+			}
+			if ( maxBoundsRaw ) {
+				try {
+					var parts  = maxBoundsRaw.split( ';' );
+					var sw     = parts[ 0 ].split( ',' );
+					var ne     = parts[ 1 ].split( ',' );
+					var bounds = [ [ parseFloat( sw[ 0 ] ), parseFloat( sw[ 1 ] ) ], [ parseFloat( ne[ 0 ] ), parseFloat( ne[ 1 ] ) ] ];
+					if ( bounds.every( function ( p ) { return ! isNaN( p[ 0 ] ) && ! isNaN( p[ 1 ] ); } ) ) {
+						map.setMaxBounds( bounds );
+					}
+				} catch ( e ) { /* ignore malformed input */ }
+			} else {
+				map.setMaxBounds( null );
+			}
 		}
 
 		// User starts/ends a drag → tell the editor to suppress the
@@ -421,9 +428,13 @@ function bflm_preview_render_template( array $attrs ): void {
 			window.top.postMessage( { type: 'bflm_map_drag_end', blockId: blockId }, '*' );
 		} );
 
-		// User pans / zooms → notify the editor.
+		// User pans / zooms → notify the editor. Skip for image maps: their
+		// fitImage() calls map.setView() with the real internal Leaflet zoom
+		// (fitZoom + imageZoom offset), which would otherwise overwrite the
+		// block's zoom attribute — image maps always keep zoom="0" in the
+		// shortcode and use imageZoom as the only user-facing zoom control.
 		map.on( 'moveend zoomend', function () {
-			if ( isProgrammaticMove ) {
+			if ( isProgrammaticMove || map.is_image_map ) {
 				return;
 			}
 			var center = map.getCenter();
@@ -497,7 +508,7 @@ function bflm_preview_render_template( array $attrs ): void {
 			var r = map.distance( circleDrawState.center, [ mlat, mlng ] );
 			// Update live circle radius.
 			if ( circleDrawState.shape ) {
-				circleDrawState.shape.setRadius( r < 1 ? 1 : r );
+				circleDrawState.shape.setRadius( 1 > r ? 1 : r );
 			}
 			// Update guide line from center to cursor.
 			if ( circleDrawState.guideLine ) {
@@ -538,7 +549,7 @@ function bflm_preview_render_template( array $attrs ): void {
 				} else {
 					// Second click: fix radius, remove guide, make center draggable.
 					var radius = map.distance( circleDrawState.center, [ clat, clng ] );
-					if ( radius < 1 ) radius = 1;
+					if ( 1 > radius ) radius = 1;
 					if ( circleDrawState.shape ) {
 						circleDrawState.shape.setRadius( radius );
 					}

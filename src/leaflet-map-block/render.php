@@ -58,15 +58,15 @@ if ( $bflm_attrs['imageMap'] && '' !== $bflm_attrs['imageSrc'] ) {
 		function fitImage() {
 			var plugin = window.WPLeafletMapPlugin;
 			if ( ! plugin || ! plugin.maps || ! plugin.maps[ 0 ] ) {
-				if ( ++attempts < 50 ) { setTimeout( fitImage, 100 ); } return;
+				if ( 50 > ++attempts ) { setTimeout( fitImage, 100 ); } return;
 			}
 			var map = plugin.maps[ 0 ];
 			if ( ! map.is_image_map ) { return; }
 			var overlay = null;
 			map.eachLayer( function ( l ) { if ( ! overlay && l.getBounds && l.getElement ) { overlay = l; } } );
-			if ( ! overlay ) { if ( ++attempts < 50 ) { setTimeout( fitImage, 100 ); } return; }
+			if ( ! overlay ) { if ( 50 > ++attempts ) { setTimeout( fitImage, 100 ); } return; }
 			var img = overlay.getElement();
-			if ( ! img || ! img.naturalWidth ) { if ( ++attempts < 50 ) { setTimeout( fitImage, 100 ); } return; }
+			if ( ! img || ! img.naturalWidth ) { if ( 50 > ++attempts ) { setTimeout( fitImage, 100 ); } return; }
 			var iw = img.naturalWidth;
 			var ih = img.naturalHeight;
 			var mw = map.getContainer().offsetWidth;
