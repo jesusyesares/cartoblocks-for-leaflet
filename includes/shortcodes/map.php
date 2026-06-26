@@ -90,7 +90,7 @@ function bflm_build_wms_shortcode( array $attrs ): string {
  */
 function bflm_build_image_shortcode( array $attrs ): string {
 	return sprintf(
-		'[leaflet-image src="%1$s" x="%2$s" y="%3$s" zoom="0" height="%4$s"]',
+		'[leaflet-image src="%1$s" x="%2$s" y="%3$s" zoom="0" height="%4$s" width="100%%"]',
 		esc_attr( (string) $attrs['imageSrc'] ),
 		esc_attr( (string) $attrs['imageX'] ),
 		esc_attr( (string) $attrs['imageY'] ),

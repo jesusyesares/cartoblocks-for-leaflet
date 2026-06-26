@@ -93,7 +93,7 @@ function bflm_preview_render_template( array $attrs ): void {
 			function fitImage() {
 				var plugin = window.WPLeafletMapPlugin;
 				if ( ! plugin || ! plugin.maps || ! plugin.maps[ 0 ] ) {
-					if ( ++attempts < 50 ) { setTimeout( fitImage, 100 ); }
+					if ( 50 > ++attempts ) { setTimeout( fitImage, 100 ); }
 					return;
 				}
 				var map = plugin.maps[ 0 ];
@@ -103,14 +103,14 @@ function bflm_preview_render_template( array $attrs ): void {
 				var overlay = null;
 				map.eachLayer( function ( l ) { if ( ! overlay && l.getBounds && l.getElement ) { overlay = l; } } );
 				if ( ! overlay ) {
-					if ( ++attempts < 50 ) { setTimeout( fitImage, 100 ); }
+					if ( 50 > ++attempts ) { setTimeout( fitImage, 100 ); }
 					return;
 				}
 
 				// Need image natural dimensions — wait until loaded.
 				var img = overlay.getElement();
 				if ( ! img || ! img.naturalWidth ) {
-					if ( ++attempts < 50 ) { setTimeout( fitImage, 100 ); }
+					if ( 50 > ++attempts ) { setTimeout( fitImage, 100 ); }
 					return;
 				}
 
@@ -131,6 +131,12 @@ function bflm_preview_render_template( array $attrs ): void {
 				map.setMinZoom( fitZoom + zoomOffset );
 				map.setMaxBounds( null );
 				map.setView( [ 0, 0 ], fitZoom + zoomOffset, { animate: false } );
+
+				// Stash fitZoom on the map instance so the moveend/zoomend
+				// listener (in the other inline script below) can convert the
+				// real Leaflet zoom back into the block's imageZoom offset
+				// when the user pans/zooms the image map by hand.
+				map.bflmFitZoom = fitZoom;
 			}
 			fitImage();
 		} )();
@@ -235,7 +241,7 @@ function bflm_preview_render_template( array $attrs ): void {
 				interactive: false,
 			} ).addTo( map );
 		}
-		if ( drawState.points.length < 1 ) {
+		if ( 1 > drawState.points.length ) {
 			drawState.shape.setLatLngs( [] );
 		}
 
@@ -376,7 +382,7 @@ function bflm_preview_render_template( array $attrs ): void {
 	function init() {
 		var plugin = window.WPLeafletMapPlugin;
 		if ( ! plugin || ! plugin.maps || ! plugin.maps[ 0 ] ) {
-			if ( ++attempts < MAX_ATTEMPTS ) {
+			if ( MAX_ATTEMPTS > ++attempts ) {
 				setTimeout( init, 200 );
 			}
 			return;
@@ -389,33 +395,71 @@ function bflm_preview_render_template( array $attrs ): void {
 		// final percentage-width size so invalidateSize gets the correct dimensions.
 		setTimeout( function () { map.invalidateSize(); }, 200 );
 
-		// Apply zoom & bounds constraints if set.
-		if ( minZoom !== null ) {
-			map.setMinZoom( minZoom );
-		}
-		if ( maxZoom !== null ) {
-			map.setMaxZoom( maxZoom );
-		}
-		if ( maxBoundsRaw ) {
-			try {
-				var parts  = maxBoundsRaw.split( ';' );
-				var sw     = parts[ 0 ].split( ',' );
-				var ne     = parts[ 1 ].split( ',' );
-				var bounds = [ [ parseFloat( sw[ 0 ] ), parseFloat( sw[ 1 ] ) ], [ parseFloat( ne[ 0 ] ), parseFloat( ne[ 1 ] ) ] ];
-				if ( bounds.every( function ( p ) { return ! isNaN( p[ 0 ] ) && ! isNaN( p[ 1 ] ); } ) ) {
-					map.setMaxBounds( bounds );
-				}
-			} catch ( e ) { /* ignore malformed input */ }
-		} else {
-			map.setMaxBounds( null );
+		// Apply zoom & bounds constraints if set. Skip for image maps: their
+		// own fitImage() (in the WPLeafletImageShortcode script above) computes
+		// and sets minZoom/maxBounds from the image's real dimensions — these
+		// tile-map constraints (inherited from the block's regular minZoom/
+		// maxZoom attributes) would otherwise clobber that fit, since this
+		// init() poll has no guaranteed ordering against fitImage()'s own poll.
+		if ( ! map.is_image_map ) {
+			if ( minZoom !== null ) {
+				map.setMinZoom( minZoom );
+			}
+			if ( maxZoom !== null ) {
+				map.setMaxZoom( maxZoom );
+			}
+			if ( maxBoundsRaw ) {
+				try {
+					var parts  = maxBoundsRaw.split( ';' );
+					var sw     = parts[ 0 ].split( ',' );
+					var ne     = parts[ 1 ].split( ',' );
+					var bounds = [ [ parseFloat( sw[ 0 ] ), parseFloat( sw[ 1 ] ) ], [ parseFloat( ne[ 0 ] ), parseFloat( ne[ 1 ] ) ] ];
+					if ( bounds.every( function ( p ) { return ! isNaN( p[ 0 ] ) && ! isNaN( p[ 1 ] ); } ) ) {
+						map.setMaxBounds( bounds );
+					}
+				} catch ( e ) { /* ignore malformed input */ }
+			} else {
+				map.setMaxBounds( null );
+			}
 		}
 
-		// User pans / zooms → notify the editor.
+		// User starts/ends a drag → tell the editor to suppress the
+		// focus-restoring overlay so it doesn't get remounted on top of the
+		// iframe mid-gesture (Gutenberg's isSelected flips false the moment
+		// focus crosses into this iframe's separate browsing context).
+		map.on( 'dragstart', function () {
+			window.top.postMessage( { type: 'bflm_map_drag_start', blockId: blockId }, '*' );
+		} );
+		map.on( 'dragend', function () {
+			window.top.postMessage( { type: 'bflm_map_drag_end', blockId: blockId }, '*' );
+		} );
+
+		// User pans / zooms → notify the editor. Image maps report through a
+		// separate message (bflm_image_update): their shortcode always keeps
+		// zoom="0" and uses imageX/imageY/imageZoom instead of lat/lng/zoom,
+		// so the real Leaflet zoom (fitZoom + imageZoom offset) must be
+		// converted back to an offset using the fitZoom stashed by fitImage().
 		map.on( 'moveend zoomend', function () {
 			if ( isProgrammaticMove ) {
 				return;
 			}
 			var center = map.getCenter();
+			if ( map.is_image_map ) {
+				if ( 'number' !== typeof map.bflmFitZoom ) {
+					return;
+				}
+				window.top.postMessage(
+					{
+						type:      'bflm_image_update',
+						blockId:   blockId,
+						imageX:    center.lat,
+						imageY:    center.lng,
+						imageZoom: map.getZoom() - map.bflmFitZoom,
+					},
+					'*'
+				);
+				return;
+			}
 			window.top.postMessage(
 				{ type: 'bflm_map_update', blockId: blockId, lat: center.lat, lng: center.lng, zoom: map.getZoom() },
 				'*'
@@ -486,7 +530,7 @@ function bflm_preview_render_template( array $attrs ): void {
 			var r = map.distance( circleDrawState.center, [ mlat, mlng ] );
 			// Update live circle radius.
 			if ( circleDrawState.shape ) {
-				circleDrawState.shape.setRadius( r < 1 ? 1 : r );
+				circleDrawState.shape.setRadius( 1 > r ? 1 : r );
 			}
 			// Update guide line from center to cursor.
 			if ( circleDrawState.guideLine ) {
@@ -527,7 +571,7 @@ function bflm_preview_render_template( array $attrs ): void {
 				} else {
 					// Second click: fix radius, remove guide, make center draggable.
 					var radius = map.distance( circleDrawState.center, [ clat, clng ] );
-					if ( radius < 1 ) radius = 1;
+					if ( 1 > radius ) radius = 1;
 					if ( circleDrawState.shape ) {
 						circleDrawState.shape.setRadius( radius );
 					}
@@ -620,6 +664,18 @@ function bflm_preview_render_template( array $attrs ): void {
 						map[ key ].disable();
 					}
 				} );
+				return;
+			}
+
+			if ( msg.type === 'bflm_set_image_view' ) {
+				if ( 'number' !== typeof map.bflmFitZoom ) {
+					return;
+				}
+				isProgrammaticMove = true;
+				map.once( 'moveend', function () {
+					isProgrammaticMove = false;
+				} );
+				map.setView( [ msg.imageX, msg.imageY ], map.bflmFitZoom + msg.imageZoom, { animate: true } );
 				return;
 			}
 

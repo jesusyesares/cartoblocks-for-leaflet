@@ -24,6 +24,8 @@
  *     type: 'bflm_map_update'       — user pan/zoom → update lat/lng/zoom attrs
  *     type: 'bflm_marker_update'    — marker drag   → update marker lat/lng attr
  *     type: 'bflm_linepoint_update' — line-point drag → update line point lat/lng
+ *     type: 'bflm_map_drag_start'   — user starts dragging map → suppress overlay
+ *     type: 'bflm_map_drag_end'     — user releases map drag   → restore overlay
  *
  * SRC REBUILD vs. postMessage
  * ───────────────────────────
@@ -1316,6 +1318,15 @@ export default function Edit( {
 	const iframeRef = useRef( null );
 
 	/**
+	 * Whether the user is mid-drag/mid-interaction inside the iframe overlay.
+	 * Gutenberg's `isSelected` flips to false as soon as focus crosses into
+	 * the iframe's separate browsing context, which would otherwise remount
+	 * the focus-restoring overlay on top of the iframe mid-drag and cut the
+	 * gesture short. This flag keeps the overlay hidden until mouseup.
+	 */
+	const [ isOverlayInteracting, setIsOverlayInteracting ] = useState( false );
+
+	/**
 	 * Always-current snapshot of all block attributes. Debounced callbacks in
 	 * structural and view effects capture this ref to avoid stale closures.
 	 *
@@ -1339,6 +1350,20 @@ export default function Edit( {
 	 */
 	const isIframeUpdateRef = useRef( false );
 
+	/**
+	 * Set true before setAttributes() calls triggered by incoming iframe
+	 * postMessages (e.g. drag-driven lat/lng/zoom updates) so the structural
+	 * src-rebuild effect skips reloading the iframe. Without this, dragging
+	 * the map fires moveend → bflm_map_update → setAttributes(lat/lng/zoom) →
+	 * shortcode changes → the 500ms debounced rebuild reassigns iframe.src,
+	 * reloading the iframe mid/post-drag and resetting Leaflet's grab cursor.
+	 * Separate from isIframeUpdateRef because both effects run on the same
+	 * render and would otherwise race to consume a single shared flag.
+	 *
+	 * @type {React.MutableRefObject<boolean>}
+	 */
+	const skipNextSrcRebuildRef = useRef( false );
+
 	// Keep drawingLineIndexRef in sync with state so postMessage callbacks can
 	// read the current value without stale closures.
 	useEffect( () => {
@@ -1355,6 +1380,20 @@ export default function Edit( {
 
 	/** setTimeout handle for the 100 ms view postMessage debounce. */
 	const viewDebounceRef = useRef( null );
+
+	/** setTimeout handle for the 100 ms image-map view postMessage debounce. */
+	const imageViewDebounceRef = useRef( null );
+
+	/**
+	 * Set true before setAttributes() calls triggered by incoming
+	 * bflm_image_update postMessages so the image-view effect does not echo
+	 * back to the iframe. Separate from isIframeUpdateRef/skipNextSrcRebuildRef
+	 * because all three effects run on the same render and would otherwise
+	 * race to consume shared flags.
+	 *
+	 * @type {React.MutableRefObject<boolean>}
+	 */
+	const isIframeImageUpdateRef = useRef( false );
 
 	/**
 	 * True after the component has mounted. Used to skip the previewUrlKey
@@ -1432,6 +1471,13 @@ export default function Edit( {
 			return;
 		}
 		if ( drawingCircleIndexRef.current !== null ) {
+			return;
+		}
+		// Skip rebuild when lat/lng/zoom changed because of a drag/pan/zoom
+		// that already happened live inside the iframe — reloading would
+		// kill the in-progress interaction and reset Leaflet's cursor state.
+		if ( skipNextSrcRebuildRef.current ) {
+			skipNextSrcRebuildRef.current = false;
 			return;
 		}
 		clearTimeout( srcDebounceRef.current );
@@ -1521,6 +1567,44 @@ export default function Edit( {
 		);
 	}, [ dragging, keyboard, doubleClickZoom, boxZoom, tap ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
+	// ── Image map view changes (sidebar) → postMessage to iframe (100 ms) ────
+	//
+	// Mirrors the lat/lng/zoom effect above, but for image maps: imageX/
+	// imageY/imageZoom changes from the sidebar send bflm_set_image_view so
+	// the iframe calls map.setView() without a full reload. Skip when the
+	// change originated from the iframe itself (echo prevention).
+	useEffect( () => {
+		if ( isIframeImageUpdateRef.current ) {
+			isIframeImageUpdateRef.current = false;
+			return;
+		}
+
+		clearTimeout( imageViewDebounceRef.current );
+		imageViewDebounceRef.current = setTimeout( () => {
+			const iframe = iframeRef.current;
+			if ( ! iframe?.contentWindow ) {
+				return;
+			}
+			const {
+				imageX: currentImageX,
+				imageY: currentImageY,
+				imageZoom: currentImageZoom,
+			} = attributesRef.current;
+			iframe.contentWindow.postMessage(
+				{
+					type: 'bflm_set_image_view',
+					blockId: clientIdRef.current,
+					imageX: currentImageX ?? 0,
+					imageY: currentImageY ?? 0,
+					imageZoom: currentImageZoom ?? 0,
+				},
+				'*'
+			);
+		}, 100 );
+
+		return () => clearTimeout( imageViewDebounceRef.current );
+	}, [ imageX, imageY, imageZoom ] ); // eslint-disable-line react-hooks/exhaustive-deps
+
 	// ── Incoming postMessages from the preview iframe ─────────────────────────
 	useEffect( () => {
 		/**
@@ -1546,13 +1630,52 @@ export default function Edit( {
 				return;
 			}
 
+			// User starts/ends dragging the map inside the iframe. Suppress
+			// the focus-restoring overlay for the duration of the drag so it
+			// doesn't remount on top of the iframe mid-gesture when
+			// Gutenberg's isSelected flips false (focus moved into the
+			// iframe's separate browsing context) and cut the drag short.
+			if ( msg.type === 'bflm_map_drag_start' ) {
+				setIsOverlayInteracting( true );
+				return;
+			}
+
+			if ( msg.type === 'bflm_map_drag_end' ) {
+				setIsOverlayInteracting( false );
+				return;
+			}
+
 			if ( msg.type === 'bflm_map_update' ) {
-				// Flag the update so the lat/lng/zoom effect skips the echo.
+				// Image maps always keep zoom="0" in the shortcode — imageZoom
+				// is the only user-facing zoom control for them. The preview
+				// iframe already skips posting this message for image maps,
+				// but guard here too in case of stale iframes or future call sites.
+				if ( attributesRef.current.imageMap ) {
+					return;
+				}
+				// Flag the update so the lat/lng/zoom effect skips the echo,
+				// and so the structural rebuild effect skips reloading the
+				// iframe (the change already happened live inside it).
 				isIframeUpdateRef.current = true;
+				skipNextSrcRebuildRef.current = true;
 				setAttributes( {
 					lat: parseFloat( msg.lat.toFixed( 6 ) ),
 					lng: parseFloat( msg.lng.toFixed( 6 ) ),
 					zoom: msg.zoom,
+				} );
+				return;
+			}
+
+			if ( msg.type === 'bflm_image_update' ) {
+				// Flag the update so the image-view effect skips the echo,
+				// and so the structural rebuild effect skips reloading the
+				// iframe (the change already happened live inside it).
+				isIframeImageUpdateRef.current = true;
+				skipNextSrcRebuildRef.current = true;
+				setAttributes( {
+					imageX: parseFloat( msg.imageX.toFixed( 6 ) ),
+					imageY: parseFloat( msg.imageY.toFixed( 6 ) ),
+					imageZoom: parseFloat( msg.imageZoom.toFixed( 6 ) ),
 				} );
 				return;
 			}
@@ -7358,7 +7481,7 @@ export default function Edit( {
 						sandbox="allow-scripts allow-same-origin"
 						title={ __( 'Map preview', 'blocks-for-leaflet-map' ) }
 					/>
-					{ ! isSelected && (
+					{ ! isSelected && ! isOverlayInteracting && (
 						<div
 							style={ {
 								position: 'absolute',
