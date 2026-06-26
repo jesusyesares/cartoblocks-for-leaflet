@@ -2492,6 +2492,37 @@ export default function Edit( {
 		} );
 	}
 
+	/**
+	 * Compute a "SW;NE" bounds string centred on the current map view, sized to
+	 * roughly half the visible viewport (Web Mercator metres-per-pixel formula)
+	 * so a freshly added overlay lands in view instead of needing manual bounds
+	 * first (an empty bounds value makes bflm_build_overlay_shortcodes() skip
+	 * the overlay entirely — see includes/shortcodes/overlay.php).
+	 *
+	 * @param {number} centerLat Current map latitude.
+	 * @param {number} centerLng Current map longitude.
+	 * @param {number} mapZoom   Current map zoom level.
+	 * @return {string} Bounds string, e.g. "40.71,-74.22;40.77,-74.12".
+	 */
+	function computeDefaultOverlayBounds( centerLat, centerLng, mapZoom ) {
+		const metersPerPixel =
+			( 156543.03392 * Math.cos( ( centerLat * Math.PI ) / 180 ) ) /
+			Math.pow( 2, mapZoom );
+		// Half the size of a typical map container, in pixels, used as the
+		// overlay's half-width/height so it covers a sensible chunk of the
+		// current view with margin on every side.
+		const halfSizePx = 200;
+		const metersOffset = metersPerPixel * halfSizePx;
+
+		const latOffset = metersOffset / 111320;
+		const lngOffset =
+			metersOffset / ( 111320 * Math.cos( ( centerLat * Math.PI ) / 180 ) );
+
+		const sw = `${ ( centerLat - latOffset ).toFixed( 6 ) },${ ( centerLng - lngOffset ).toFixed( 6 ) }`;
+		const ne = `${ ( centerLat + latOffset ).toFixed( 6 ) },${ ( centerLng + lngOffset ).toFixed( 6 ) }`;
+		return `${ sw };${ ne }`;
+	}
+
 	/** Add a new overlay of the given type and expand it. */
 	function handleAddOverlay( type ) {
 		const next = [
@@ -2499,7 +2530,7 @@ export default function Edit( {
 			{
 				type,
 				src: '',
-				bounds: '',
+				bounds: computeDefaultOverlayBounds( lat, lng, zoom ),
 				opacity: null,
 				interactive: false,
 				alt: '',
