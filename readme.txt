@@ -107,6 +107,12 @@ Note: GeoJSON, GPX, and KML data layers, and any map tiles, are loaded by the
 Leaflet Map plugin (and your browser) from whatever URLs **you** enter. Those
 requests are made by the Leaflet Map plugin, not by Blocks for Leaflet Map.
 
+Note: if "Use WMS tile source" is enabled but the WMS Source field is left
+empty, the Leaflet Map plugin falls back to a free public demo WMS service
+operated by terrestris GmbH (`ows.mundialis.de`). That service displays a
+watermark and is also a third-party request — provide your own WMS URL to
+avoid it.
+
 == Frequently Asked Questions ==
 
 = Does this plugin replace the Leaflet Map plugin? =
@@ -128,6 +134,12 @@ Whatever you have configured in the Leaflet Map plugin settings. By default, Ope
 = Can I use a WMS tile source? =
 
 Yes. Toggle "Use WMS tile source" in the Tile Layer panel and enter the WMS URL, layer name, and CRS. The WMS source must be CORS-enabled for the editor preview to load (same requirement as the frontend).
+
+Note: if you leave the WMS Source field empty, the Leaflet Map plugin falls
+back to a free public demo WMS service (`ows.mundialis.de`, operated by
+terrestris GmbH), which displays a "terrestris" watermark and QR code overlay
+on the map. This is not added by Blocks for Leaflet Map — enter your own WMS
+URL to remove it.
 
 = Can I load GeoJSON, GPX, or KML files? =
 
