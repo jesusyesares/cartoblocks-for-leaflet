@@ -605,6 +605,24 @@ function bflm_preview_render_template( array $attrs ): void {
 				return;
 			}
 
+			if ( msg.type === 'bflm_set_interaction' ) {
+				// Three-state values arrive as 'true' / 'false' / '' (default,
+				// left untouched — the constructor option already applied it).
+				// Each Leaflet interaction handler exposes enable()/disable(),
+				// so toggling here avoids waiting for a full iframe reload.
+				[ 'dragging', 'keyboard', 'doubleClickZoom', 'boxZoom', 'tap' ].forEach( function ( key ) {
+					if ( ! ( key in msg ) || '' === msg[ key ] || ! map[ key ] ) {
+						return;
+					}
+					if ( 'true' === msg[ key ] ) {
+						map[ key ].enable();
+					} else if ( 'false' === msg[ key ] ) {
+						map[ key ].disable();
+					}
+				} );
+				return;
+			}
+
 			if ( msg.type === 'bflm_draw_start' ) {
 				startDraw( map, msg );
 				return;
