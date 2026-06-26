@@ -24,6 +24,7 @@
  *     type: 'bflm_map_update'       — user pan/zoom → update lat/lng/zoom attrs
  *     type: 'bflm_marker_update'    — marker drag   → update marker lat/lng attr
  *     type: 'bflm_linepoint_update' — line-point drag → update line point lat/lng
+ *     type: 'bflm_overlay_update'   — overlay corner-handle drag → update overlay bounds
  *     type: 'bflm_map_drag_start'   — user starts dragging map → suppress overlay
  *     type: 'bflm_map_drag_end'     — user releases map drag   → restore overlay
  *
@@ -1691,6 +1692,18 @@ export default function Edit( {
 									lng: parseFloat( msg.lng.toFixed( 6 ) ),
 							  }
 							: m
+					),
+				} );
+				return;
+			}
+
+			if ( msg.type === 'bflm_overlay_update' ) {
+				const currentOverlays = attributesRef.current.overlays || [];
+				setAttributes( {
+					overlays: currentOverlays.map( ( o, i ) =>
+						i === msg.overlayIndex
+							? { ...o, bounds: `${ msg.sw };${ msg.ne }` }
+							: o
 					),
 				} );
 				return;
