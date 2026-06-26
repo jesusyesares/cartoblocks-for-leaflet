@@ -1492,6 +1492,35 @@ export default function Edit( {
 		return () => clearTimeout( viewDebounceRef.current );
 	}, [ lat, lng, zoom ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
+	// ── Interaction toggles (sidebar) → postMessage to iframe (no debounce) ───
+	//
+	// dragging/keyboard/doubleClickZoom/boxZoom/tap are part of previewUrlKey
+	// (via shortcode) and would otherwise only take effect after the 500 ms
+	// src-rebuild — during which the stale iframe still responds with its old
+	// settings (e.g. double-click still zooms after switching to "Disabled").
+	// Sending bflm_set_interaction immediately calls the matching Leaflet
+	// handler's enable()/disable() on the live map, closing that gap. The
+	// later src-rebuild still happens (keeps the iframe's HTML in sync) but no
+	// longer matters for perceived responsiveness.
+	useEffect( () => {
+		const iframe = iframeRef.current;
+		if ( ! iframe?.contentWindow ) {
+			return;
+		}
+		iframe.contentWindow.postMessage(
+			{
+				type: 'bflm_set_interaction',
+				blockId: clientIdRef.current,
+				dragging: dragging || '',
+				keyboard: keyboard || '',
+				doubleClickZoom: doubleClickZoom || '',
+				boxZoom: boxZoom || '',
+				tap: tap || '',
+			},
+			'*'
+		);
+	}, [ dragging, keyboard, doubleClickZoom, boxZoom, tap ] ); // eslint-disable-line react-hooks/exhaustive-deps
+
 	// ── Incoming postMessages from the preview iframe ─────────────────────────
 	useEffect( () => {
 		/**
