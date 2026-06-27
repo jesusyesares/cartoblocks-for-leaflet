@@ -76,6 +76,20 @@ function bflm_preview_render_template( array $attrs ): void {
 	#map-wrap { width: 100%; }
 	/* Draw-mode pin — reset Leaflet's default marker background/shadow */
 	.bflm-draw-pin { background: none; border: none; }
+	/* Overlay corner-resize handle — small filled square, no Leaflet default marker chrome */
+	.bflm-overlay-handle {
+		background: #fff;
+		border: 2px solid #2271b1;
+		border-radius: 2px;
+		cursor: nwse-resize;
+	}
+	/* Overlay move handle — centre marker used to drag the whole overlay */
+	.bflm-overlay-move-handle {
+		background: rgba(34, 113, 177, 0.5);
+		border: 2px solid #2271b1;
+		border-radius: 50%;
+		cursor: move;
+	}
 </style>
 	<?php wp_head(); ?>
 </head>
@@ -496,6 +510,308 @@ function bflm_preview_render_template( array $attrs ): void {
 			} );
 		} );
 
+		// ── Overlay corner-resize + move handles ────────────────────────────────
+		// Each image/video overlay gets 4 draggable corner markers (SW/SE/NW/NE)
+		// to adjust its bounds, plus a centre marker to drag the whole overlay
+		// without resizing it — instead of typing lat/lng pairs by hand.
+		// plugin.overlays is populated in the same document order as the
+		// [leaflet-image-overlay]/[leaflet-video-overlay] shortcodes emitted by
+		// bflm_build_overlay_shortcodes() (includes/shortcodes/overlay.php), so
+		// array index here matches the overlays attribute index in edit.js.
+		// Handle drags must not start/extend the underlying map pan — markers
+		// already stop their own propagation to the map's click/dblclick chain,
+		// but Leaflet's drag handler still lets the originalEvent bubble to the
+		// document, so map.dragging stays untouched here regardless.
+		var CORNER_ICON = L.divIcon( {
+			className: 'bflm-overlay-handle',
+			iconSize:  [ 12, 12 ],
+		} );
+		var MOVE_ICON = L.divIcon( {
+			className: 'bflm-overlay-move-handle',
+			iconSize:  [ 18, 18 ],
+		} );
+
+		/**
+		 * Wire the 4 corner-resize handles + 1 move handle for a single overlay
+		 * layer. Extracted to a named function (rather than an inline forEach
+		 * callback) so it can be re-invoked by rebuildOverlays() after a live
+		 * bflm_set_overlays postMessage replaces the overlay layers — not just
+		 * once at initial page load.
+		 *
+		 * @param {L.ImageOverlay|L.VideoOverlay} layer        The overlay layer.
+		 * @param {number}                        overlayIndex Index matching the
+		 *                                                      `overlays` block attribute.
+		 */
+		function setupOverlayHandles( layer, overlayIndex ) {
+			if ( ! layer.getBounds ) {
+				return;
+			}
+
+			var corners = {};
+			var moveHandle;
+			var moveDragStart = null;
+
+			function cornersFromBounds( b ) {
+				return {
+					sw: b.getSouthWest(),
+					se: L.latLng( b.getSouth(), b.getEast() ),
+					nw: L.latLng( b.getNorth(), b.getWest() ),
+					ne: b.getNorthEast(),
+				};
+			}
+
+			function postOverlayUpdate( bounds ) {
+				window.top.postMessage(
+					{
+						type:         'bflm_overlay_update',
+						blockId:      blockId,
+						overlayIndex: overlayIndex,
+						sw:           bounds.getSouthWest().lat + ',' + bounds.getSouthWest().lng,
+						ne:           bounds.getNorthEast().lat + ',' + bounds.getNorthEast().lng,
+					},
+					'*'
+				);
+			}
+
+			/** Re-derive bounds from the two opposite-corner handles being dragged and apply to the layer + the other two handles. */
+			function applyCorner( key, latlng ) {
+				var b      = layer.getBounds();
+				var sw     = b.getSouthWest();
+				var ne     = b.getNorthEast();
+				var newSw  = L.latLng( sw.lat, sw.lng );
+				var newNe  = L.latLng( ne.lat, ne.lng );
+
+				if ( key === 'sw' ) {
+					newSw = latlng;
+				} else if ( key === 'ne' ) {
+					newNe = latlng;
+				} else if ( key === 'se' ) {
+					newSw = L.latLng( latlng.lat, newSw.lng );
+					newNe = L.latLng( newNe.lat, latlng.lng );
+				} else if ( key === 'nw' ) {
+					newSw = L.latLng( newSw.lat, latlng.lng );
+					newNe = L.latLng( latlng.lat, newNe.lng );
+				}
+
+				var newBounds = L.latLngBounds( newSw, newNe );
+				layer.setBounds( newBounds );
+
+				var c = cornersFromBounds( newBounds );
+				Object.keys( corners ).forEach( function ( k ) {
+					if ( k !== key ) {
+						corners[ k ].setLatLng( c[ k ] );
+					}
+				} );
+				moveHandle.setLatLng( newBounds.getCenter() );
+
+				return newBounds;
+			}
+
+			var initialCorners = cornersFromBounds( layer.getBounds() );
+
+			[ 'sw', 'se', 'nw', 'ne' ].forEach( function ( key ) {
+				var handle = L.marker( initialCorners[ key ], {
+					icon:        CORNER_ICON,
+					draggable:   true,
+					zIndexOffset: 2000,
+				} ).addTo( map );
+
+				handle.on( 'drag', function ( e ) {
+					applyCorner( key, e.target.getLatLng() );
+				} );
+
+				handle.on( 'dragend', function () {
+					postOverlayUpdate( layer.getBounds() );
+				} );
+
+				corners[ key ] = handle;
+			} );
+
+			// Centre handle: drags the whole overlay (translate, no resize).
+			moveHandle = L.marker( layer.getBounds().getCenter(), {
+				icon:         MOVE_ICON,
+				draggable:    true,
+				zIndexOffset: 1900,
+			} ).addTo( map );
+
+			moveHandle.on( 'dragstart', function ( e ) {
+				moveDragStart = {
+					handleLatLng: e.target.getLatLng(),
+					bounds:       layer.getBounds(),
+				};
+			} );
+
+			moveHandle.on( 'drag', function ( e ) {
+				if ( ! moveDragStart ) {
+					return;
+				}
+				var current = e.target.getLatLng();
+				var dLat    = current.lat - moveDragStart.handleLatLng.lat;
+				var dLng    = current.lng - moveDragStart.handleLatLng.lng;
+				var sw      = moveDragStart.bounds.getSouthWest();
+				var ne      = moveDragStart.bounds.getNorthEast();
+				var newBounds = L.latLngBounds(
+					L.latLng( sw.lat + dLat, sw.lng + dLng ),
+					L.latLng( ne.lat + dLat, ne.lng + dLng )
+				);
+
+				layer.setBounds( newBounds );
+				var c = cornersFromBounds( newBounds );
+				Object.keys( corners ).forEach( function ( k ) {
+					corners[ k ].setLatLng( c[ k ] );
+				} );
+			} );
+
+			moveHandle.on( 'dragend', function () {
+				moveDragStart = null;
+				postOverlayUpdate( layer.getBounds() );
+			} );
+
+			// Cmd/Ctrl + drag directly on the image: same translate as the move
+			// handle, but without needing to grab the small centre dot. Plain
+			// drag on the image still pans the map (Leaflet's default), so the
+			// modifier key is what disambiguates "move the image" from
+			// "pan the map" when the cursor is over the overlay.
+			var imgDragStart = null;
+
+			function onImgMouseDown( e ) {
+				if ( ! ( e.metaKey || e.ctrlKey ) ) {
+					return;
+				}
+				L.DomEvent.stop( e );
+				map.dragging.disable();
+				imgDragStart = {
+					containerPoint: map.mouseEventToContainerPoint( e ),
+					bounds:         layer.getBounds(),
+				};
+				document.addEventListener( 'mousemove', onImgMouseMove );
+				document.addEventListener( 'mouseup', onImgMouseUp );
+			}
+
+			function onImgMouseMove( e ) {
+				if ( ! imgDragStart ) {
+					return;
+				}
+				var current  = map.mouseEventToLatLng( e );
+				var start     = map.containerPointToLatLng( imgDragStart.containerPoint );
+				var dLat      = current.lat - start.lat;
+				var dLng      = current.lng - start.lng;
+				var sw        = imgDragStart.bounds.getSouthWest();
+				var ne        = imgDragStart.bounds.getNorthEast();
+				var newBounds = L.latLngBounds(
+					L.latLng( sw.lat + dLat, sw.lng + dLng ),
+					L.latLng( ne.lat + dLat, ne.lng + dLng )
+				);
+
+				layer.setBounds( newBounds );
+				moveHandle.setLatLng( newBounds.getCenter() );
+				var c = cornersFromBounds( newBounds );
+				Object.keys( corners ).forEach( function ( k ) {
+					corners[ k ].setLatLng( c[ k ] );
+				} );
+			}
+
+			function onImgMouseUp() {
+				document.removeEventListener( 'mousemove', onImgMouseMove );
+				document.removeEventListener( 'mouseup', onImgMouseUp );
+				map.dragging.enable();
+				if ( imgDragStart ) {
+					imgDragStart = null;
+					postOverlayUpdate( layer.getBounds() );
+				}
+			}
+
+			layer.on( 'add', function () {
+				var el = layer.getElement();
+				if ( el ) {
+					el.addEventListener( 'mousedown', onImgMouseDown );
+				}
+			} );
+			if ( map.hasLayer( layer ) ) {
+				var existingEl = layer.getElement();
+				if ( existingEl ) {
+					existingEl.addEventListener( 'mousedown', onImgMouseDown );
+				}
+			}
+		}
+
+		( plugin.overlays || [] ).forEach( setupOverlayHandles );
+
+		/**
+		 * Live rebuild of every overlay layer for this block, used by the
+		 * bflm_set_overlays message handler below. Removes all current overlay
+		 * layers (and their handles) from the map, then recreates them from
+		 * `newOverlays` using the SAME option set as bflm_build_overlay_shortcodes()
+		 * (includes/shortcodes/overlay.php) / buildOverlayShortcodes() (edit.js),
+		 * so the live preview matches the eventual shortcode-rendered output.
+		 *
+		 * Overlays with empty src or bounds are skipped, mirroring the PHP/JS
+		 * shortcode builders. Bounds are parsed from "lat1,lng1;lat2,lng2".
+		 *
+		 * Corner-resize + move handles are re-wired via setupOverlayHandles()
+		 * after recreation so dragging keeps working without a full reload.
+		 *
+		 * @param {Array<Object>} newOverlays Overlay objects from the `overlays` block attribute.
+		 */
+		function rebuildOverlays( newOverlays ) {
+			// Remove existing overlay layers (e.g. handle markers stay attached
+			// to layers we're about to discard — Leaflet GC's their listeners
+			// when the layer itself is removed from the map).
+			( plugin.overlays || [] ).forEach( function ( layer ) {
+				if ( map.hasLayer( layer ) ) {
+					map.removeLayer( layer );
+				}
+			} );
+			// Remove any leftover corner/move handle markers from the previous
+			// set — they are plain L.marker instances added directly to `map`,
+			// not tracked anywhere else, so find them by icon class.
+			map.eachLayer( function ( l ) {
+				if (
+					l instanceof L.Marker &&
+					l.options &&
+					l.options.icon &&
+					l.options.icon.options &&
+					( 'bflm-overlay-handle' === l.options.icon.options.className ||
+						'bflm-overlay-move-handle' === l.options.icon.options.className )
+				) {
+					map.removeLayer( l );
+				}
+			} );
+
+			plugin.overlays = [];
+
+			( newOverlays || [] ).forEach( function ( overlay ) {
+				var src    = ( overlay.src || '' ).toString().trim();
+				var bounds = ( overlay.bounds || '' ).toString().trim();
+				if ( ! src || ! bounds ) {
+					return;
+				}
+
+				var parts = bounds.split( /[;,]/ ).map( parseFloat );
+				if ( parts.length < 4 || parts.some( isNaN ) ) {
+					return;
+				}
+				var llBounds = [ [ parts[ 0 ], parts[ 1 ] ], [ parts[ 2 ], parts[ 3 ] ] ];
+
+				var options = {};
+				if ( null != overlay.opacity ) options.opacity = parseFloat( overlay.opacity );
+				if ( overlay.interactive ) options.interactive = true;
+				if ( overlay.alt && overlay.alt.toString().trim() ) options.alt = overlay.alt.toString().trim();
+				if ( null != overlay.zIndex ) options.zIndex = parseInt( overlay.zIndex, 10 );
+				if ( overlay.classname && overlay.classname.toString().trim() ) options.className = overlay.classname.toString().trim();
+				if ( 'video' !== overlay.type && false === overlay.keepAspectRatio ) options.keepAspectRatio = false;
+
+				var layer = 'video' === overlay.type
+					? L.videoOverlay( src, llBounds, options )
+					: L.imageOverlay( src, llBounds, options );
+
+				layer.addTo( plugin.getCurrentGroup() );
+				plugin.overlays.push( layer );
+			} );
+
+			plugin.overlays.forEach( setupOverlayHandles );
+		}
+
 		// fitBounds: when enabled, adjust the map to contain all markers.
 		// Guarded by isProgrammaticMove (same pattern as bflm_set_view) so the
 		// resulting moveend does not post bflm_map_update back to the editor —
@@ -676,6 +992,18 @@ function bflm_preview_render_template( array $attrs ): void {
 					isProgrammaticMove = false;
 				} );
 				map.setView( [ msg.imageX, msg.imageY ], map.bflmFitZoom + msg.imageZoom, { animate: true } );
+				return;
+			}
+
+			if ( msg.type === 'bflm_set_overlays' ) {
+				// Live overlay edits (src/bounds/opacity/etc.) — rebuild every
+				// overlay layer for this block without reloading the iframe.
+				// Adding/removing an overlay also lands here (the editor sends
+				// the full overlays array either way), but the editor only
+				// forces a full iframe reload on COUNT changes (see
+				// previewUrlKey in edit.js) — this handler keeps the live
+				// preview correct regardless of which case triggered it.
+				rebuildOverlays( msg.overlays || [] );
 				return;
 			}
 
