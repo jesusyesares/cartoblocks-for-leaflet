@@ -18,7 +18,9 @@
  * COMMUNICATION CHANNELS
  * ──────────────────────
  *   Outer → Preview  (iframeRef.current.contentWindow.postMessage)
- *     type: 'bflm_set_view'  — sidebar lat/lng/zoom change → map.setView()
+ *     type: 'bflm_set_view'     — sidebar lat/lng/zoom change → map.setView()
+ *     type: 'bflm_set_overlays' — overlays attribute change → live rebuild of
+ *                                 image/video overlay layers, no iframe reload
  *
  *   Preview → Outer  (window.top.postMessage, received on window here)
  *     type: 'bflm_map_update'       — user pan/zoom → update lat/lng/zoom attrs
@@ -35,6 +37,12 @@
  *
  *   View changes (lat, lng, zoom) from the sidebar:
  *     Send bflm_set_view postMessage → no tile reload (100 ms debounce).
+ *
+ *   Overlay edits (src/bounds/opacity/etc. on an existing overlay):
+ *     Send bflm_set_overlays postMessage → no tile reload (150 ms debounce).
+ *     Adding/removing an overlay still triggers a full reload (see
+ *     previewUrlKey below) to keep layer order/indices in sync with the
+ *     handle-setup code in includes/preview/template.php.
  *
  * ECHO LOOP PREVENTION
  * ─────────────────────
@@ -1385,6 +1393,9 @@ export default function Edit( {
 	/** setTimeout handle for the 100 ms image-map view postMessage debounce. */
 	const imageViewDebounceRef = useRef( null );
 
+	/** setTimeout handle for the 150 ms overlays postMessage debounce. */
+	const overlaysDebounceRef = useRef( null );
+
 	/**
 	 * Set true before setAttributes() calls triggered by incoming
 	 * bflm_image_update postMessages so the image-view effect does not echo
@@ -1460,7 +1471,28 @@ export default function Edit( {
 	// so append it explicitly when in image mode so the iframe reloads on slider change.
 	// Width changes resize the iframe container; Leaflet won't auto-recalculate tile
 	// positions, so include normalizedWidth in the key to force a full iframe reload.
-	const previewUrlKey = ( imageMap ? shortcode + '|iz=' + ( imageZoom ?? 0 ) : shortcode ) + '|w=' + normalizedWidth;
+	//
+	// Overlay edits (src/bounds/opacity/etc. on an EXISTING overlay) now sync live via
+	// the bflm_set_overlays postMessage effect below, so they must not appear in this
+	// key — otherwise every keystroke in the overlay panel would also trigger a full
+	// reload, fighting the live update. The [leaflet-image-overlay]/[leaflet-video-overlay]
+	// tags are stripped out of the shortcode used for the key; only the overlay COUNT is
+	// kept (`|ov=`) so adding/removing an overlay still forces a reload — needed to keep
+	// Leaflet Map's `window.WPLeafletMapPlugin.overlays` array indices (and therefore the
+	// resize/move handle wiring in includes/preview/template.php) in sync with the
+	// `overlays` attribute array.
+	const shortcodeNoOverlays = shortcode.replace(
+		/\n?\[leaflet-(?:image|video)-overlay[^\]]*\/\]/g,
+		''
+	);
+	const previewUrlKey =
+		( imageMap
+			? shortcodeNoOverlays + '|iz=' + ( imageZoom ?? 0 )
+			: shortcodeNoOverlays ) +
+		'|w=' +
+		normalizedWidth +
+		'|ov=' +
+		( overlays ? overlays.length : 0 );
 
 	useEffect( () => {
 		// Skip on first render — mount effect already set iframe.src.
@@ -1605,6 +1637,37 @@ export default function Edit( {
 
 		return () => clearTimeout( imageViewDebounceRef.current );
 	}, [ imageX, imageY, imageZoom ] ); // eslint-disable-line react-hooks/exhaustive-deps
+
+	// ── Overlay edits → postMessage to iframe (150 ms debounce) ──────────────
+	//
+	// Editing an existing overlay (src/bounds/opacity/interactive/alt/zIndex/
+	// classname/keepAspectRatio) sends bflm_set_overlays so the iframe rebuilds
+	// its L.imageOverlay/L.videoOverlay layers in place — no full reload. The
+	// iframe always receives the FULL current overlays array (cheap to clone
+	// via postMessage) and recreates every overlay layer for this block.
+	// Adding/removing an overlay is handled separately by previewUrlKey (the
+	// overlay count is part of that key) so layer indices stay in sync with
+	// the resize/move handle wiring in includes/preview/template.php.
+	useEffect( () => {
+		clearTimeout( overlaysDebounceRef.current );
+		overlaysDebounceRef.current = setTimeout( () => {
+			const iframe = iframeRef.current;
+			if ( ! iframe?.contentWindow ) {
+				return;
+			}
+			iframe.contentWindow.postMessage(
+				{
+					type: 'bflm_set_overlays',
+					blockId: clientIdRef.current,
+					overlays: attributesRef.current.overlays || [],
+				},
+				'*'
+			);
+		}, 150 );
+
+		return () => clearTimeout( overlaysDebounceRef.current );
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [ JSON.stringify( overlays ) ] );
 
 	// ── Incoming postMessages from the preview iframe ─────────────────────────
 	useEffect( () => {
