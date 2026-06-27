@@ -113,6 +113,24 @@ operated by terrestris GmbH (`ows.mundialis.de`). That service displays a
 watermark and is also a third-party request — provide your own WMS URL to
 avoid it.
 
+== Known Limitations ==
+
+**GPX data layers from the Media Library may not render.**
+
+When a `.gpx` file is uploaded to the WordPress Media Library and used as the
+source of a GPX data layer, the track may fail to draw, while GeoJSON and KML
+layers work in the same setup. This is an upstream limitation in the Leaflet
+Map plugin, not in Blocks for Leaflet Map: its GeoJSON/GPX/KML loader reads the
+response as XML (`responseXML`), which the browser only populates when the file
+is served with an XML `Content-Type` (`text/xml`, `application/xml`, or a
+`+xml` subtype). Many web servers serve `.gpx` as `text/plain` or
+`application/octet-stream`, so the track is never parsed. The same behaviour
+occurs when using the Leaflet Map plugin's `[leaflet-gpx]` shortcode directly.
+
+Workarounds: serve the GPX file from a host that sets an XML `Content-Type`
+(e.g. `application/gpx+xml`), or configure your web server to serve `.gpx` as
+XML. GeoJSON and KML layers are unaffected.
+
 == Frequently Asked Questions ==
 
 = Does this plugin replace the Leaflet Map plugin? =
