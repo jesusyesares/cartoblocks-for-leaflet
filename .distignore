@@ -10,6 +10,7 @@ composer.lock
 .editorconfig
 .git
 .gitignore
+.pressship-svn
 
 # Develop
 node_modules/
