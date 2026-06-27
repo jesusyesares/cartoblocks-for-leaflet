@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.8
 Tested up to:      7.0
-Stable tag:        1.1.0
+Stable tag:        1.1.1
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -194,6 +194,10 @@ Yes. All user-facing strings are wrapped in `__()` with the `blocks-for-leaflet-
 7. Frontend rendering — map with markers, lines, and a GeoJSON layer.
 
 == Changelog ==\
+\
+= 1.1.1 =\
+* i18n: Wrapped the remaining untranslated UI placeholder and added translator comments for two placeholder strings so all user-facing text is translation-ready. Regenerated the translation template (.pot). No change to plugin behaviour.\
+* Docs: Added a "Known Limitations" note documenting that GPX data layers sourced from the Media Library may not render (upstream Content-Type limitation).\
 \
 = 1.1.0 =\
 * New: Image and video overlay shortcodes ([leaflet-image-overlay] / [leaflet-video-overlay]) with drag-to-move and drag-to-resize handles in the editor preview.\
