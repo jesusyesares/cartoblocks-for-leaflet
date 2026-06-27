@@ -14,7 +14,16 @@
  * `phpcs:ignoreFile` directive above is intentional and exists solely to
  * silence the lint output on this third-party file. See PR #20 review
  * comments for the original discussion.
+ *
+ * BFLM addition: the ABSPATH guard below is the only local change. It is
+ * required by the WordPress.org Plugin Check (direct file access protection)
+ * and does not alter any library behaviour — no class or function in this file
+ * executes before the guard.
  */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Exit if accessed directly.
+}
 
 /**
  * Plugin installation and activation for WordPress themes.
