@@ -3436,6 +3436,7 @@ export default function Edit( {
 											target="_blank"
 											rel="noopener noreferrer"
 											aria-label={ sprintf(
+												// translators: %s is the name of the external link's destination.
 												__(
 													'%s (opens in new tab)',
 													'blocks-for-leaflet-map'
@@ -3458,6 +3459,7 @@ export default function Edit( {
 											target="_blank"
 											rel="noopener noreferrer"
 											aria-label={ sprintf(
+												// translators: %s is the name of the external link's destination.
 												__(
 													'%s (opens in new tab)',
 													'blocks-for-leaflet-map'
@@ -3480,6 +3482,7 @@ export default function Edit( {
 											target="_blank"
 											rel="noopener noreferrer"
 											aria-label={ sprintf(
+												// translators: %s is the name of the external link's destination.
 												__(
 													'%s (opens in new tab)',
 													'blocks-for-leaflet-map'
@@ -5322,6 +5325,7 @@ export default function Edit( {
 											>
 												{ isOrphan && '📍 ' }
 												{ sprintf(
+													// translators: %d is the point's position number in the list.
 													__(
 														'Point %d',
 														'blocks-for-leaflet-map'
@@ -5752,7 +5756,10 @@ export default function Edit( {
 										'blocks-for-leaflet-map'
 									) }
 									value={ line.dashArray || '' }
-									placeholder="e.g. 5,10"
+									placeholder={ __(
+										'e.g. 5,10',
+										'blocks-for-leaflet-map'
+									) }
 									onChange={ ( v ) =>
 										handleUpdateLine( lineIdx, {
 											dashArray: v,
@@ -6356,7 +6363,10 @@ export default function Edit( {
 												'blocks-for-leaflet-map'
 											) }
 											value={ circle.dashArray || '' }
-											placeholder="e.g. 5,10"
+											placeholder={ __(
+											'e.g. 5,10',
+											'blocks-for-leaflet-map'
+										) }
 											onChange={ ( v ) =>
 												handleUpdateCircle( circleIdx, {
 													dashArray: v,
