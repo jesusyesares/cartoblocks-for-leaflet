@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.8
 Tested up to:      7.0
-Stable tag:        1.0.7
+Stable tag:        1.1.0
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -176,6 +176,14 @@ Yes. All user-facing strings are wrapped in `__()` with the `blocks-for-leaflet-
 7. Frontend rendering — map with markers, lines, and a GeoJSON layer.
 
 == Changelog ==\
+\
+= 1.1.0 =\
+* New: Image and video overlay shortcodes ([leaflet-image-overlay] / [leaflet-video-overlay]) with drag-to-move and drag-to-resize handles in the editor preview.\
+* New: Overlay bounds auto-fill centred on the current map view; overlays update live in the editor without an iframe reload.\
+* Improved: Interaction toggles (dragging, keyboard, double-click zoom, etc.) now apply live in the preview.\
+* Fixed: Image-map drag and zoom now sync with the sidebar controls in both the editor preview and the frontend; width is passed to [leaflet-image].\
+* Fixed: Iframe no longer reloads mid-drag, which previously killed map panning.\
+* Hardened: ABSPATH guard added to the generated blocks-manifest.php; Nominatim external service disclosed in the readme.\
 \
 = 1.0.7 =\
 * Refactor: Internal modularization (no behaviour change). Plugin code is split into focused files under `includes/` so each feature has one home: shortcode builders, preview endpoint, geocoder, editor assets, file-type filters, TGM config. Main plugin file slimmed from 1450 to 95 lines; render.php from 614 to 105 lines. Frontend output is byte-identical to 1.0.6.\
