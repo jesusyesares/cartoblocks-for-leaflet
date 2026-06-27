@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.8
 Tested up to:      7.0
-Stable tag:        1.0.7
+Stable tag:        1.1.0
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -83,6 +83,36 @@ Blocks for Leaflet Map adds a native Gutenberg block that wraps the [Leaflet Map
 3. Activate the plugin through the Plugins screen.
 4. In the block editor, search for "Leaflet Map Block" and add it to your page or post.
 
+== External services ==
+
+This plugin connects to one external service: the Nominatim geocoding API
+operated by the OpenStreetMap Foundation. It is used **only** in the block
+editor, and **only** when you click the address search button to look up the
+coordinates of a place name. It is never called on the frontend of your site
+and is never called automatically.
+
+When you perform an address search, the text you type into the search field is
+sent to `https://nominatim.openstreetmap.org/search` so it can be matched
+against OpenStreetMap data and returned as a list of candidate locations. The
+request also includes your site URL and administrator contact email in the
+User-Agent header, following Nominatim's usage policy for attribution. No other
+personal data is transmitted. If you have configured a Nominatim contact email
+in the Leaflet Map plugin settings, that value is used instead.
+
+* Service provider: OpenStreetMap Foundation (Nominatim)
+* Terms / usage policy: https://operations.osmfoundation.org/policies/nominatim/
+* Privacy policy: https://wiki.osmfoundation.org/wiki/Privacy_Policy
+
+Note: GeoJSON, GPX, and KML data layers, and any map tiles, are loaded by the
+Leaflet Map plugin (and your browser) from whatever URLs **you** enter. Those
+requests are made by the Leaflet Map plugin, not by Blocks for Leaflet Map.
+
+Note: if "Use WMS tile source" is enabled but the WMS Source field is left
+empty, the Leaflet Map plugin falls back to a free public demo WMS service
+operated by terrestris GmbH (`ows.mundialis.de`). That service displays a
+watermark and is also a third-party request — provide your own WMS URL to
+avoid it.
+
 == Frequently Asked Questions ==
 
 = Does this plugin replace the Leaflet Map plugin? =
@@ -104,6 +134,12 @@ Whatever you have configured in the Leaflet Map plugin settings. By default, Ope
 = Can I use a WMS tile source? =
 
 Yes. Toggle "Use WMS tile source" in the Tile Layer panel and enter the WMS URL, layer name, and CRS. The WMS source must be CORS-enabled for the editor preview to load (same requirement as the frontend).
+
+Note: if you leave the WMS Source field empty, the Leaflet Map plugin falls
+back to a free public demo WMS service (`ows.mundialis.de`, operated by
+terrestris GmbH), which displays a "terrestris" watermark and QR code overlay
+on the map. This is not added by Blocks for Leaflet Map — enter your own WMS
+URL to remove it.
 
 = Can I load GeoJSON, GPX, or KML files? =
 
@@ -140,6 +176,14 @@ Yes. All user-facing strings are wrapped in `__()` with the `blocks-for-leaflet-
 7. Frontend rendering — map with markers, lines, and a GeoJSON layer.
 
 == Changelog ==\
+\
+= 1.1.0 =\
+* New: Image and video overlay shortcodes ([leaflet-image-overlay] / [leaflet-video-overlay]) with drag-to-move and drag-to-resize handles in the editor preview.\
+* New: Overlay bounds auto-fill centred on the current map view; overlays update live in the editor without an iframe reload.\
+* Improved: Interaction toggles (dragging, keyboard, double-click zoom, etc.) now apply live in the preview.\
+* Fixed: Image-map drag and zoom now sync with the sidebar controls in both the editor preview and the frontend; width is passed to [leaflet-image].\
+* Fixed: Iframe no longer reloads mid-drag, which previously killed map panning.\
+* Hardened: ABSPATH guard added to the generated blocks-manifest.php; Nominatim external service disclosed in the readme.\
 \
 = 1.0.7 =\
 * Refactor: Internal modularization (no behaviour change). Plugin code is split into focused files under `includes/` so each feature has one home: shortcode builders, preview endpoint, geocoder, editor assets, file-type filters, TGM config. Main plugin file slimmed from 1450 to 95 lines; render.php from 614 to 105 lines. Frontend output is byte-identical to 1.0.6.\

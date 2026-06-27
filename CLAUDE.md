@@ -27,7 +27,7 @@ converting its shortcodes into a single configurable Gutenberg block.
 - **Plugin slug:** `blocks-for-leaflet-map`
 - **Block:** `leaflet-map-block`
 - **Repo:** https://github.com/jesusyesares/blocks-for-leaflet-map
-- **Current version:** 1.0.6 (next release: 1.0.7 — internal modularization)
+- **Current version:** 1.0.7 (released — internal modularization, v1.1.0 milestone)
 - **Goal:** Public release, eventually WordPress.org submission
 - **Requires:** "Leaflet Map" plugin by bozdoz installed and active
 - **Build tooling:** `wp-scripts` (`npm run build`, `npm run plugin-zip`)
@@ -129,33 +129,56 @@ All five locations must be updated on every release:
 
 ## Development Protocol
 Mandatory for every feature:
-1. Create feature branch
+1. Create feature branch off `develop`
 2. Implement
 3. Build (`npm run build`)
-4. Confirm tests pass
-5. Merge to main (no-ff)
-6. Version bump (all five locations)
+4. Confirm tests pass (`npm test` + `composer test`)
+5. Merge to `develop` (no-ff)
+6. Version bump (all five locations) when cutting a release
+7. `develop` → `main` + tag on release (currently kept in lockstep — `main` mirrors the latest tagged release)
 
 ## Distribution
 Use `npm run plugin-zip` (wp-scripts plugin-zip) with `.distignore`.
-Excluded: `node_modules/`, `src/`, `.git/`, `.claude/`, config files, `CHANGELOG.md`.
+Excluded: `node_modules/`, `src/`, `.git/`, `.claude/`, `plans/`, config files, `CHANGELOG.md`.
 
-## Current Milestone: v1.1.0 (lands as 1.0.7 — internal refactor only)
+## Testing
+- JS: `npm test` (Jest, via `@wordpress/scripts`)
+- PHP: `composer test` (PHPUnit 9.6, `tests/` — 115 tests / 304 assertions as of 1.0.7)
+- Lint/static analysis: `composer lint`, `composer phpstan` (covers `includes/`)
+
+## Completed Milestone: v1.1.0 (released as 1.0.7)
 - ✅ PR #21 — Extract shortcode builders to `includes/shortcodes/`
 - ✅ PR #22 — Slim `render.php` to use shared builders (614 → 105 lines)
 - ✅ PR #24 — Split `blocks-for-leaflet-map.php` into per-feature includes (1450 → 95 lines)
-- 🔲 Final docs PR + version bump to 1.0.7
-- 🔲 Issue #23 — fitMarkers + lines/polygons editor zoom oscillation
+- ✅ PR #25/#26 — docs + version bump to 1.0.7
+- ✅ Issue #23 — fitMarkers editor preview reload loop, fixed + smoke-tested
+- ✅ PHPCS/PHPStan coverage expanded to `includes/`
+- ✅ PHPUnit 9.6 suite added (`tests/`, 115 tests)
+- ✅ Security hardening: postMessage origin validation, `wp_safe_remote_get` for geocoder, `esc_url` on overlay `src`
+- ✅ `@wordpress/*` deps pinned to semver ranges; `.pot` regenerated
+
+## Current Milestone: v1.2.0 — split `edit.js` into smaller modules
+`src/leaflet-map-block/edit.js` is 7457 lines. Candidate module seams:
+- Shortcode-builder / URL-building helpers (~lines 95–994)
+- Iframe postMessage sync (~lines 1337–1700)
+- Marker/line/circle attribute handlers (~lines 1702–2488)
+- Geocoding UI (~lines 1161–1773)
+- Remaining slimmer main edit component (~1500 lines)
 
 ## Roadmap
 - v0.4.0 → v1.0.0 — completed (full shortcode parity)
-- **v1.1.0 — internal modularization (in progress on `develop`)**
-- v1.2.0 — split `edit.js` into smaller modules
+- v1.1.0 — completed, released as 1.0.7 (internal modularization)
+- **v1.2.0 — split `edit.js` into smaller modules (next)**
 - v1.3.0+ — i18n completion + WordPress.org submission
 
 ## Before WordPress.org Submission
-- Full internationalisation required (all user-facing strings)
+- Full internationalisation required (all user-facing strings) — `.pot` regenerated
+  at 1.0.7 but coverage audit (untranslated strings) still pending
 - Resolve any remaining Plugin Check warnings
+- Issue #27 (GPX from Media Library not rendering) — root cause is upstream
+  (Leaflet Map's `leaflet-ajax-geojson.js` / `Content-Type` for `.gpx`). Add a
+  "Known Limitations" note to `readme.txt` and/or file upstream at
+  bozdoz/wp-plugin-leaflet-map. Does not block submission.
 
 ## GitHub Project Management
 Issues and milestones are tracked via `gh` CLI.

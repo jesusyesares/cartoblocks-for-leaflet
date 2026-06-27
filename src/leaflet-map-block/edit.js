@@ -18,12 +18,17 @@
  * COMMUNICATION CHANNELS
  * ──────────────────────
  *   Outer → Preview  (iframeRef.current.contentWindow.postMessage)
- *     type: 'bflm_set_view'  — sidebar lat/lng/zoom change → map.setView()
+ *     type: 'bflm_set_view'     — sidebar lat/lng/zoom change → map.setView()
+ *     type: 'bflm_set_overlays' — overlays attribute change → live rebuild of
+ *                                 image/video overlay layers, no iframe reload
  *
  *   Preview → Outer  (window.top.postMessage, received on window here)
  *     type: 'bflm_map_update'       — user pan/zoom → update lat/lng/zoom attrs
  *     type: 'bflm_marker_update'    — marker drag   → update marker lat/lng attr
  *     type: 'bflm_linepoint_update' — line-point drag → update line point lat/lng
+ *     type: 'bflm_overlay_update'   — overlay corner-handle drag → update overlay bounds
+ *     type: 'bflm_map_drag_start'   — user starts dragging map → suppress overlay
+ *     type: 'bflm_map_drag_end'     — user releases map drag   → restore overlay
  *
  * SRC REBUILD vs. postMessage
  * ───────────────────────────
@@ -32,6 +37,12 @@
  *
  *   View changes (lat, lng, zoom) from the sidebar:
  *     Send bflm_set_view postMessage → no tile reload (100 ms debounce).
+ *
+ *   Overlay edits (src/bounds/opacity/etc. on an existing overlay):
+ *     Send bflm_set_overlays postMessage → no tile reload (150 ms debounce).
+ *     Adding/removing an overlay still triggers a full reload (see
+ *     previewUrlKey below) to keep layer order/indices in sync with the
+ *     handle-setup code in includes/preview/template.php.
  *
  * ECHO LOOP PREVENTION
  * ─────────────────────
@@ -1316,6 +1327,15 @@ export default function Edit( {
 	const iframeRef = useRef( null );
 
 	/**
+	 * Whether the user is mid-drag/mid-interaction inside the iframe overlay.
+	 * Gutenberg's `isSelected` flips to false as soon as focus crosses into
+	 * the iframe's separate browsing context, which would otherwise remount
+	 * the focus-restoring overlay on top of the iframe mid-drag and cut the
+	 * gesture short. This flag keeps the overlay hidden until mouseup.
+	 */
+	const [ isOverlayInteracting, setIsOverlayInteracting ] = useState( false );
+
+	/**
 	 * Always-current snapshot of all block attributes. Debounced callbacks in
 	 * structural and view effects capture this ref to avoid stale closures.
 	 *
@@ -1339,6 +1359,20 @@ export default function Edit( {
 	 */
 	const isIframeUpdateRef = useRef( false );
 
+	/**
+	 * Set true before setAttributes() calls triggered by incoming iframe
+	 * postMessages (e.g. drag-driven lat/lng/zoom updates) so the structural
+	 * src-rebuild effect skips reloading the iframe. Without this, dragging
+	 * the map fires moveend → bflm_map_update → setAttributes(lat/lng/zoom) →
+	 * shortcode changes → the 500ms debounced rebuild reassigns iframe.src,
+	 * reloading the iframe mid/post-drag and resetting Leaflet's grab cursor.
+	 * Separate from isIframeUpdateRef because both effects run on the same
+	 * render and would otherwise race to consume a single shared flag.
+	 *
+	 * @type {React.MutableRefObject<boolean>}
+	 */
+	const skipNextSrcRebuildRef = useRef( false );
+
 	// Keep drawingLineIndexRef in sync with state so postMessage callbacks can
 	// read the current value without stale closures.
 	useEffect( () => {
@@ -1355,6 +1389,23 @@ export default function Edit( {
 
 	/** setTimeout handle for the 100 ms view postMessage debounce. */
 	const viewDebounceRef = useRef( null );
+
+	/** setTimeout handle for the 100 ms image-map view postMessage debounce. */
+	const imageViewDebounceRef = useRef( null );
+
+	/** setTimeout handle for the 150 ms overlays postMessage debounce. */
+	const overlaysDebounceRef = useRef( null );
+
+	/**
+	 * Set true before setAttributes() calls triggered by incoming
+	 * bflm_image_update postMessages so the image-view effect does not echo
+	 * back to the iframe. Separate from isIframeUpdateRef/skipNextSrcRebuildRef
+	 * because all three effects run on the same render and would otherwise
+	 * race to consume shared flags.
+	 *
+	 * @type {React.MutableRefObject<boolean>}
+	 */
+	const isIframeImageUpdateRef = useRef( false );
 
 	/**
 	 * True after the component has mounted. Used to skip the previewUrlKey
@@ -1420,7 +1471,28 @@ export default function Edit( {
 	// so append it explicitly when in image mode so the iframe reloads on slider change.
 	// Width changes resize the iframe container; Leaflet won't auto-recalculate tile
 	// positions, so include normalizedWidth in the key to force a full iframe reload.
-	const previewUrlKey = ( imageMap ? shortcode + '|iz=' + ( imageZoom ?? 0 ) : shortcode ) + '|w=' + normalizedWidth;
+	//
+	// Overlay edits (src/bounds/opacity/etc. on an EXISTING overlay) now sync live via
+	// the bflm_set_overlays postMessage effect below, so they must not appear in this
+	// key — otherwise every keystroke in the overlay panel would also trigger a full
+	// reload, fighting the live update. The [leaflet-image-overlay]/[leaflet-video-overlay]
+	// tags are stripped out of the shortcode used for the key; only the overlay COUNT is
+	// kept (`|ov=`) so adding/removing an overlay still forces a reload — needed to keep
+	// Leaflet Map's `window.WPLeafletMapPlugin.overlays` array indices (and therefore the
+	// resize/move handle wiring in includes/preview/template.php) in sync with the
+	// `overlays` attribute array.
+	const shortcodeNoOverlays = shortcode.replace(
+		/\n?\[leaflet-(?:image|video)-overlay[^\]]*\/\]/g,
+		''
+	);
+	const previewUrlKey =
+		( imageMap
+			? shortcodeNoOverlays + '|iz=' + ( imageZoom ?? 0 )
+			: shortcodeNoOverlays ) +
+		'|w=' +
+		normalizedWidth +
+		'|ov=' +
+		( overlays ? overlays.length : 0 );
 
 	useEffect( () => {
 		// Skip on first render — mount effect already set iframe.src.
@@ -1432,6 +1504,13 @@ export default function Edit( {
 			return;
 		}
 		if ( drawingCircleIndexRef.current !== null ) {
+			return;
+		}
+		// Skip rebuild when lat/lng/zoom changed because of a drag/pan/zoom
+		// that already happened live inside the iframe — reloading would
+		// kill the in-progress interaction and reset Leaflet's cursor state.
+		if ( skipNextSrcRebuildRef.current ) {
+			skipNextSrcRebuildRef.current = false;
 			return;
 		}
 		clearTimeout( srcDebounceRef.current );
@@ -1492,6 +1571,104 @@ export default function Edit( {
 		return () => clearTimeout( viewDebounceRef.current );
 	}, [ lat, lng, zoom ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
+	// ── Interaction toggles (sidebar) → postMessage to iframe (no debounce) ───
+	//
+	// dragging/keyboard/doubleClickZoom/boxZoom/tap are part of previewUrlKey
+	// (via shortcode) and would otherwise only take effect after the 500 ms
+	// src-rebuild — during which the stale iframe still responds with its old
+	// settings (e.g. double-click still zooms after switching to "Disabled").
+	// Sending bflm_set_interaction immediately calls the matching Leaflet
+	// handler's enable()/disable() on the live map, closing that gap. The
+	// later src-rebuild still happens (keeps the iframe's HTML in sync) but no
+	// longer matters for perceived responsiveness.
+	useEffect( () => {
+		const iframe = iframeRef.current;
+		if ( ! iframe?.contentWindow ) {
+			return;
+		}
+		iframe.contentWindow.postMessage(
+			{
+				type: 'bflm_set_interaction',
+				blockId: clientIdRef.current,
+				dragging: dragging || '',
+				keyboard: keyboard || '',
+				doubleClickZoom: doubleClickZoom || '',
+				boxZoom: boxZoom || '',
+				tap: tap || '',
+			},
+			'*'
+		);
+	}, [ dragging, keyboard, doubleClickZoom, boxZoom, tap ] ); // eslint-disable-line react-hooks/exhaustive-deps
+
+	// ── Image map view changes (sidebar) → postMessage to iframe (100 ms) ────
+	//
+	// Mirrors the lat/lng/zoom effect above, but for image maps: imageX/
+	// imageY/imageZoom changes from the sidebar send bflm_set_image_view so
+	// the iframe calls map.setView() without a full reload. Skip when the
+	// change originated from the iframe itself (echo prevention).
+	useEffect( () => {
+		if ( isIframeImageUpdateRef.current ) {
+			isIframeImageUpdateRef.current = false;
+			return;
+		}
+
+		clearTimeout( imageViewDebounceRef.current );
+		imageViewDebounceRef.current = setTimeout( () => {
+			const iframe = iframeRef.current;
+			if ( ! iframe?.contentWindow ) {
+				return;
+			}
+			const {
+				imageX: currentImageX,
+				imageY: currentImageY,
+				imageZoom: currentImageZoom,
+			} = attributesRef.current;
+			iframe.contentWindow.postMessage(
+				{
+					type: 'bflm_set_image_view',
+					blockId: clientIdRef.current,
+					imageX: currentImageX ?? 0,
+					imageY: currentImageY ?? 0,
+					imageZoom: currentImageZoom ?? 0,
+				},
+				'*'
+			);
+		}, 100 );
+
+		return () => clearTimeout( imageViewDebounceRef.current );
+	}, [ imageX, imageY, imageZoom ] ); // eslint-disable-line react-hooks/exhaustive-deps
+
+	// ── Overlay edits → postMessage to iframe (150 ms debounce) ──────────────
+	//
+	// Editing an existing overlay (src/bounds/opacity/interactive/alt/zIndex/
+	// classname/keepAspectRatio) sends bflm_set_overlays so the iframe rebuilds
+	// its L.imageOverlay/L.videoOverlay layers in place — no full reload. The
+	// iframe always receives the FULL current overlays array (cheap to clone
+	// via postMessage) and recreates every overlay layer for this block.
+	// Adding/removing an overlay is handled separately by previewUrlKey (the
+	// overlay count is part of that key) so layer indices stay in sync with
+	// the resize/move handle wiring in includes/preview/template.php.
+	useEffect( () => {
+		clearTimeout( overlaysDebounceRef.current );
+		overlaysDebounceRef.current = setTimeout( () => {
+			const iframe = iframeRef.current;
+			if ( ! iframe?.contentWindow ) {
+				return;
+			}
+			iframe.contentWindow.postMessage(
+				{
+					type: 'bflm_set_overlays',
+					blockId: clientIdRef.current,
+					overlays: attributesRef.current.overlays || [],
+				},
+				'*'
+			);
+		}, 150 );
+
+		return () => clearTimeout( overlaysDebounceRef.current );
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [ JSON.stringify( overlays ) ] );
+
 	// ── Incoming postMessages from the preview iframe ─────────────────────────
 	useEffect( () => {
 		/**
@@ -1517,13 +1694,52 @@ export default function Edit( {
 				return;
 			}
 
+			// User starts/ends dragging the map inside the iframe. Suppress
+			// the focus-restoring overlay for the duration of the drag so it
+			// doesn't remount on top of the iframe mid-gesture when
+			// Gutenberg's isSelected flips false (focus moved into the
+			// iframe's separate browsing context) and cut the drag short.
+			if ( msg.type === 'bflm_map_drag_start' ) {
+				setIsOverlayInteracting( true );
+				return;
+			}
+
+			if ( msg.type === 'bflm_map_drag_end' ) {
+				setIsOverlayInteracting( false );
+				return;
+			}
+
 			if ( msg.type === 'bflm_map_update' ) {
-				// Flag the update so the lat/lng/zoom effect skips the echo.
+				// Image maps always keep zoom="0" in the shortcode — imageZoom
+				// is the only user-facing zoom control for them. The preview
+				// iframe already skips posting this message for image maps,
+				// but guard here too in case of stale iframes or future call sites.
+				if ( attributesRef.current.imageMap ) {
+					return;
+				}
+				// Flag the update so the lat/lng/zoom effect skips the echo,
+				// and so the structural rebuild effect skips reloading the
+				// iframe (the change already happened live inside it).
 				isIframeUpdateRef.current = true;
+				skipNextSrcRebuildRef.current = true;
 				setAttributes( {
 					lat: parseFloat( msg.lat.toFixed( 6 ) ),
 					lng: parseFloat( msg.lng.toFixed( 6 ) ),
 					zoom: msg.zoom,
+				} );
+				return;
+			}
+
+			if ( msg.type === 'bflm_image_update' ) {
+				// Flag the update so the image-view effect skips the echo,
+				// and so the structural rebuild effect skips reloading the
+				// iframe (the change already happened live inside it).
+				isIframeImageUpdateRef.current = true;
+				skipNextSrcRebuildRef.current = true;
+				setAttributes( {
+					imageX: parseFloat( msg.imageX.toFixed( 6 ) ),
+					imageY: parseFloat( msg.imageY.toFixed( 6 ) ),
+					imageZoom: parseFloat( msg.imageZoom.toFixed( 6 ) ),
 				} );
 				return;
 			}
@@ -1539,6 +1755,18 @@ export default function Edit( {
 									lng: parseFloat( msg.lng.toFixed( 6 ) ),
 							  }
 							: m
+					),
+				} );
+				return;
+			}
+
+			if ( msg.type === 'bflm_overlay_update' ) {
+				const currentOverlays = attributesRef.current.overlays || [];
+				setAttributes( {
+					overlays: currentOverlays.map( ( o, i ) =>
+						i === msg.overlayIndex
+							? { ...o, bounds: `${ msg.sw };${ msg.ne }` }
+							: o
 					),
 				} );
 				return;
@@ -2340,6 +2568,37 @@ export default function Edit( {
 		} );
 	}
 
+	/**
+	 * Compute a "SW;NE" bounds string centred on the current map view, sized to
+	 * roughly half the visible viewport (Web Mercator metres-per-pixel formula)
+	 * so a freshly added overlay lands in view instead of needing manual bounds
+	 * first (an empty bounds value makes bflm_build_overlay_shortcodes() skip
+	 * the overlay entirely — see includes/shortcodes/overlay.php).
+	 *
+	 * @param {number} centerLat Current map latitude.
+	 * @param {number} centerLng Current map longitude.
+	 * @param {number} mapZoom   Current map zoom level.
+	 * @return {string} Bounds string, e.g. "40.71,-74.22;40.77,-74.12".
+	 */
+	function computeDefaultOverlayBounds( centerLat, centerLng, mapZoom ) {
+		const metersPerPixel =
+			( 156543.03392 * Math.cos( ( centerLat * Math.PI ) / 180 ) ) /
+			Math.pow( 2, mapZoom );
+		// Half the size of a typical map container, in pixels, used as the
+		// overlay's half-width/height so it covers a sensible chunk of the
+		// current view with margin on every side.
+		const halfSizePx = 200;
+		const metersOffset = metersPerPixel * halfSizePx;
+
+		const latOffset = metersOffset / 111320;
+		const lngOffset =
+			metersOffset / ( 111320 * Math.cos( ( centerLat * Math.PI ) / 180 ) );
+
+		const sw = `${ ( centerLat - latOffset ).toFixed( 6 ) },${ ( centerLng - lngOffset ).toFixed( 6 ) }`;
+		const ne = `${ ( centerLat + latOffset ).toFixed( 6 ) },${ ( centerLng + lngOffset ).toFixed( 6 ) }`;
+		return `${ sw };${ ne }`;
+	}
+
 	/** Add a new overlay of the given type and expand it. */
 	function handleAddOverlay( type ) {
 		const next = [
@@ -2347,7 +2606,7 @@ export default function Edit( {
 			{
 				type,
 				src: '',
-				bounds: '',
+				bounds: computeDefaultOverlayBounds( lat, lng, zoom ),
 				opacity: null,
 				interactive: false,
 				alt: '',
@@ -7329,7 +7588,7 @@ export default function Edit( {
 						sandbox="allow-scripts allow-same-origin"
 						title={ __( 'Map preview', 'blocks-for-leaflet-map' ) }
 					/>
-					{ ! isSelected && (
+					{ ! isSelected && ! isOverlayInteracting && (
 						<div
 							style={ {
 								position: 'absolute',
