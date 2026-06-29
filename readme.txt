@@ -1,5 +1,5 @@
 === Blocks for Leaflet Map ===
-Contributors:      jesusyesares
+Contributors:      glycymeris
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.8
 Tested up to:      7.0
