@@ -1,10 +1,10 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "blocks-for-leaflet-map/leaflet-map-block",
+	"name": "cartoblocks-for-leaflet/leaflet-map-block",
 	"version": "1.2.0",
-	"title": "Leaflet Map Block",
-	"category": "embed",
+	"title": "Map for Leaflet",
+	"category": "media",
 	"icon": "location-alt",
 	"description": "Embed an interactive Leaflet map using the Leaflet Map plugin shortcodes.",
 	"keywords": [ "map", "leaflet", "location", "embed" ],
@@ -350,7 +350,7 @@
 			}
 		}
 	},
-	"textdomain": "blocks-for-leaflet-map",
+	"textdomain": "cartoblocks-for-leaflet",
 	"editorScript": "file:./index.js",
 	"editorStyle": "file:./index.css",
 	"style": "file:./style-index.css",

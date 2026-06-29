@@ -3,7 +3,7 @@
  * PHPStan-only constant stubs.
  *
  * Declares plugin constants whose runtime value is computed via a function
- * call (e.g. `plugin_dir_path( __FILE__ )` in blocks-for-leaflet-map.php).
+ * call (e.g. `plugin_dir_path( __FILE__ )` in cartoblocks-for-leaflet.php).
  * PHPStan can only discover `define()`'d constants when the value is a
  * literal it can statically evaluate, so this file re-declares them with
  * placeholder literal values purely so PHPStan recognises the constant

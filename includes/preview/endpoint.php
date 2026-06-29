@@ -24,7 +24,7 @@ defined( 'ABSPATH' ) || exit;
 function bflm_preview_map(): void {
 	$nonce = isset( $_GET['bflm_nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['bflm_nonce'] ) ) : '';
 	if ( ! wp_verify_nonce( $nonce, 'bflm_preview_nonce' ) ) {
-		wp_die( esc_html__( 'Invalid or expired preview token.', 'blocks-for-leaflet-map' ), 403 );
+		wp_die( esc_html__( 'Invalid or expired preview token.', 'cartoblocks-for-leaflet' ), 403 );
 	}
 
 	$attrs = bflm_preview_normalise_input( $_GET ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified above.

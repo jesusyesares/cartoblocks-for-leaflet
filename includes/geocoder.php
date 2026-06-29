@@ -26,14 +26,14 @@ function bflm_geocode_address(): void {
 
 	if ( ! current_user_can( 'edit_posts' ) ) {
 		wp_send_json_error(
-			array( 'message' => __( 'You do not have permission to perform this action.', 'blocks-for-leaflet-map' ) ),
+			array( 'message' => __( 'You do not have permission to perform this action.', 'cartoblocks-for-leaflet' ) ),
 			403
 		);
 	}
 
 	if ( ! bflm_is_leaflet_map_active() ) {
 		wp_send_json_error(
-			array( 'message' => __( 'The Leaflet Map plugin is not active.', 'blocks-for-leaflet-map' ) )
+			array( 'message' => __( 'The Leaflet Map plugin is not active.', 'cartoblocks-for-leaflet' ) )
 		);
 	}
 
@@ -41,7 +41,7 @@ function bflm_geocode_address(): void {
 
 	if ( '' === $address ) {
 		wp_send_json_error(
-			array( 'message' => __( 'Please enter an address to search.', 'blocks-for-leaflet-map' ) )
+			array( 'message' => __( 'Please enter an address to search.', 'cartoblocks-for-leaflet' ) )
 		);
 	}
 
@@ -76,7 +76,7 @@ function bflm_geocode_address(): void {
 
 	if ( is_wp_error( $response ) ) {
 		wp_send_json_error(
-			array( 'message' => __( 'Geocoding request failed. Please try again.', 'blocks-for-leaflet-map' ) )
+			array( 'message' => __( 'Geocoding request failed. Please try again.', 'cartoblocks-for-leaflet' ) )
 		);
 	}
 
@@ -85,7 +85,7 @@ function bflm_geocode_address(): void {
 
 	if ( ! is_array( $data ) || empty( $data ) ) {
 		wp_send_json_error(
-			array( 'message' => __( 'No results found for that address.', 'blocks-for-leaflet-map' ) )
+			array( 'message' => __( 'No results found for that address.', 'cartoblocks-for-leaflet' ) )
 		);
 	}
 
@@ -103,7 +103,7 @@ function bflm_geocode_address(): void {
 
 	if ( empty( $candidates ) ) {
 		wp_send_json_error(
-			array( 'message' => __( 'No results found for that address.', 'blocks-for-leaflet-map' ) )
+			array( 'message' => __( 'No results found for that address.', 'cartoblocks-for-leaflet' ) )
 		);
 	}
 

@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
-<ruleset name="Blocks for Leaflet Map">
-    <description>WordPress Coding Standards for blocks-for-leaflet-map.</description>
+<ruleset name="CartoBlocks for Leaflet">
+    <description>WordPress Coding Standards for cartoblocks-for-leaflet.</description>
 
     <!-- Files to analyse -->
-    <file>blocks-for-leaflet-map.php</file>
+    <file>cartoblocks-for-leaflet.php</file>
     <file>src/leaflet-map-block/render.php</file>
     <file>includes</file>
 
@@ -17,7 +17,7 @@
         <!-- Plugin-specific text domain -->
         <properties>
             <property name="text_domain" type="array">
-                <element value="blocks-for-leaflet-map"/>
+                <element value="cartoblocks-for-leaflet"/>
             </property>
         </properties>
     </rule>
