@@ -1,5 +1,5 @@
-=== Blocks for Leaflet Map ===
-Contributors:      jesusyesares
+=== CartoBlocks for Leaflet ===
+Contributors:      glycymeris
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.8
 Tested up to:      7.0
@@ -12,7 +12,7 @@ A Gutenberg block that gives you a full visual editor for all Leaflet Map plugin
 
 == Description ==
 
-Blocks for Leaflet Map adds a native Gutenberg block that wraps the [Leaflet Map](https://wordpress.org/plugins/leaflet-map/) plugin shortcodes. Configure your map visually in the block editor — the plugin generates the correct shortcodes automatically, and the frontend is rendered entirely by Leaflet Map.
+CartoBlocks for Leaflet adds a native Gutenberg block that wraps the [Leaflet Map](https://wordpress.org/plugins/leaflet-map/) plugin shortcodes. Configure your map visually in the block editor — the plugin generates the correct shortcodes automatically, and the frontend is rendered entirely by Leaflet Map.
 
 **Core map features:**
 
@@ -78,9 +78,9 @@ Blocks for Leaflet Map adds a native Gutenberg block that wraps the [Leaflet Map
 
 == Installation ==
 
-1. Upload the `blocks-for-leaflet-map` folder to `/wp-content/plugins/`, or install the plugin through the WordPress plugins screen.
+1. Upload the `cartoblocks-for-leaflet` folder to `/wp-content/plugins/`, or install the plugin through the WordPress plugins screen.
 2. Activate the plugin through the Plugins screen. If the [Leaflet Map](https://wordpress.org/plugins/leaflet-map/) plugin is not yet installed and active, WordPress prompts you to install and activate it first (it is a required dependency).
-3. In the block editor, search for "Leaflet Map Block" and add it to your page or post.
+3. In the block editor, search for "Map for Leaflet" and add it to your page or post.
 
 == External services ==
 
@@ -104,7 +104,7 @@ in the Leaflet Map plugin settings, that value is used instead.
 
 Note: GeoJSON, GPX, and KML data layers, and any map tiles, are loaded by the
 Leaflet Map plugin (and your browser) from whatever URLs **you** enter. Those
-requests are made by the Leaflet Map plugin, not by Blocks for Leaflet Map.
+requests are made by the Leaflet Map plugin, not by CartoBlocks for Leaflet.
 
 Note: if "Use WMS tile source" is enabled but the WMS Source field is left
 empty, the Leaflet Map plugin falls back to a free public demo WMS service
@@ -119,7 +119,7 @@ avoid it.
 When a `.gpx` file is uploaded to the WordPress Media Library and used as the
 source of a GPX data layer, the track may fail to draw, while GeoJSON and KML
 layers work in the same setup. This is an upstream limitation in the Leaflet
-Map plugin, not in Blocks for Leaflet Map: its GeoJSON/GPX/KML loader reads the
+Map plugin, not in CartoBlocks for Leaflet: its GeoJSON/GPX/KML loader reads the
 response as XML (`responseXML`), which the browser only populates when the file
 is served with an XML `Content-Type` (`text/xml`, `application/xml`, or a
 `+xml` subtype). Many web servers serve `.gpx` as `text/plain` or
@@ -155,7 +155,7 @@ Yes. Toggle "Use WMS tile source" in the Tile Layer panel and enter the WMS URL,
 Note: if you leave the WMS Source field empty, the Leaflet Map plugin falls
 back to a free public demo WMS service (`ows.mundialis.de`, operated by
 terrestris GmbH), which displays a "terrestris" watermark and QR code overlay
-on the map. This is not added by Blocks for Leaflet Map — enter your own WMS
+on the map. This is not added by CartoBlocks for Leaflet — enter your own WMS
 URL to remove it.
 
 = Can I load GeoJSON, GPX, or KML files? =
@@ -180,7 +180,7 @@ Click the `<>` button in the block toolbar to open the Shortcode Viewer. It show
 
 = Does it support translations? =
 
-Yes. All user-facing strings are wrapped in `__()` with the `blocks-for-leaflet-map` textdomain. A `.pot` file is included in the `languages/` directory.
+Yes. All user-facing strings are wrapped in `__()` with the `cartoblocks-for-leaflet` textdomain. A `.pot` file is included in the `languages/` directory.
 
 == Screenshots ==
 

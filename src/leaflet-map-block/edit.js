@@ -88,9 +88,9 @@ import './editor.scss';
  * Allowed CSS units for map dimension controls.
  */
 const DIMENSION_UNITS = [
-	{ value: 'px', label: __( 'px', 'blocks-for-leaflet-map' ), default: 400 },
-	{ value: '%', label: __( '%', 'blocks-for-leaflet-map' ), default: 100 },
-	{ value: 'vh', label: __( 'vh', 'blocks-for-leaflet-map' ), default: 50 },
+	{ value: 'px', label: __( 'px', 'cartoblocks-for-leaflet' ), default: 400 },
+	{ value: '%', label: __( '%', 'cartoblocks-for-leaflet' ), default: 100 },
+	{ value: 'vh', label: __( 'vh', 'cartoblocks-for-leaflet' ), default: 50 },
 ];
 
 /**
@@ -98,9 +98,9 @@ const DIMENSION_UNITS = [
  * Empty string = "Default" (omit from shortcode, use Leaflet Map global settings).
  */
 const THREE_STATE_OPTIONS = [
-	{ value: '', label: __( 'Default', 'blocks-for-leaflet-map' ) },
-	{ value: 'true', label: __( 'Enabled', 'blocks-for-leaflet-map' ) },
-	{ value: 'false', label: __( 'Disabled', 'blocks-for-leaflet-map' ) },
+	{ value: '', label: __( 'Default', 'cartoblocks-for-leaflet' ) },
+	{ value: 'true', label: __( 'Enabled', 'cartoblocks-for-leaflet' ) },
+	{ value: 'false', label: __( 'Disabled', 'cartoblocks-for-leaflet' ) },
 ];
 
 // ── Shortcode builder ─────────────────────────────────────────────────────────
@@ -296,7 +296,7 @@ function buildLineShortcodes( lines ) {
 /**
  * Build [leaflet-circle] shortcode strings from the circles attribute.
  * Skips circles where lat/lng is null or radius is ≤ 0.
- * Keep in sync with render.php and bflm_preview_map() in blocks-for-leaflet-map.php.
+ * Keep in sync with render.php and bflm_preview_map() in cartoblocks-for-leaflet.php.
  *
  * @param {Array} circles
  * @return {string}
@@ -344,7 +344,7 @@ const LAYER_TYPE_TAGS = {
 /**
  * Build [leaflet-geojson] / [leaflet-gpx] / [leaflet-kml] shortcode strings.
  * Skips layers with empty src. Always self-closing — popup config goes via attrs.
- * Keep in sync with render.php and bflm_preview_map() in blocks-for-leaflet-map.php.
+ * Keep in sync with render.php and bflm_preview_map() in cartoblocks-for-leaflet.php.
  *
  * @param {Array} layers
  * @return {string}
@@ -408,7 +408,7 @@ function buildLayerShortcodes( layers ) {
 /**
  * Build [leaflet-image-overlay] / [leaflet-video-overlay] shortcode strings.
  * Skips overlays with empty src or bounds. Always self-closing.
- * Keep in sync with render.php and bflm_preview_map() in blocks-for-leaflet-map.php.
+ * Keep in sync with render.php and bflm_preview_map() in cartoblocks-for-leaflet.php.
  *
  * @param {Array} overlays
  * @return {string}
@@ -1020,7 +1020,7 @@ async function bflmGeocodeAddress( address ) {
 			candidates: [],
 			error: __(
 				'Geocoding is not available. Please reload the editor.',
-				'blocks-for-leaflet-map'
+				'cartoblocks-for-leaflet'
 			),
 		};
 	}
@@ -1041,7 +1041,7 @@ async function bflmGeocodeAddress( address ) {
 					data.data?.message ||
 					__(
 						'An unexpected error occurred. Please try again.',
-						'blocks-for-leaflet-map'
+						'cartoblocks-for-leaflet'
 					),
 			};
 		}
@@ -1051,7 +1051,7 @@ async function bflmGeocodeAddress( address ) {
 			candidates: [],
 			error: __(
 				'Geocoding request failed. Please check your connection and try again.',
-				'blocks-for-leaflet-map'
+				'cartoblocks-for-leaflet'
 			),
 		};
 	}
@@ -2764,7 +2764,7 @@ export default function Edit( {
 						icon={ codeIcon }
 						label={ __(
 							'View shortcode',
-							'blocks-for-leaflet-map'
+							'cartoblocks-for-leaflet'
 						) }
 						onClick={ () => setShowShortcode( ( prev ) => ! prev ) }
 						isPressed={ showShortcode }
@@ -2783,7 +2783,7 @@ export default function Edit( {
 					<div className="bflm-shortcode-popover__inner">
 						<div className="bflm-shortcode-popover__header">
 							<span className="bflm-shortcode-popover__label">
-								{ __( 'Shortcode', 'blocks-for-leaflet-map' ) }
+								{ __( 'Shortcode', 'cartoblocks-for-leaflet' ) }
 							</span>
 							<button
 								type="button"
@@ -2792,8 +2792,8 @@ export default function Edit( {
 								onMouseDown={ ( e ) => e.stopPropagation() }
 							>
 								{ isCopied
-									? __( 'Copied!', 'blocks-for-leaflet-map' )
-									: __( 'Copy', 'blocks-for-leaflet-map' ) }
+									? __( 'Copied!', 'cartoblocks-for-leaflet' )
+									: __( 'Copy', 'cartoblocks-for-leaflet' ) }
 							</button>
 						</div>
 						<pre className="bflm-shortcode-popover__code">
@@ -2806,17 +2806,17 @@ export default function Edit( {
 			<InspectorControls>
 				{ /* ── Location panel ────────────────────────────────────── */ }
 				<PanelBody
-					title={ __( 'Location', 'blocks-for-leaflet-map' ) }
+					title={ __( 'Location', 'cartoblocks-for-leaflet' ) }
 					initialOpen={ true }
 				>
 					<ToggleControl
 						label={ __(
 							'Image map mode',
-							'blocks-for-leaflet-map'
+							'cartoblocks-for-leaflet'
 						) }
 						help={ __(
 							'Replace tile layer with a flat image. Coordinates become pixel positions.',
-							'blocks-for-leaflet-map'
+							'cartoblocks-for-leaflet'
 						) }
 						checked={ imageMap }
 						onChange={ ( value ) =>
@@ -2863,11 +2863,11 @@ export default function Edit( {
 												{ imageSrc
 													? __(
 															'Replace image',
-															'blocks-for-leaflet-map'
+															'cartoblocks-for-leaflet'
 													  )
 													: __(
 															'Select image',
-															'blocks-for-leaflet-map'
+															'cartoblocks-for-leaflet'
 													  ) }
 											</Button>
 										</>
@@ -2877,11 +2877,11 @@ export default function Edit( {
 							<TextControl
 								label={ __(
 									'Image URL',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								help={ __(
 									'Paste an external image URL, or use the picker above.',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								value={ imageSrc }
 								onChange={ ( value ) =>
@@ -2894,7 +2894,7 @@ export default function Edit( {
 							<NumberControl
 								label={ __(
 									'Center X (pixels)',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								value={ imageX }
 								onChange={ ( value ) =>
@@ -2908,7 +2908,7 @@ export default function Edit( {
 							<NumberControl
 								label={ __(
 									'Center Y (pixels)',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								value={ imageY }
 								onChange={ ( value ) =>
@@ -2922,11 +2922,11 @@ export default function Edit( {
 							<RangeControl
 								label={ __(
 									'Zoom Level',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								help={ __(
 									'0 = fit image to block. Positive = zoom in, negative = zoom out.',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								value={ imageZoom ?? 0 }
 								onChange={ ( value ) =>
@@ -2943,20 +2943,20 @@ export default function Edit( {
 
 					{ ! imageMap && (
 					<RadioControl
-						label={ __( 'Input mode', 'blocks-for-leaflet-map' ) }
+						label={ __( 'Input mode', 'cartoblocks-for-leaflet' ) }
 						selected={ locationMode }
 						options={ [
 							{
 								label: __(
 									'Coordinates',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								),
 								value: 'coordinates',
 							},
 							{
 								label: __(
 									'Address',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								),
 								value: 'address',
 							},
@@ -2974,7 +2974,7 @@ export default function Edit( {
 							<NumberControl
 								label={ __(
 									'Latitude',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								value={ lat }
 								onChange={ ( value ) =>
@@ -2988,7 +2988,7 @@ export default function Edit( {
 							<NumberControl
 								label={ __(
 									'Longitude',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								value={ lng }
 								onChange={ ( value ) =>
@@ -3007,12 +3007,12 @@ export default function Edit( {
 							<TextControl
 								label={ __(
 									'Address',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								value={ addressInput }
 								placeholder={ __(
 									'Enter an address…',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								onChange={ ( value ) => {
 									setAddressInput( value );
@@ -3046,7 +3046,7 @@ export default function Edit( {
 									marginTop: '8px',
 								} }
 							>
-								{ __( 'Search', 'blocks-for-leaflet-map' ) }
+								{ __( 'Search', 'cartoblocks-for-leaflet' ) }
 							</Button>
 
 							{ geocodeStatus === 'loading' && (
@@ -3085,7 +3085,7 @@ export default function Edit( {
 										>
 											{ __(
 												'Select a location:',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 										</p>
 										{ candidates.map(
@@ -3120,7 +3120,7 @@ export default function Edit( {
 
 					{ ! imageMap && (
 						<RangeControl
-							label={ __( 'Zoom Level', 'blocks-for-leaflet-map' ) }
+							label={ __( 'Zoom Level', 'cartoblocks-for-leaflet' ) }
 							value={ zoom }
 							onChange={ ( value ) =>
 								setAttributes( { zoom: value } )
@@ -3135,11 +3135,11 @@ export default function Edit( {
 						<ToggleControl
 							label={ __(
 								'Fit to Markers',
-								'blocks-for-leaflet-map'
+								'cartoblocks-for-leaflet'
 							) }
 							help={ __(
 								'Automatically adjust the map view to contain all markers.',
-								'blocks-for-leaflet-map'
+								'cartoblocks-for-leaflet'
 							) }
 							checked={ fitMarkers }
 							onChange={ ( value ) =>
@@ -3152,11 +3152,11 @@ export default function Edit( {
 
 				{ /* ── Dimensions panel ───────────────────────────────────── */ }
 				<PanelBody
-					title={ __( 'Dimensions', 'blocks-for-leaflet-map' ) }
+					title={ __( 'Dimensions', 'cartoblocks-for-leaflet' ) }
 					initialOpen={ false }
 				>
 					<UnitControl
-						label={ __( 'Height', 'blocks-for-leaflet-map' ) }
+						label={ __( 'Height', 'cartoblocks-for-leaflet' ) }
 						value={ normalizedHeight }
 						units={ DIMENSION_UNITS }
 						min={ 0 }
@@ -3167,7 +3167,7 @@ export default function Edit( {
 					/>
 					<UnitControl
 						key={ widthControlKey }
-						label={ __( 'Width', 'blocks-for-leaflet-map' ) }
+						label={ __( 'Width', 'cartoblocks-for-leaflet' ) }
 						value={ normalizedWidth }
 						units={ DIMENSION_UNITS }
 						min={ 0 }
@@ -3190,13 +3190,13 @@ export default function Edit( {
 
 				{ /* ── Interaction panel ───────────────────────────────────── */ }
 				{ ! imageMap && <PanelBody
-					title={ __( 'Interaction', 'blocks-for-leaflet-map' ) }
+					title={ __( 'Interaction', 'cartoblocks-for-leaflet' ) }
 					initialOpen={ false }
 				>
 					<ToggleControl
 						label={ __(
 							'Scroll Wheel Zoom',
-							'blocks-for-leaflet-map'
+							'cartoblocks-for-leaflet'
 						) }
 						checked={ scrollWheelZoom }
 						onChange={ ( value ) =>
@@ -3205,7 +3205,7 @@ export default function Edit( {
 						__nextHasNoMarginBottom
 					/>
 					<SelectControl
-						label={ __( 'Dragging', 'blocks-for-leaflet-map' ) }
+						label={ __( 'Dragging', 'cartoblocks-for-leaflet' ) }
 						value={ dragging }
 						options={ THREE_STATE_OPTIONS }
 						onChange={ ( value ) =>
@@ -3217,7 +3217,7 @@ export default function Edit( {
 					<SelectControl
 						label={ __(
 							'Keyboard Navigation',
-							'blocks-for-leaflet-map'
+							'cartoblocks-for-leaflet'
 						) }
 						value={ keyboard }
 						options={ THREE_STATE_OPTIONS }
@@ -3230,7 +3230,7 @@ export default function Edit( {
 					<SelectControl
 						label={ __(
 							'Double Click Zoom',
-							'blocks-for-leaflet-map'
+							'cartoblocks-for-leaflet'
 						) }
 						value={ doubleClickZoom }
 						options={ THREE_STATE_OPTIONS }
@@ -3241,10 +3241,10 @@ export default function Edit( {
 						__nextHasNoMarginBottom
 					/>
 					<SelectControl
-						label={ __( 'Box Zoom', 'blocks-for-leaflet-map' ) }
+						label={ __( 'Box Zoom', 'cartoblocks-for-leaflet' ) }
 						help={ __(
 							'Shift + drag to zoom to area.',
-							'blocks-for-leaflet-map'
+							'cartoblocks-for-leaflet'
 						) }
 						value={ boxZoom }
 						options={ THREE_STATE_OPTIONS }
@@ -3257,7 +3257,7 @@ export default function Edit( {
 					<SelectControl
 						label={ __(
 							'Close Popup on Click',
-							'blocks-for-leaflet-map'
+							'cartoblocks-for-leaflet'
 						) }
 						value={ closePopupOnClick }
 						options={ THREE_STATE_OPTIONS }
@@ -3268,10 +3268,10 @@ export default function Edit( {
 						__nextHasNoMarginBottom
 					/>
 					<SelectControl
-						label={ __( 'Tap', 'blocks-for-leaflet-map' ) }
+						label={ __( 'Tap', 'cartoblocks-for-leaflet' ) }
 						help={ __(
 							'Mobile tap interaction.',
-							'blocks-for-leaflet-map'
+							'cartoblocks-for-leaflet'
 						) }
 						value={ tap }
 						options={ THREE_STATE_OPTIONS }
@@ -3282,10 +3282,10 @@ export default function Edit( {
 						__nextHasNoMarginBottom
 					/>
 					<SelectControl
-						label={ __( 'Inertia', 'blocks-for-leaflet-map' ) }
+						label={ __( 'Inertia', 'cartoblocks-for-leaflet' ) }
 						help={ __(
 							'Pan inertia after dragging.',
-							'blocks-for-leaflet-map'
+							'cartoblocks-for-leaflet'
 						) }
 						value={ inertia }
 						options={ THREE_STATE_OPTIONS }
@@ -3299,14 +3299,14 @@ export default function Edit( {
 
 				{ /* ── Zoom & Bounds panel ────────────────────────────────── */ }
 				{ ! imageMap && <PanelBody
-					title={ __( 'Zoom & Bounds', 'blocks-for-leaflet-map' ) }
+					title={ __( 'Zoom & Bounds', 'cartoblocks-for-leaflet' ) }
 					initialOpen={ false }
 				>
 					<TextControl
-						label={ __( 'Min Zoom', 'blocks-for-leaflet-map' ) }
+						label={ __( 'Min Zoom', 'cartoblocks-for-leaflet' ) }
 						help={ __(
 							'Minimum zoom level allowed. Leave empty for global default.',
-							'blocks-for-leaflet-map'
+							'cartoblocks-for-leaflet'
 						) }
 						type="number"
 						min={ 0 }
@@ -3320,10 +3320,10 @@ export default function Edit( {
 						__nextHasNoMarginBottom
 					/>
 					<TextControl
-						label={ __( 'Max Zoom', 'blocks-for-leaflet-map' ) }
+						label={ __( 'Max Zoom', 'cartoblocks-for-leaflet' ) }
 						help={ __(
 							'Maximum zoom level allowed. Leave empty for global default.',
-							'blocks-for-leaflet-map'
+							'cartoblocks-for-leaflet'
 						) }
 						type="number"
 						min={ 0 }
@@ -3337,10 +3337,10 @@ export default function Edit( {
 						__nextHasNoMarginBottom
 					/>
 					<TextControl
-						label={ __( 'Max Bounds', 'blocks-for-leaflet-map' ) }
+						label={ __( 'Max Bounds', 'cartoblocks-for-leaflet' ) }
 						help={ __(
 							'Restrict the map view to a bounding box. Format: lat,lng;lat,lng (southwest;northeast). Example: 40.0,-4.0;38.0,-3.0',
-							'blocks-for-leaflet-map'
+							'cartoblocks-for-leaflet'
 						) }
 						value={ maxBounds }
 						onChange={ ( value ) =>
@@ -3353,20 +3353,20 @@ export default function Edit( {
 
 				{ /* ── Tile Layer panel ──────────────────────────────────── */ }
 				{ ! imageMap && <PanelBody
-					title={ __( 'Tile Layer', 'blocks-for-leaflet-map' ) }
+					title={ __( 'Tile Layer', 'cartoblocks-for-leaflet' ) }
 					initialOpen={ false }
 				>
 					<p>
 						{ __(
 							'Override the global Leaflet Map tile settings for this specific map.',
-							'blocks-for-leaflet-map'
+							'cartoblocks-for-leaflet'
 						) }
 					</p>
 					<ToggleControl
-						label={ __( 'Use WMS tile source', 'blocks-for-leaflet-map' ) }
+						label={ __( 'Use WMS tile source', 'cartoblocks-for-leaflet' ) }
 						help={ __(
 							'Replaces the standard tile layer with a WMS (Web Map Service) source. Emits [leaflet-wms] instead of [leaflet-map].',
-							'blocks-for-leaflet-map'
+							'cartoblocks-for-leaflet'
 						) }
 						checked={ wmsEnabled }
 						onChange={ ( value ) =>
@@ -3377,11 +3377,11 @@ export default function Edit( {
 					{ wmsEnabled && (
 						<>
 							<TextControl
-								label={ __( 'WMS URL', 'blocks-for-leaflet-map' ) }
+								label={ __( 'WMS URL', 'cartoblocks-for-leaflet' ) }
 								placeholder="https://ows.mundialis.de/services/service?"
 								help={ __(
 									'The WMS service endpoint URL. Must end with ? or &.',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								value={ wmsSource }
 								onChange={ ( value ) =>
@@ -3391,11 +3391,11 @@ export default function Edit( {
 								__nextHasNoMarginBottom
 							/>
 							<TextControl
-								label={ __( 'Layer', 'blocks-for-leaflet-map' ) }
+								label={ __( 'Layer', 'cartoblocks-for-leaflet' ) }
 								placeholder="TOPO-OSM-WMS"
 								help={ __(
 									'WMS layer name. Leave empty to use the bozdoz default (TOPO-OSM-WMS).',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								value={ wmsLayer }
 								onChange={ ( value ) =>
@@ -3405,11 +3405,11 @@ export default function Edit( {
 								__nextHasNoMarginBottom
 							/>
 							<TextControl
-								label={ __( 'CRS', 'blocks-for-leaflet-map' ) }
+								label={ __( 'CRS', 'cartoblocks-for-leaflet' ) }
 								placeholder="EPSG:3857"
 								help={ __(
 									'Coordinate Reference System (e.g. EPSG:3857, EPSG:4326). Leave empty to use the bozdoz default.',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								value={ wmsCrs }
 								onChange={ ( value ) =>
@@ -3423,13 +3423,13 @@ export default function Edit( {
 					{ ! wmsEnabled && (
 						<>
 							<TextControl
-								label={ __( 'Tile URL', 'blocks-for-leaflet-map' ) }
+								label={ __( 'Tile URL', 'cartoblocks-for-leaflet' ) }
 								placeholder="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
 								help={
 									<>
 										{ __(
 											'Browse providers: ',
-											'blocks-for-leaflet-map'
+											'cartoblocks-for-leaflet'
 										) }
 										<a
 											href="https://alexurquhart.github.io/free-tiles/"
@@ -3439,17 +3439,17 @@ export default function Edit( {
 												// translators: %s is the name of the external link's destination.
 												__(
 													'%s (opens in new tab)',
-													'blocks-for-leaflet-map'
+													'cartoblocks-for-leaflet'
 												),
 												__(
 													'Free Tile Services',
-													'blocks-for-leaflet-map'
+													'cartoblocks-for-leaflet'
 												)
 											) }
 										>
 											{ __(
 												'Free Tile Services',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											↗
 										</a>
@@ -3462,17 +3462,17 @@ export default function Edit( {
 												// translators: %s is the name of the external link's destination.
 												__(
 													'%s (opens in new tab)',
-													'blocks-for-leaflet-map'
+													'cartoblocks-for-leaflet'
 												),
 												__(
 													'Leaflet Providers Preview',
-													'blocks-for-leaflet-map'
+													'cartoblocks-for-leaflet'
 												)
 											) }
 										>
 											{ __(
 												'Leaflet Providers Preview',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											↗
 										</a>
@@ -3485,17 +3485,17 @@ export default function Edit( {
 												// translators: %s is the name of the external link's destination.
 												__(
 													'%s (opens in new tab)',
-													'blocks-for-leaflet-map'
+													'cartoblocks-for-leaflet'
 												),
 												__(
 													'OSM Wiki',
-													'blocks-for-leaflet-map'
+													'cartoblocks-for-leaflet'
 												)
 											) }
 										>
 											{ __(
 												'OSM Wiki',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											↗
 										</a>
@@ -3509,10 +3509,10 @@ export default function Edit( {
 								__nextHasNoMarginBottom
 							/>
 							<NumberControl
-								label={ __( 'Tile Size', 'blocks-for-leaflet-map' ) }
+								label={ __( 'Tile Size', 'cartoblocks-for-leaflet' ) }
 								help={ __(
 									"Default: 256. Most providers (OpenStreetMap, ArcGIS, CartoDB) use 256 — leave empty unless your provider's documentation explicitly requires a different value (e.g., Mapbox: 512). Changing this incorrectly will distort the map.",
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								value={ localTilesize }
 								min={ 64 }
@@ -3526,10 +3526,10 @@ export default function Edit( {
 								__nextHasNoMarginBottom
 							/>
 							<TextControl
-								label={ __( 'Subdomains', 'blocks-for-leaflet-map' ) }
+								label={ __( 'Subdomains', 'cartoblocks-for-leaflet' ) }
 								help={ __(
 									'Comma-separated list (e.g., a,b,c) matching the {s} placeholder in the Tile URL. Leave empty if not used.',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								value={ subdomains }
 								onChange={ ( value ) =>
@@ -3539,10 +3539,10 @@ export default function Edit( {
 								__nextHasNoMarginBottom
 							/>
 							<TextControl
-								label={ __( 'Map ID', 'blocks-for-leaflet-map' ) }
+								label={ __( 'Map ID', 'cartoblocks-for-leaflet' ) }
 								help={ __(
 									'Required only for Mapbox tiles. Leave empty for other providers.',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								value={ mapid }
 								onChange={ ( value ) =>
@@ -3552,10 +3552,10 @@ export default function Edit( {
 								__nextHasNoMarginBottom
 							/>
 							<TextControl
-								label={ __( 'Access Token', 'blocks-for-leaflet-map' ) }
+								label={ __( 'Access Token', 'cartoblocks-for-leaflet' ) }
 								help={ __(
 									"Required only for providers that need authentication (e.g., Mapbox, Stadia, Thunderforest). This token will be visible in the page's HTML source — restrict it to your domain in the provider's dashboard.",
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								value={ accesstoken }
 								onChange={ ( value ) =>
@@ -3565,10 +3565,10 @@ export default function Edit( {
 								__nextHasNoMarginBottom
 							/>
 							<NumberControl
-								label={ __( 'Zoom Offset', 'blocks-for-leaflet-map' ) }
+								label={ __( 'Zoom Offset', 'cartoblocks-for-leaflet' ) }
 								help={ __(
 									'Default: 0. Only change for specific providers (Mapbox typically requires -1 when Tile Size is 512).',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								value={ localZoomoffset }
 								onChange={ ( value ) =>
@@ -3581,10 +3581,10 @@ export default function Edit( {
 								__nextHasNoMarginBottom
 							/>
 							<SelectControl
-								label={ __( 'No Wrap', 'blocks-for-leaflet-map' ) }
+								label={ __( 'No Wrap', 'cartoblocks-for-leaflet' ) }
 								help={ __(
 									'Prevents the map from repeating horizontally when scrolled past the edges. Default: off.',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								value={ nowrap }
 								options={ THREE_STATE_OPTIONS }
@@ -3597,11 +3597,11 @@ export default function Edit( {
 							<SelectControl
 								label={ __(
 									'Detect Retina',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								help={ __(
 									'Loads higher-resolution tiles on Retina/HiDPI screens. Only enable if the provider serves @2x tiles, otherwise the map will fail on those screens.',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								value={ detectretina }
 								options={ THREE_STATE_OPTIONS }
@@ -3612,10 +3612,10 @@ export default function Edit( {
 								__nextHasNoMarginBottom
 							/>
 							<TextareaControl
-								label={ __( 'Attribution', 'blocks-for-leaflet-map' ) }
+								label={ __( 'Attribution', 'cartoblocks-for-leaflet' ) }
 								help={ __(
 									'Custom attribution HTML. Leave empty to use the default from Leaflet Map settings.',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								value={ attribution }
 								onChange={ ( value ) =>
@@ -3629,11 +3629,11 @@ export default function Edit( {
 
 				{ /* ── Map Controls panel ──────────────────────────────────── */ }
 				{ ! imageMap && <PanelBody
-					title={ __( 'Map Controls', 'blocks-for-leaflet-map' ) }
+					title={ __( 'Map Controls', 'cartoblocks-for-leaflet' ) }
 					initialOpen={ false }
 				>
 					<ToggleControl
-						label={ __( 'Zoom Control', 'blocks-for-leaflet-map' ) }
+						label={ __( 'Zoom Control', 'cartoblocks-for-leaflet' ) }
 						checked={ zoomControl }
 						onChange={ ( value ) =>
 							setAttributes( { zoomControl: value } )
@@ -3641,10 +3641,10 @@ export default function Edit( {
 						__nextHasNoMarginBottom
 					/>
 					<ToggleControl
-						label={ __( 'Show Scale', 'blocks-for-leaflet-map' ) }
+						label={ __( 'Show Scale', 'cartoblocks-for-leaflet' ) }
 						help={ __(
 							'Display a scale indicator on the map.',
-							'blocks-for-leaflet-map'
+							'cartoblocks-for-leaflet'
 						) }
 						checked={ showScale }
 						onChange={ ( value ) =>
@@ -3658,7 +3658,7 @@ export default function Edit( {
 				<PanelBody
 					title={ sprintf(
 						/* translators: %d: number of markers on the map. */
-						__( 'Markers (%d)', 'blocks-for-leaflet-map' ),
+						__( 'Markers (%d)', 'cartoblocks-for-leaflet' ),
 						markers.length
 					) }
 					initialOpen={ false }
@@ -3674,7 +3674,7 @@ export default function Edit( {
 					>
 						{ __(
 							'+ Add Marker at Center',
-							'blocks-for-leaflet-map'
+							'cartoblocks-for-leaflet'
 						) }
 					</Button>
 
@@ -3683,7 +3683,7 @@ export default function Edit( {
 							key={ index }
 							title={ sprintf(
 								/* translators: %d: 1-based marker number. */
-								__( 'Marker %d', 'blocks-for-leaflet-map' ),
+								__( 'Marker %d', 'cartoblocks-for-leaflet' ),
 								index + 1
 							) }
 							initialOpen={ false }
@@ -3699,12 +3699,12 @@ export default function Edit( {
 										<TextControl
 											label={ __(
 												'Search by address',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											value={ msInput }
 											placeholder={ __(
 												'Enter an address…',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											onChange={ ( value ) => {
 												updateMarkerSearch( index, {
@@ -3743,7 +3743,7 @@ export default function Edit( {
 										>
 											{ __(
 												'Search',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 										</Button>
 
@@ -3788,7 +3788,7 @@ export default function Edit( {
 													>
 														{ __(
 															'Select a location:',
-															'blocks-for-leaflet-map'
+															'cartoblocks-for-leaflet'
 														) }
 													</p>
 													{ msCandidates.map(
@@ -3833,8 +3833,8 @@ export default function Edit( {
 
 							<NumberControl
 								label={ imageMap
-									? __( 'Y (pixels)', 'blocks-for-leaflet-map' )
-									: __( 'Latitude', 'blocks-for-leaflet-map' )
+									? __( 'Y (pixels)', 'cartoblocks-for-leaflet' )
+									: __( 'Latitude', 'cartoblocks-for-leaflet' )
 								}
 								value={ marker.lat }
 								onChange={ ( value ) =>
@@ -3847,8 +3847,8 @@ export default function Edit( {
 							/>
 							<NumberControl
 								label={ imageMap
-									? __( 'X (pixels)', 'blocks-for-leaflet-map' )
-									: __( 'Longitude', 'blocks-for-leaflet-map' )
+									? __( 'X (pixels)', 'cartoblocks-for-leaflet' )
+									: __( 'Longitude', 'cartoblocks-for-leaflet' )
 								}
 								value={ marker.lng }
 								onChange={ ( value ) =>
@@ -3862,11 +3862,11 @@ export default function Edit( {
 							<TextControl
 								label={ __(
 									'Title',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								help={ __(
 									"Browser tooltip shown on hover. Also used as the marker's accessible name.",
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								value={ marker.title || '' }
 								onChange={ ( value ) =>
@@ -3880,11 +3880,11 @@ export default function Edit( {
 							<TextareaControl
 								label={ __(
 									'Popup Content',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								help={ __(
 									'HTML is supported.',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								value={ marker.content || '' }
 								onChange={ ( value ) =>
@@ -3899,18 +3899,18 @@ export default function Edit( {
 							<PanelBody
 								title={ __(
 									'Advanced',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								initialOpen={ false }
 							>
 								<TextControl
 									label={ __(
 										'Alt Text',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									help={ __(
 										'Alternative text for the marker image. Improves accessibility for screen reader users.',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									value={ marker.alt || '' }
 									onChange={ ( value ) =>
@@ -3924,11 +3924,11 @@ export default function Edit( {
 								<ToggleControl
 									label={ __(
 										'Auto-open Popup',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									help={ __(
 										'Open the popup automatically when the page loads.',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									checked={ marker.visible || false }
 									onChange={ ( value ) =>
@@ -3941,11 +3941,11 @@ export default function Edit( {
 								<ToggleControl
 									label={ __(
 										'Draggable',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									help={ __(
 										'Allow visitors to drag the marker. The new position is logged to the browser console.',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									checked={ marker.draggable || false }
 									onChange={ ( value ) =>
@@ -3958,11 +3958,11 @@ export default function Edit( {
 								<RangeControl
 									label={ __(
 										'Opacity',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									help={ __(
 										'Marker icon opacity. Default: 1 (fully opaque).',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									value={
 										marker.opacity != null
@@ -3983,11 +3983,11 @@ export default function Edit( {
 								<NumberControl
 									label={ __(
 										'Z-Index Offset',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									help={ __(
 										'Raise or lower this marker relative to others. Leaflet already offsets markers by latitude, so you may need values of 10+ (or higher when markers are close together) to visibly change the stacking order.',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									value={ marker.zIndexOffset ?? 0 }
 									onChange={ ( value ) => {
@@ -4006,14 +4006,14 @@ export default function Edit( {
 							<PanelBody
 								title={ __(
 									'Custom Icon',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								initialOpen={ false }
 							>
 								<ToggleControl
 									label={ __(
 										'Use custom icon',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									checked={ marker.useCustomIcon || false }
 									onChange={ ( value ) => {
@@ -4045,7 +4045,7 @@ export default function Edit( {
 										>
 											{ __(
 												'SVG marker mode was automatically disabled — SVG and custom-image markers cannot be combined. Your SVG settings have been preserved and will resume when you disable custom icon mode.',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 										</Notice>
 									) }
@@ -4063,7 +4063,7 @@ export default function Edit( {
 										>
 											{ __(
 												'Icon',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 										</p>
 										<MediaUploadCheck>
@@ -4114,11 +4114,11 @@ export default function Edit( {
 															{ marker.iconUrl
 																? __(
 																		'Replace image',
-																		'blocks-for-leaflet-map'
+																		'cartoblocks-for-leaflet'
 																  )
 																: __(
 																		'Select image',
-																		'blocks-for-leaflet-map'
+																		'cartoblocks-for-leaflet'
 																  ) }
 														</Button>
 														{ marker.iconUrl && (
@@ -4151,7 +4151,7 @@ export default function Edit( {
 																>
 																	{ __(
 																		'Remove',
-																		'blocks-for-leaflet-map'
+																		'cartoblocks-for-leaflet'
 																	) }
 																</Button>
 															</>
@@ -4172,7 +4172,7 @@ export default function Edit( {
 										>
 											{ __(
 												'Icon Size (px)',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 										</p>
 										<div
@@ -4184,7 +4184,7 @@ export default function Edit( {
 											<NumberControl
 												label={ __(
 													'Width',
-													'blocks-for-leaflet-map'
+													'cartoblocks-for-leaflet'
 												) }
 												value={ marker.iconWidth ?? '' }
 												min={ 1 }
@@ -4266,7 +4266,7 @@ export default function Edit( {
 											<NumberControl
 												label={ __(
 													'Height',
-													'blocks-for-leaflet-map'
+													'cartoblocks-for-leaflet'
 												) }
 												value={
 													marker.iconHeight ?? ''
@@ -4352,7 +4352,7 @@ export default function Edit( {
 										<ToggleControl
 											label={ __(
 												'Lock aspect ratio',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											checked={
 												marker.lockIconAspectRatio !==
@@ -4370,7 +4370,7 @@ export default function Edit( {
 										<AnchorGrid
 											label={ __(
 												'Anchor position',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											anchorX={ marker.iconAnchorX }
 											anchorY={ marker.iconAnchorY }
@@ -4378,7 +4378,7 @@ export default function Edit( {
 											height={ marker.iconHeight }
 											disabledHelp={ __(
 												'Set icon size first',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											onChange={ ( presetId ) => {
 												const coords = computeAnchorFromPreset(
@@ -4405,7 +4405,7 @@ export default function Edit( {
 										>
 											{ __(
 												'Icon Anchor (px)',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 										</p>
 										<div
@@ -4417,7 +4417,7 @@ export default function Edit( {
 											<NumberControl
 												label={ __(
 													'X',
-													'blocks-for-leaflet-map'
+													'cartoblocks-for-leaflet'
 												) }
 												value={
 													marker.iconAnchorX ?? ''
@@ -4441,7 +4441,7 @@ export default function Edit( {
 											<NumberControl
 												label={ __(
 													'Y',
-													'blocks-for-leaflet-map'
+													'cartoblocks-for-leaflet'
 												) }
 												value={
 													marker.iconAnchorY ?? ''
@@ -4475,7 +4475,7 @@ export default function Edit( {
 										>
 											{ __(
 												'Popup Anchor (px)',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 										</p>
 										<div
@@ -4487,7 +4487,7 @@ export default function Edit( {
 											<NumberControl
 												label={ __(
 													'X',
-													'blocks-for-leaflet-map'
+													'cartoblocks-for-leaflet'
 												) }
 												value={
 													marker.popupAnchorX ?? ''
@@ -4511,7 +4511,7 @@ export default function Edit( {
 											<NumberControl
 												label={ __(
 													'Y',
-													'blocks-for-leaflet-map'
+													'cartoblocks-for-leaflet'
 												) }
 												value={
 													marker.popupAnchorY ?? ''
@@ -4537,7 +4537,7 @@ export default function Edit( {
 										<ToggleControl
 											label={ __(
 												'Add shadow',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											checked={
 												marker.useShadow || false
@@ -4565,7 +4565,7 @@ export default function Edit( {
 												>
 													{ __(
 														'Shadow',
-														'blocks-for-leaflet-map'
+														'cartoblocks-for-leaflet'
 													) }
 												</p>
 												<MediaUploadCheck>
@@ -4619,11 +4619,11 @@ export default function Edit( {
 																	{ marker.shadowUrl
 																		? __(
 																				'Replace image',
-																				'blocks-for-leaflet-map'
+																				'cartoblocks-for-leaflet'
 																		  )
 																		: __(
 																				'Select image',
-																				'blocks-for-leaflet-map'
+																				'cartoblocks-for-leaflet'
 																		  ) }
 																</Button>
 																{ marker.shadowUrl && (
@@ -4656,7 +4656,7 @@ export default function Edit( {
 																		>
 																			{ __(
 																				'Remove',
-																				'blocks-for-leaflet-map'
+																				'cartoblocks-for-leaflet'
 																			) }
 																		</Button>
 																	</>
@@ -4678,7 +4678,7 @@ export default function Edit( {
 												>
 													{ __(
 														'Shadow Size (px)',
-														'blocks-for-leaflet-map'
+														'cartoblocks-for-leaflet'
 													) }
 												</p>
 												<div
@@ -4690,7 +4690,7 @@ export default function Edit( {
 													<NumberControl
 														label={ __(
 															'Width',
-															'blocks-for-leaflet-map'
+															'cartoblocks-for-leaflet'
 														) }
 														value={
 															marker.shadowWidth ??
@@ -4776,7 +4776,7 @@ export default function Edit( {
 													<NumberControl
 														label={ __(
 															'Height',
-															'blocks-for-leaflet-map'
+															'cartoblocks-for-leaflet'
 														) }
 														value={
 															marker.shadowHeight ??
@@ -4864,7 +4864,7 @@ export default function Edit( {
 												<ToggleControl
 													label={ __(
 														'Lock aspect ratio',
-														'blocks-for-leaflet-map'
+														'cartoblocks-for-leaflet'
 													) }
 													checked={
 														marker.lockShadowAspectRatio !==
@@ -4888,7 +4888,7 @@ export default function Edit( {
 												<AnchorGrid
 													label={ __(
 														'Anchor position',
-														'blocks-for-leaflet-map'
+														'cartoblocks-for-leaflet'
 													) }
 													anchorX={ marker.shadowAnchorX }
 													anchorY={ marker.shadowAnchorY }
@@ -4896,7 +4896,7 @@ export default function Edit( {
 													height={ marker.shadowHeight }
 													disabledHelp={ __(
 														'Set shadow size first',
-														'blocks-for-leaflet-map'
+														'cartoblocks-for-leaflet'
 													) }
 													onChange={ ( presetId ) => {
 														const coords = computeAnchorFromPreset(
@@ -4924,7 +4924,7 @@ export default function Edit( {
 												>
 													{ __(
 														'Shadow Anchor (px)',
-														'blocks-for-leaflet-map'
+														'cartoblocks-for-leaflet'
 													) }
 												</p>
 												<div
@@ -4936,7 +4936,7 @@ export default function Edit( {
 													<NumberControl
 														label={ __(
 															'X',
-															'blocks-for-leaflet-map'
+															'cartoblocks-for-leaflet'
 														) }
 														value={
 															marker.shadowAnchorX ??
@@ -4968,7 +4968,7 @@ export default function Edit( {
 													<NumberControl
 														label={ __(
 															'Y',
-															'blocks-for-leaflet-map'
+															'cartoblocks-for-leaflet'
 														) }
 														value={
 															marker.shadowAnchorY ??
@@ -5007,14 +5007,14 @@ export default function Edit( {
 							<PanelBody
 								title={ __(
 									'SVG Marker',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								initialOpen={ false }
 							>
 								<ToggleControl
 									label={ __(
 										'Use SVG marker',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									checked={ marker.useSvgMarker || false }
 									onChange={ ( value ) => {
@@ -5044,7 +5044,7 @@ export default function Edit( {
 										>
 											{ __(
 												'Custom icon mode was automatically disabled — SVG and custom-image markers cannot be combined. Your custom icon settings have been preserved and will resume when you disable SVG marker mode.',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 										</Notice>
 									) }
@@ -5062,7 +5062,7 @@ export default function Edit( {
 										>
 											{ __(
 												'Background Color',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 										</p>
 										<p
@@ -5074,7 +5074,7 @@ export default function Edit( {
 										>
 											{ __(
 												'Default: #2b82cb',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 										</p>
 										<ColorPalette
@@ -5093,7 +5093,7 @@ export default function Edit( {
 										<TextControl
 											label={ __(
 												'Icon CSS Class',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											value={ marker.svgIconClass || '' }
 											onChange={ ( value ) =>
@@ -5103,7 +5103,7 @@ export default function Edit( {
 											}
 											help={ __(
 												"CSS class for an icon font glyph (e.g. 'fas fa-star' for Font Awesome). Requires the icon font to be enqueued by your theme or another plugin — Leaflet Map does not load any icon font.",
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											__nextHasNoMarginBottom
 										/>
@@ -5119,7 +5119,7 @@ export default function Edit( {
 										>
 											{ __(
 												'Icon Color',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 										</p>
 										<p
@@ -5131,7 +5131,7 @@ export default function Edit( {
 										>
 											{ __(
 												'Default: white',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 										</p>
 										<ColorPalette
@@ -5156,7 +5156,7 @@ export default function Edit( {
 							>
 								{ __(
 									'Remove Marker',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 							</Button>
 						</PanelBody>
@@ -5167,7 +5167,7 @@ export default function Edit( {
 				<PanelBody
 					title={ sprintf(
 						/* translators: %d: number of shapes */
-						__( 'Lines & Polygons (%d)', 'blocks-for-leaflet-map' ),
+						__( 'Lines & Polygons (%d)', 'cartoblocks-for-leaflet' ),
 						( lines || [] ).length
 					) }
 					initialOpen={ false }
@@ -5184,14 +5184,14 @@ export default function Edit( {
 							onClick={ () => handleAddLine( 'line' ) }
 							style={ { flex: 1, justifyContent: 'center' } }
 						>
-							{ __( '+ Line', 'blocks-for-leaflet-map' ) }
+							{ __( '+ Line', 'cartoblocks-for-leaflet' ) }
 						</Button>
 						<Button
 							variant="secondary"
 							onClick={ () => handleAddLine( 'polygon' ) }
 							style={ { flex: 1, justifyContent: 'center' } }
 						>
-							{ __( '+ Polygon', 'blocks-for-leaflet-map' ) }
+							{ __( '+ Polygon', 'cartoblocks-for-leaflet' ) }
 						</Button>
 					</div>
 
@@ -5202,11 +5202,11 @@ export default function Edit( {
 								line.type === 'polygon'
 									? /* translators: 1: index, 2: point count */ __(
 											'Polygon %1$d (%2$d pts)',
-											'blocks-for-leaflet-map'
+											'cartoblocks-for-leaflet'
 									  )
 									: /* translators: 1: index, 2: point count */ __(
 											'Line %1$d (%2$d pts)',
-											'blocks-for-leaflet-map'
+											'cartoblocks-for-leaflet'
 									  ),
 								lineIdx + 1,
 								( line.points || [] ).length
@@ -5219,21 +5219,21 @@ export default function Edit( {
 							}
 						>
 							<SelectControl
-								label={ __( 'Type', 'blocks-for-leaflet-map' ) }
+								label={ __( 'Type', 'cartoblocks-for-leaflet' ) }
 								value={ line.type || 'line' }
 								options={ [
 									{
 										value: 'line',
 										label: __(
 											'Line (polyline)',
-											'blocks-for-leaflet-map'
+											'cartoblocks-for-leaflet'
 										),
 									},
 									{
 										value: 'polygon',
 										label: __(
 											'Polygon',
-											'blocks-for-leaflet-map'
+											'cartoblocks-for-leaflet'
 										),
 									},
 								] }
@@ -5252,7 +5252,7 @@ export default function Edit( {
 									fontSize: '12px',
 								} }
 							>
-								{ __( 'Points', 'blocks-for-leaflet-map' ) }
+								{ __( 'Points', 'cartoblocks-for-leaflet' ) }
 							</p>
 							{ ( line.points || [] ).length === 0 && (
 								<p
@@ -5264,7 +5264,7 @@ export default function Edit( {
 								>
 									{ __(
 										'No points. Add at least 2 to draw the shape.',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 								</p>
 							) }
@@ -5328,7 +5328,7 @@ export default function Edit( {
 													// translators: %d is the point's position number in the list.
 													__(
 														'Point %d',
-														'blocks-for-leaflet-map'
+														'cartoblocks-for-leaflet'
 													),
 													pi + 1
 												) }
@@ -5356,8 +5356,8 @@ export default function Edit( {
 											<>
 												<NumberControl
 													label={ imageMap
-														? __( 'Y (pixels)', 'blocks-for-leaflet-map' )
-														: __( 'Latitude', 'blocks-for-leaflet-map' )
+														? __( 'Y (pixels)', 'cartoblocks-for-leaflet' )
+														: __( 'Latitude', 'cartoblocks-for-leaflet' )
 													}
 													value={ point.lat }
 													step={ imageMap ? 1 : 0.000001 }
@@ -5379,8 +5379,8 @@ export default function Edit( {
 												/>
 												<NumberControl
 													label={ imageMap
-														? __( 'X (pixels)', 'blocks-for-leaflet-map' )
-														: __( 'Longitude', 'blocks-for-leaflet-map' )
+														? __( 'X (pixels)', 'cartoblocks-for-leaflet' )
+														: __( 'Longitude', 'cartoblocks-for-leaflet' )
 													}
 													value={ point.lng }
 													step={ imageMap ? 1 : 0.000001 }
@@ -5417,7 +5417,7 @@ export default function Edit( {
 												>
 													{ __(
 														'📍 Locate on map',
-														'blocks-for-leaflet-map'
+														'cartoblocks-for-leaflet'
 													) }
 												</Button>
 												{ ! imageMap && <div
@@ -5428,11 +5428,11 @@ export default function Edit( {
 													<TextControl
 														label={ __(
 															'Search by address',
-															'blocks-for-leaflet-map'
+															'cartoblocks-for-leaflet'
 														) }
 														placeholder={ __(
 															'e.g. Paris, France',
-															'blocks-for-leaflet-map'
+															'cartoblocks-for-leaflet'
 														) }
 														value={ lpsInput }
 														onChange={ ( v ) =>
@@ -5486,11 +5486,11 @@ export default function Edit( {
 														'loading'
 															? __(
 																	'Searching…',
-																	'blocks-for-leaflet-map'
+																	'cartoblocks-for-leaflet'
 															  )
 															: __(
 																	'Search',
-																	'blocks-for-leaflet-map'
+																	'cartoblocks-for-leaflet'
 															  ) }
 													</Button>
 													{ lpsStatus === 'error' &&
@@ -5528,7 +5528,7 @@ export default function Edit( {
 																>
 																	{ __(
 																		'Select a result:',
-																		'blocks-for-leaflet-map'
+																		'cartoblocks-for-leaflet'
 																	) }
 																</p>
 																{ lpsCandidates.map(
@@ -5584,7 +5584,7 @@ export default function Edit( {
 										>
 											{ __(
 												'Remove Point',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 										</Button>
 									</div>
@@ -5599,7 +5599,7 @@ export default function Edit( {
 							>
 								{ __(
 									'Click "Draw on map" to add points by clicking on the map, or use "+ Add Point" to enter coordinates manually.',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 							</p>
 							<div
@@ -5619,7 +5619,7 @@ export default function Edit( {
 								>
 									{ __(
 										'+ Add Point',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 								</Button>
 								{ drawingLineIndex === lineIdx ? (
@@ -5633,7 +5633,7 @@ export default function Edit( {
 									>
 										{ __(
 											'⏹ Stop drawing',
-											'blocks-for-leaflet-map'
+											'cartoblocks-for-leaflet'
 										) }
 									</Button>
 								) : (
@@ -5649,7 +5649,7 @@ export default function Edit( {
 									>
 										{ __(
 											'✏ Draw on map',
-											'blocks-for-leaflet-map'
+											'cartoblocks-for-leaflet'
 										) }
 									</Button>
 								) }
@@ -5665,7 +5665,7 @@ export default function Edit( {
 								>
 									{ __(
 										'🖱 Click on the map to add points. Double-click to finish.',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 								</p>
 							) }
@@ -5673,7 +5673,7 @@ export default function Edit( {
 							<ToggleControl
 								label={ __(
 									'Fit map to this shape',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								checked={ !! line.fitbounds }
 								onChange={ ( v ) =>
@@ -5688,7 +5688,7 @@ export default function Edit( {
 							<PanelBody
 								title={ __(
 									'Style',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								initialOpen={ false }
 							>
@@ -5700,7 +5700,7 @@ export default function Edit( {
 								>
 									{ __(
 										'Stroke color',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 								</p>
 								<ColorPalette
@@ -5715,7 +5715,7 @@ export default function Edit( {
 								<NumberControl
 									label={ __(
 										'Weight (px)',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									value={ line.weight ?? '' }
 									min={ 0 }
@@ -5734,7 +5734,7 @@ export default function Edit( {
 								<RangeControl
 									label={ __(
 										'Opacity',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									value={ line.opacity ?? 1 }
 									min={ 0 }
@@ -5753,12 +5753,12 @@ export default function Edit( {
 								<TextControl
 									label={ __(
 										'Dash array',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									value={ line.dashArray || '' }
 									placeholder={ __(
 										'e.g. 5,10',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									onChange={ ( v ) =>
 										handleUpdateLine( lineIdx, {
@@ -5770,7 +5770,7 @@ export default function Edit( {
 								<TextControl
 									label={ __(
 										'CSS class',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									value={ line.classname || '' }
 									onChange={ ( v ) =>
@@ -5784,13 +5784,13 @@ export default function Edit( {
 
 							{ /* Fill subsection */ }
 							<PanelBody
-								title={ __( 'Fill', 'blocks-for-leaflet-map' ) }
+								title={ __( 'Fill', 'cartoblocks-for-leaflet' ) }
 								initialOpen={ false }
 							>
 								<ToggleControl
 									label={ __(
 										'Fill shape',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									checked={ !! line.fill }
 									onChange={ ( v ) =>
@@ -5808,7 +5808,7 @@ export default function Edit( {
 										>
 											{ __(
 												'Fill color',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 										</p>
 										<ColorPalette
@@ -5825,7 +5825,7 @@ export default function Edit( {
 										<RangeControl
 											label={ __(
 												'Fill opacity',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											value={ line.fillOpacity ?? 0.2 }
 											min={ 0 }
@@ -5849,14 +5849,14 @@ export default function Edit( {
 							<PanelBody
 								title={ __(
 									'Popup',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								initialOpen={ false }
 							>
 								<TextareaControl
 									label={ __(
 										'Popup content (HTML allowed)',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									value={ line.popup || '' }
 									onChange={ ( v ) =>
@@ -5871,7 +5871,7 @@ export default function Edit( {
 									<ToggleControl
 										label={ __(
 											'Open popup on load',
-											'blocks-for-leaflet-map'
+											'cartoblocks-for-leaflet'
 										) }
 										checked={ !! line.visible }
 										onChange={ ( v ) =>
@@ -5893,11 +5893,11 @@ export default function Edit( {
 								{ line.type === 'polygon'
 									? __(
 											'Remove Polygon',
-											'blocks-for-leaflet-map'
+											'cartoblocks-for-leaflet'
 									  )
 									: __(
 											'Remove Line',
-											'blocks-for-leaflet-map'
+											'cartoblocks-for-leaflet'
 									  ) }
 							</Button>
 						</PanelBody>
@@ -5906,7 +5906,7 @@ export default function Edit( {
 
 				{ /* ── Circles panel ──────────────────────────────────── */ }
 				<PanelBody
-					title={ __( 'Circles', 'blocks-for-leaflet-map' ) }
+					title={ __( 'Circles', 'cartoblocks-for-leaflet' ) }
 					initialOpen={ false }
 				>
 					<Button
@@ -5918,7 +5918,7 @@ export default function Edit( {
 							marginBottom: '8px',
 						} }
 					>
-						{ __( '+ Circle', 'blocks-for-leaflet-map' ) }
+						{ __( '+ Circle', 'cartoblocks-for-leaflet' ) }
 					</Button>
 
 					{ ( attributes.circles || [] ).map(
@@ -5943,7 +5943,7 @@ export default function Edit( {
 									key={ circleIdx }
 									title={ `${ __(
 										'Circle',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) } ${ circleIdx + 1 }` }
 									opened={ expandedCircleIndex === circleIdx }
 									onToggle={ () =>
@@ -5963,14 +5963,14 @@ export default function Edit( {
 									>
 										{ __(
 											'Click "Draw on map" to set center + radius by clicking on the map, or enter coordinates manually.',
-											'blocks-for-leaflet-map'
+											'cartoblocks-for-leaflet'
 										) }
 									</p>
 
 									<NumberControl
 										label={ imageMap
-											? __( 'Y (pixels)', 'blocks-for-leaflet-map' )
-											: __( 'Latitude', 'blocks-for-leaflet-map' )
+											? __( 'Y (pixels)', 'cartoblocks-for-leaflet' )
+											: __( 'Latitude', 'cartoblocks-for-leaflet' )
 										}
 										value={ circle.lat ?? '' }
 										step={ imageMap ? 1 : 0.000001 }
@@ -5986,8 +5986,8 @@ export default function Edit( {
 									/>
 									<NumberControl
 										label={ imageMap
-											? __( 'X (pixels)', 'blocks-for-leaflet-map' )
-											: __( 'Longitude', 'blocks-for-leaflet-map' )
+											? __( 'X (pixels)', 'cartoblocks-for-leaflet' )
+											: __( 'Longitude', 'cartoblocks-for-leaflet' )
 										}
 										value={ circle.lng ?? '' }
 										step={ imageMap ? 1 : 0.000001 }
@@ -6017,7 +6017,7 @@ export default function Edit( {
 									>
 										{ __(
 											'📍 Locate on map',
-											'blocks-for-leaflet-map'
+											'cartoblocks-for-leaflet'
 										) }
 									</Button>
 
@@ -6026,11 +6026,11 @@ export default function Edit( {
 										<TextControl
 											label={ __(
 												'Search by address',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											placeholder={ __(
 												'e.g. Paris, France',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											value={ csInput }
 											onChange={ ( v ) =>
@@ -6067,11 +6067,11 @@ export default function Edit( {
 											{ csStatus === 'loading'
 												? __(
 														'Searching…',
-														'blocks-for-leaflet-map'
+														'cartoblocks-for-leaflet'
 												  )
 												: __(
 														'Search',
-														'blocks-for-leaflet-map'
+														'cartoblocks-for-leaflet'
 												  ) }
 										</Button>
 										{ csStatus === 'error' && cs.error && (
@@ -6099,7 +6099,7 @@ export default function Edit( {
 													>
 														{ __(
 															'Select a result:',
-															'blocks-for-leaflet-map'
+															'cartoblocks-for-leaflet'
 														) }
 													</p>
 													{ csCandidates.map(
@@ -6151,7 +6151,7 @@ export default function Edit( {
 											<NumberControl
 												label={ __(
 													'Radius',
-													'blocks-for-leaflet-map'
+													'cartoblocks-for-leaflet'
 												) }
 												value={ displayRadius }
 												step={
@@ -6192,15 +6192,15 @@ export default function Edit( {
 											>
 												{ __(
 													'Unit',
-													'blocks-for-leaflet-map'
+													'cartoblocks-for-leaflet'
 												) }
 											</p>
 											<SelectControl
 												value={ radiusUnit }
 												options={ [
-													{ label: __( 'm', 'blocks-for-leaflet-map' ), value: 'm' },
+													{ label: __( 'm', 'cartoblocks-for-leaflet' ), value: 'm' },
 													{
-														label: __( 'km', 'blocks-for-leaflet-map' ),
+														label: __( 'km', 'cartoblocks-for-leaflet' ),
 														value: 'km',
 													},
 												] }
@@ -6239,7 +6239,7 @@ export default function Edit( {
 											>
 												{ __(
 													'⏹ Stop drawing',
-													'blocks-for-leaflet-map'
+													'cartoblocks-for-leaflet'
 												) }
 											</Button>
 										) : (
@@ -6257,7 +6257,7 @@ export default function Edit( {
 											>
 												{ __(
 													'✏ Draw on map',
-													'blocks-for-leaflet-map'
+													'cartoblocks-for-leaflet'
 												) }
 											</Button>
 										) }
@@ -6273,7 +6273,7 @@ export default function Edit( {
 										>
 											{ __(
 												'🖱 Click map to set center, then click again to set radius.',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 										</p>
 									) }
@@ -6281,7 +6281,7 @@ export default function Edit( {
 									<ToggleControl
 										label={ __(
 											'Fit map to this circle',
-											'blocks-for-leaflet-map'
+											'cartoblocks-for-leaflet'
 										) }
 										checked={ !! circle.fitbounds }
 										onChange={ ( v ) =>
@@ -6295,7 +6295,7 @@ export default function Edit( {
 									<PanelBody
 										title={ __(
 											'Style',
-											'blocks-for-leaflet-map'
+											'cartoblocks-for-leaflet'
 										) }
 										initialOpen={ false }
 									>
@@ -6307,7 +6307,7 @@ export default function Edit( {
 										>
 											{ __(
 												'Stroke color',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 										</p>
 										<ColorPalette
@@ -6322,7 +6322,7 @@ export default function Edit( {
 										<RangeControl
 											label={ __(
 												'Weight (px)',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											value={ circle.weight ?? 3 }
 											min={ 0 }
@@ -6341,7 +6341,7 @@ export default function Edit( {
 										<RangeControl
 											label={ __(
 												'Opacity',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											value={ circle.opacity ?? 1 }
 											min={ 0 }
@@ -6360,12 +6360,12 @@ export default function Edit( {
 										<TextControl
 											label={ __(
 												'Dash array',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											value={ circle.dashArray || '' }
 											placeholder={ __(
 											'e.g. 5,10',
-											'blocks-for-leaflet-map'
+											'cartoblocks-for-leaflet'
 										) }
 											onChange={ ( v ) =>
 												handleUpdateCircle( circleIdx, {
@@ -6377,7 +6377,7 @@ export default function Edit( {
 										<TextControl
 											label={ __(
 												'CSS class',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											value={ circle.classname || '' }
 											onChange={ ( v ) =>
@@ -6392,14 +6392,14 @@ export default function Edit( {
 									<PanelBody
 										title={ __(
 											'Fill',
-											'blocks-for-leaflet-map'
+											'cartoblocks-for-leaflet'
 										) }
 										initialOpen={ false }
 									>
 										<ToggleControl
 											label={ __(
 												'Fill circle',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											checked={ !! circle.fill }
 											onChange={ ( v ) =>
@@ -6419,7 +6419,7 @@ export default function Edit( {
 												>
 													{ __(
 														'Fill color',
-														'blocks-for-leaflet-map'
+														'cartoblocks-for-leaflet'
 													) }
 												</p>
 												<ColorPalette
@@ -6441,7 +6441,7 @@ export default function Edit( {
 												<RangeControl
 													label={ __(
 														'Fill opacity',
-														'blocks-for-leaflet-map'
+														'cartoblocks-for-leaflet'
 													) }
 													value={
 														circle.fillOpacity ??
@@ -6472,14 +6472,14 @@ export default function Edit( {
 									<PanelBody
 										title={ __(
 											'Popup',
-											'blocks-for-leaflet-map'
+											'cartoblocks-for-leaflet'
 										) }
 										initialOpen={ false }
 									>
 										<TextareaControl
 											label={ __(
 												'Popup content (HTML allowed)',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											value={ circle.popup || '' }
 											onChange={ ( v ) =>
@@ -6494,7 +6494,7 @@ export default function Edit( {
 											<ToggleControl
 												label={ __(
 													'Open popup on load',
-													'blocks-for-leaflet-map'
+													'cartoblocks-for-leaflet'
 												) }
 												checked={ !! circle.visible }
 												onChange={ ( v ) =>
@@ -6518,7 +6518,7 @@ export default function Edit( {
 									>
 										{ __(
 											'Remove Circle',
-											'blocks-for-leaflet-map'
+											'cartoblocks-for-leaflet'
 										) }
 									</Button>
 								</PanelBody>
@@ -6528,7 +6528,7 @@ export default function Edit( {
 				</PanelBody>
 				{ /* ── Data Layers panel ────────────────────────────────── */ }
 				{ ! imageMap && <PanelBody
-					title={ __( 'Data Layers', 'blocks-for-leaflet-map' ) }
+					title={ __( 'Data Layers', 'cartoblocks-for-leaflet' ) }
 					initialOpen={ false }
 				>
 					<p
@@ -6540,7 +6540,7 @@ export default function Edit( {
 					>
 						{ __(
 							'Load GeoJSON, GPX, or KML data from a URL. Each layer renders on the map as vector features.',
-							'blocks-for-leaflet-map'
+							'cartoblocks-for-leaflet'
 						) }
 					</p>
 					<div
@@ -6555,21 +6555,21 @@ export default function Edit( {
 							onClick={ () => handleAddLayer( 'geojson' ) }
 							style={ { flex: 1, justifyContent: 'center' } }
 						>
-							{ __( '+ GeoJSON', 'blocks-for-leaflet-map' ) }
+							{ __( '+ GeoJSON', 'cartoblocks-for-leaflet' ) }
 						</Button>
 						<Button
 							variant="secondary"
 							onClick={ () => handleAddLayer( 'gpx' ) }
 							style={ { flex: 1, justifyContent: 'center' } }
 						>
-							{ __( '+ GPX', 'blocks-for-leaflet-map' ) }
+							{ __( '+ GPX', 'cartoblocks-for-leaflet' ) }
 						</Button>
 						<Button
 							variant="secondary"
 							onClick={ () => handleAddLayer( 'kml' ) }
 							style={ { flex: 1, justifyContent: 'center' } }
 						>
-							{ __( '+ KML', 'blocks-for-leaflet-map' ) }
+							{ __( '+ KML', 'cartoblocks-for-leaflet' ) }
 						</Button>
 					</div>
 
@@ -6595,12 +6595,12 @@ export default function Edit( {
 							}
 						>
 							<SelectControl
-								label={ __( 'Type', 'blocks-for-leaflet-map' ) }
+								label={ __( 'Type', 'cartoblocks-for-leaflet' ) }
 								value={ layer.type || 'geojson' }
 								options={ [
-									{ label: __( 'GeoJSON', 'blocks-for-leaflet-map' ), value: 'geojson' },
-									{ label: __( 'GPX', 'blocks-for-leaflet-map' ), value: 'gpx' },
-									{ label: __( 'KML', 'blocks-for-leaflet-map' ), value: 'kml' },
+									{ label: __( 'GeoJSON', 'cartoblocks-for-leaflet' ), value: 'geojson' },
+									{ label: __( 'GPX', 'cartoblocks-for-leaflet' ), value: 'gpx' },
+									{ label: __( 'KML', 'cartoblocks-for-leaflet' ), value: 'kml' },
 								] }
 								onChange={ ( v ) =>
 									handleUpdateLayer( layerIdx, { type: v } )
@@ -6611,13 +6611,13 @@ export default function Edit( {
 							<TextControl
 								label={ __(
 									'Source URL',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								value={ layer.src || '' }
 								type="url"
 								help={ __(
 									'Full URL to a .geojson, .gpx, or .kml file. Must be publicly accessible (CORS-enabled).',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								onChange={ ( v ) =>
 									handleUpdateLayer( layerIdx, { src: v } )
@@ -6628,7 +6628,7 @@ export default function Edit( {
 							<ToggleControl
 								label={ __(
 									'Fit map to layer bounds',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								checked={ layer.fitbounds || false }
 								onChange={ ( v ) =>
@@ -6642,7 +6642,7 @@ export default function Edit( {
 							<PanelBody
 								title={ __(
 									'Popup configuration',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								initialOpen={ false }
 							>
@@ -6655,18 +6655,18 @@ export default function Edit( {
 								>
 									{ __(
 										'Precedence (highest first): Show all properties as table → Single property → Popup template. GPX/KML files rarely expose feature properties — popup config is most useful for GeoJSON.',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 								</p>
 								<TextareaControl
 									label={ __(
 										'Popup template',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									value={ layer.popupText || '' }
 									help={ __(
 										'Use {property_name} placeholders to interpolate feature properties. E.g. "Name: {name}".',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									onChange={ ( v ) =>
 										handleUpdateLayer( layerIdx, {
@@ -6678,12 +6678,12 @@ export default function Edit( {
 								<TextControl
 									label={ __(
 										'Single property to display',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									value={ layer.popupProperty || '' }
 									help={ __(
 										'Bare property name (e.g. "ciudad", not "{ciudad}"). When set, overrides the popup template above.',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									onChange={ ( v ) =>
 										handleUpdateLayer( layerIdx, {
@@ -6696,11 +6696,11 @@ export default function Edit( {
 								<ToggleControl
 									label={ __(
 										'Show all properties as table',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									help={ __(
 										'Displays every feature property as an HTML table in the popup. Overrides the two fields above.',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									checked={ layer.tableView || false }
 									onChange={ ( v ) =>
@@ -6716,7 +6716,7 @@ export default function Edit( {
 							<PanelBody
 								title={ __(
 									'Default feature style',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								initialOpen={ false }
 							>
@@ -6729,7 +6729,7 @@ export default function Edit( {
 								>
 									{ __(
 										'Applied as the default layer style. Feature properties (e.g. geojson.io stroke/fill) override these defaults per-feature.',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 								</p>
 								<p
@@ -6741,7 +6741,7 @@ export default function Edit( {
 								>
 									{ __(
 										'Style applies to line and polygon features only. Point markers are not affected — use Custom point icon to customise them.',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 								</p>
 								<p
@@ -6753,7 +6753,7 @@ export default function Edit( {
 								>
 									{ __(
 										'Stroke color',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 								</p>
 								<ColorPalette
@@ -6767,7 +6767,7 @@ export default function Edit( {
 								<RangeControl
 									label={ __(
 										'Weight',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									value={ layer.weight ?? undefined }
 									min={ 0 }
@@ -6785,7 +6785,7 @@ export default function Edit( {
 								<RangeControl
 									label={ __(
 										'Stroke opacity',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									value={ layer.opacity ?? undefined }
 									min={ 0 }
@@ -6803,7 +6803,7 @@ export default function Edit( {
 								<TextControl
 									label={ __(
 										'Dash array',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									value={ layer.dashArray || '' }
 									placeholder="5,5"
@@ -6818,7 +6818,7 @@ export default function Edit( {
 								<TextControl
 									label={ __(
 										'CSS class',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									value={ layer.classname || '' }
 									onChange={ ( v ) =>
@@ -6832,7 +6832,7 @@ export default function Edit( {
 								<ToggleControl
 									label={ __(
 										'Fill',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									checked={ layer.fill || false }
 									onChange={ ( v ) =>
@@ -6853,7 +6853,7 @@ export default function Edit( {
 										>
 											{ __(
 												'Fill color',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 										</p>
 										<ColorPalette
@@ -6867,7 +6867,7 @@ export default function Edit( {
 										<RangeControl
 											label={ __(
 												'Fill opacity',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											value={
 												layer.fillOpacity ?? undefined
@@ -6892,14 +6892,14 @@ export default function Edit( {
 							<PanelBody
 								title={ __(
 									'Custom point icon',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 								initialOpen={ false }
 							>
 								<ToggleControl
 									label={ __(
 										'Use custom icon',
-										'blocks-for-leaflet-map'
+										'cartoblocks-for-leaflet'
 									) }
 									checked={ layer.useCustomIcon || false }
 									onChange={ ( v ) =>
@@ -6961,11 +6961,11 @@ export default function Edit( {
 															{ layer.iconUrl
 																? __(
 																		'Replace image',
-																		'blocks-for-leaflet-map'
+																		'cartoblocks-for-leaflet'
 																  )
 																: __(
 																		'Select image',
-																		'blocks-for-leaflet-map'
+																		'cartoblocks-for-leaflet'
 																  ) }
 														</Button>
 														{ layer.iconUrl && (
@@ -6998,7 +6998,7 @@ export default function Edit( {
 																>
 																	{ __(
 																		'Remove',
-																		'blocks-for-leaflet-map'
+																		'cartoblocks-for-leaflet'
 																	) }
 																</Button>
 															</>
@@ -7018,7 +7018,7 @@ export default function Edit( {
 										>
 											{ __(
 												'Icon Size (px)',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 										</p>
 										<div
@@ -7030,7 +7030,7 @@ export default function Edit( {
 											<NumberControl
 												label={ __(
 													'Width',
-													'blocks-for-leaflet-map'
+													'cartoblocks-for-leaflet'
 												) }
 												value={ layer.iconWidth ?? '' }
 												min={ 1 }
@@ -7113,7 +7113,7 @@ export default function Edit( {
 											<NumberControl
 												label={ __(
 													'Height',
-													'blocks-for-leaflet-map'
+													'cartoblocks-for-leaflet'
 												) }
 												value={ layer.iconHeight ?? '' }
 												min={ 1 }
@@ -7197,7 +7197,7 @@ export default function Edit( {
 										<ToggleControl
 											label={ __(
 												'Lock aspect ratio',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											checked={
 												layer.lockIconAspectRatio !==
@@ -7215,7 +7215,7 @@ export default function Edit( {
 										<AnchorGrid
 											label={ __(
 												'Anchor position',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											anchorX={ layer.iconAnchorX }
 											anchorY={ layer.iconAnchorY }
@@ -7223,7 +7223,7 @@ export default function Edit( {
 											height={ layer.iconHeight }
 											disabledHelp={ __(
 												'Set icon size first',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 											onChange={ ( presetId ) => {
 												const coords = computeAnchorFromPreset(
@@ -7250,7 +7250,7 @@ export default function Edit( {
 										>
 											{ __(
 												'Icon Anchor (px)',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 										</p>
 										<div
@@ -7262,7 +7262,7 @@ export default function Edit( {
 											<NumberControl
 												label={ __(
 													'X',
-													'blocks-for-leaflet-map'
+													'cartoblocks-for-leaflet'
 												) }
 												value={
 													layer.iconAnchorX ?? ''
@@ -7289,7 +7289,7 @@ export default function Edit( {
 											<NumberControl
 												label={ __(
 													'Y',
-													'blocks-for-leaflet-map'
+													'cartoblocks-for-leaflet'
 												) }
 												value={
 													layer.iconAnchorY ?? ''
@@ -7325,7 +7325,7 @@ export default function Edit( {
 										>
 											{ __(
 												'Popup Anchor (px)',
-												'blocks-for-leaflet-map'
+												'cartoblocks-for-leaflet'
 											) }
 										</p>
 										<div
@@ -7337,7 +7337,7 @@ export default function Edit( {
 											<NumberControl
 												label={ __(
 													'X',
-													'blocks-for-leaflet-map'
+													'cartoblocks-for-leaflet'
 												) }
 												value={
 													layer.popupAnchorX ?? ''
@@ -7364,7 +7364,7 @@ export default function Edit( {
 											<NumberControl
 												label={ __(
 													'Y',
-													'blocks-for-leaflet-map'
+													'cartoblocks-for-leaflet'
 												) }
 												value={
 													layer.popupAnchorY ?? ''
@@ -7401,7 +7401,7 @@ export default function Edit( {
 							>
 								{ __(
 									'Remove this layer',
-									'blocks-for-leaflet-map'
+									'cartoblocks-for-leaflet'
 								) }
 							</Button>
 						</PanelBody>
@@ -7412,24 +7412,24 @@ export default function Edit( {
 				{ ! imageMap && <PanelBody
 					title={ sprintf(
 						/* translators: %d: number of overlays. */
-						__( 'Overlays (%d)', 'blocks-for-leaflet-map' ),
+						__( 'Overlays (%d)', 'cartoblocks-for-leaflet' ),
 						( overlays || [] ).length
 					) }
 					initialOpen={ false }
 				>
-					<p>{ __( 'Add image or video layers pinned to map coordinates.', 'blocks-for-leaflet-map' ) }</p>
+					<p>{ __( 'Add image or video layers pinned to map coordinates.', 'cartoblocks-for-leaflet' ) }</p>
 					<div style={ { display: 'flex', gap: '8px', marginBottom: '12px' } }>
 						<Button
 							variant="secondary"
 							onClick={ () => handleAddOverlay( 'image' ) }
 						>
-							{ __( '+ Image', 'blocks-for-leaflet-map' ) }
+							{ __( '+ Image', 'cartoblocks-for-leaflet' ) }
 						</Button>
 						<Button
 							variant="secondary"
 							onClick={ () => handleAddOverlay( 'video' ) }
 						>
-							{ __( '+ Video', 'blocks-for-leaflet-map' ) }
+							{ __( '+ Video', 'cartoblocks-for-leaflet' ) }
 						</Button>
 					</div>
 					{ ( overlays || [] ).map( ( overlay, overlayIdx ) => (
@@ -7437,10 +7437,10 @@ export default function Edit( {
 							key={ overlayIdx }
 							title={ sprintf(
 								/* translators: 1: overlay type, 2: index number. */
-								__( '%1$s overlay %2$d', 'blocks-for-leaflet-map' ),
+								__( '%1$s overlay %2$d', 'cartoblocks-for-leaflet' ),
 								overlay.type === 'video'
-									? __( 'Video', 'blocks-for-leaflet-map' )
-									: __( 'Image', 'blocks-for-leaflet-map' ),
+									? __( 'Video', 'cartoblocks-for-leaflet' )
+									: __( 'Image', 'cartoblocks-for-leaflet' ),
 								overlayIdx + 1
 							) }
 							initialOpen={ expandedOverlayIndex === overlayIdx }
@@ -7451,11 +7451,11 @@ export default function Edit( {
 							}
 						>
 							<SelectControl
-								label={ __( 'Type', 'blocks-for-leaflet-map' ) }
+								label={ __( 'Type', 'cartoblocks-for-leaflet' ) }
 								value={ overlay.type }
 								options={ [
-									{ value: 'image', label: __( 'Image overlay', 'blocks-for-leaflet-map' ) },
-									{ value: 'video', label: __( 'Video overlay', 'blocks-for-leaflet-map' ) },
+									{ value: 'image', label: __( 'Image overlay', 'cartoblocks-for-leaflet' ) },
+									{ value: 'video', label: __( 'Video overlay', 'cartoblocks-for-leaflet' ) },
 								] }
 								onChange={ ( value ) =>
 									handleUpdateOverlay( overlayIdx, { type: value } )
@@ -7464,7 +7464,7 @@ export default function Edit( {
 								__nextHasNoMarginBottom
 							/>
 							<TextControl
-								label={ __( 'Source URL', 'blocks-for-leaflet-map' ) }
+								label={ __( 'Source URL', 'cartoblocks-for-leaflet' ) }
 								placeholder={ overlay.type === 'video'
 									? 'https://example.com/video.mp4'
 									: 'https://example.com/image.jpg'
@@ -7477,9 +7477,9 @@ export default function Edit( {
 								__nextHasNoMarginBottom
 							/>
 							<TextControl
-								label={ __( 'Bounds', 'blocks-for-leaflet-map' ) }
+								label={ __( 'Bounds', 'cartoblocks-for-leaflet' ) }
 								placeholder="40.712,-74.226;40.773,-74.125"
-								help={ __( 'SW corner ; NE corner: lat1,lng1;lat2,lng2', 'blocks-for-leaflet-map' ) }
+								help={ __( 'SW corner ; NE corner: lat1,lng1;lat2,lng2', 'cartoblocks-for-leaflet' ) }
 								value={ overlay.bounds }
 								onChange={ ( value ) =>
 									handleUpdateOverlay( overlayIdx, { bounds: value } )
@@ -7488,7 +7488,7 @@ export default function Edit( {
 								__nextHasNoMarginBottom
 							/>
 							<RangeControl
-								label={ __( 'Opacity', 'blocks-for-leaflet-map' ) }
+								label={ __( 'Opacity', 'cartoblocks-for-leaflet' ) }
 								value={ overlay.opacity ?? 1 }
 								min={ 0 }
 								max={ 1 }
@@ -7500,8 +7500,8 @@ export default function Edit( {
 								__nextHasNoMarginBottom
 							/>
 							<ToggleControl
-								label={ __( 'Interactive', 'blocks-for-leaflet-map' ) }
-								help={ __( 'Allow mouse/touch events on this overlay.', 'blocks-for-leaflet-map' ) }
+								label={ __( 'Interactive', 'cartoblocks-for-leaflet' ) }
+								help={ __( 'Allow mouse/touch events on this overlay.', 'cartoblocks-for-leaflet' ) }
 								checked={ overlay.interactive }
 								onChange={ ( value ) =>
 									handleUpdateOverlay( overlayIdx, { interactive: value } )
@@ -7511,7 +7511,7 @@ export default function Edit( {
 							{ overlay.type === 'image' && (
 								<>
 									<TextControl
-										label={ __( 'Alt text', 'blocks-for-leaflet-map' ) }
+										label={ __( 'Alt text', 'cartoblocks-for-leaflet' ) }
 										value={ overlay.alt }
 										onChange={ ( value ) =>
 											handleUpdateOverlay( overlayIdx, { alt: value } )
@@ -7520,7 +7520,7 @@ export default function Edit( {
 										__nextHasNoMarginBottom
 									/>
 									<ToggleControl
-										label={ __( 'Keep aspect ratio', 'blocks-for-leaflet-map' ) }
+										label={ __( 'Keep aspect ratio', 'cartoblocks-for-leaflet' ) }
 										checked={ overlay.keepAspectRatio }
 										onChange={ ( value ) =>
 											handleUpdateOverlay( overlayIdx, { keepAspectRatio: value } )
@@ -7530,7 +7530,7 @@ export default function Edit( {
 								</>
 							) }
 							<NumberControl
-								label={ __( 'Z-Index', 'blocks-for-leaflet-map' ) }
+								label={ __( 'Z-Index', 'cartoblocks-for-leaflet' ) }
 								value={ overlay.zIndex ?? '' }
 								onChange={ ( value ) =>
 									handleUpdateOverlay( overlayIdx, {
@@ -7543,7 +7543,7 @@ export default function Edit( {
 								__nextHasNoMarginBottom
 							/>
 							<TextControl
-								label={ __( 'CSS class', 'blocks-for-leaflet-map' ) }
+								label={ __( 'CSS class', 'cartoblocks-for-leaflet' ) }
 								value={ overlay.classname }
 								onChange={ ( value ) =>
 									handleUpdateOverlay( overlayIdx, { classname: value } )
@@ -7556,7 +7556,7 @@ export default function Edit( {
 								variant="secondary"
 								onClick={ () => handleRemoveOverlay( overlayIdx ) }
 							>
-								{ __( 'Remove this overlay', 'blocks-for-leaflet-map' ) }
+								{ __( 'Remove this overlay', 'cartoblocks-for-leaflet' ) }
 							</Button>
 						</PanelBody>
 					) ) }
@@ -7596,7 +7596,7 @@ export default function Edit( {
 						height={ normalizedHeight }
 						style={ { border: 'none', display: imageMap && ! imageSrc ? 'none' : 'block' } }
 						sandbox="allow-scripts allow-same-origin"
-						title={ __( 'Map preview', 'blocks-for-leaflet-map' ) }
+						title={ __( 'Map preview', 'cartoblocks-for-leaflet' ) }
 					/>
 					{ ! isSelected && ! isOverlayInteracting && (
 						<div
