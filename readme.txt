@@ -72,16 +72,15 @@ Blocks for Leaflet Map adds a native Gutenberg block that wraps the [Leaflet Map
 
 **Requirements:**
 
-* The [Leaflet Map](https://wordpress.org/plugins/leaflet-map/) plugin must be installed and active.
-* WordPress 6.0 or higher.
+* The [Leaflet Map](https://wordpress.org/plugins/leaflet-map/) plugin must be installed and active. This is declared as a plugin dependency, so WordPress will guide you to install and activate it before this plugin can be activated.
+* WordPress 6.8 or higher.
 * PHP 7.4 or higher.
 
 == Installation ==
 
-1. Make sure the [Leaflet Map](https://wordpress.org/plugins/leaflet-map/) plugin is installed and active.
-2. Upload the `blocks-for-leaflet-map` folder to `/wp-content/plugins/`, or install the plugin through the WordPress plugins screen.
-3. Activate the plugin through the Plugins screen.
-4. In the block editor, search for "Leaflet Map Block" and add it to your page or post.
+1. Upload the `blocks-for-leaflet-map` folder to `/wp-content/plugins/`, or install the plugin through the WordPress plugins screen.
+2. Activate the plugin through the Plugins screen. If the [Leaflet Map](https://wordpress.org/plugins/leaflet-map/) plugin is not yet installed and active, WordPress prompts you to install and activate it first (it is a required dependency).
+3. In the block editor, search for "Leaflet Map Block" and add it to your page or post.
 
 == External services ==
 
