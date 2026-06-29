@@ -40,14 +40,13 @@ converting its shortcodes into a single configurable Gutenberg block.
 ```
 blocks-for-leaflet-map.php           ~95 lines, bootstrap only
 includes/
-├── class-tgm-plugin-activation.php  vendored upstream library — DO NOT MODIFY
-├── tgm-config.php                   TGMPA load + bflm_register_required_plugins()
 ├── filetypes.php                    upload_mimes / wp_check_filetype_and_ext filters
 ├── geocoder.php                     bflm_geocode_address() + AJAX hook
 ├── editor-assets.php                bflm_localise_editor_script() + hook
 ├── preview/
 │   ├── input.php                    bflm_preview_normalise_input() — pure $_GET sanitiser
-│   ├── template.php                 bflm_preview_render_template() — full HTML page emission
+│   ├── inline-assets.php            bflm_preview_inline_css() / *_bridge_js() / *_imagefit_js() — enqueued iframe CSS/JS
+│   ├── template.php                 bflm_preview_render_template() — full HTML page emission (enqueues inline-assets)
 │   └── endpoint.php                 bflm_preview_map() — nonce verification + orchestration
 └── shortcodes/
     ├── attrs.php                    bflm_normalise_map_attrs() + interaction/zoom/tile helpers
@@ -84,11 +83,15 @@ any `$_GET` parsing. `includes/preview/input.php` is a pure sanitiser — no
 `wp_die`, no `header`, no `echo`, no hook registration. This makes the input
 function trivially testable and keeps the security check in one place.
 
-### Vendored TGM library
-`includes/class-tgm-plugin-activation.php` is upstream code at version 2.6.1 —
-**never modify it**. All BFLM integration lives in `includes/tgm-config.php`.
-PHPCS / PHPStan warnings against the vendored file (e.g., PR #20 review
-comments) are upstream concerns and the file carries `phpcs:ignoreFile`.
+### Leaflet Map dependency — native plugin dependencies
+The "Leaflet Map" dependency is declared with the `Requires Plugins: leaflet-map`
+header in `blocks-for-leaflet-map.php` (WordPress 6.5+ native plugin
+dependencies). WordPress core blocks activation until Leaflet Map is installed
+and active and shows the install/activate prompt on the Plugins screen — no
+vendored installer library. `bflm_is_leaflet_map_active()` remains as a
+defensive runtime guard for edge cases (e.g. the dependency force-deactivated
+mid-request). The former TGM Plugin Activation library was removed in the
+v1.2.x cycle (replaced all 3 inline-`<style>` Plugin Review flags it carried).
 
 ## Key Technical Decisions
 

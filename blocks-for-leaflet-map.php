@@ -3,9 +3,10 @@
  * Plugin Name:       Blocks for Leaflet Map
  * Plugin URI:        https://github.com/jesusyesares/blocks-for-leaflet-map
  * Description:       A dynamic Gutenberg block that wraps the Leaflet Map plugin shortcodes. Requires the "Leaflet Map" plugin to be installed and active.
- * Version:           1.1.1
+ * Version:           1.2.0
  * Requires at least: 6.8
  * Requires PHP:      7.4
+ * Requires Plugins:  leaflet-map
  * Author:            Jesús Yesares García
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -18,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-define( 'BFLM_VERSION', '1.1.1' );
+define( 'BFLM_VERSION', '1.2.0' );
 define( 'BFLM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BFLM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BFLM_LEAFLET_MAP_PLUGIN', 'leaflet-map/leaflet-map.php' );
@@ -38,11 +39,12 @@ require_once BFLM_PLUGIN_DIR . 'includes/shortcodes/layer.php';
 require_once BFLM_PLUGIN_DIR . 'includes/shortcodes/overlay.php';
 
 // ---------------------------------------------------------------------------
-// TGM Plugin Activation — bootstraps the "Leaflet Map" dependency installer.
-// (Loads the vendored library + registers the activation hook.)
+// Dependency on the "Leaflet Map" plugin is declared via the "Requires Plugins"
+// header above (WordPress 6.5+ native plugin dependencies). WordPress core
+// prevents activation until Leaflet Map is installed and active, and shows the
+// install/activate prompt on the Plugins screen. The runtime guard below
+// (bflm_is_leaflet_map_active) remains as a defensive check.
 // ---------------------------------------------------------------------------
-
-require_once BFLM_PLUGIN_DIR . 'includes/tgm-config.php';
 
 // ---------------------------------------------------------------------------
 // File-type filters — allow GeoJSON / GPX / KML / KMZ uploads.
@@ -64,7 +66,11 @@ function bflm_is_leaflet_map_active(): bool {
 }
 
 if ( ! bflm_is_leaflet_map_active() ) {
-	return; // Stop loading — TGMPA notice handles the rest.
+	// Defensive guard. WordPress core normally blocks activation while the
+	// "Leaflet Map" dependency (declared in the "Requires Plugins" header) is
+	// missing, so this early return only triggers in edge cases such as the
+	// dependency being force-deactivated programmatically mid-request.
+	return;
 }
 
 // ---------------------------------------------------------------------------
@@ -74,6 +80,7 @@ if ( ! bflm_is_leaflet_map_active() ) {
 // ---------------------------------------------------------------------------
 
 require_once BFLM_PLUGIN_DIR . 'includes/preview/input.php';
+require_once BFLM_PLUGIN_DIR . 'includes/preview/inline-assets.php';
 require_once BFLM_PLUGIN_DIR . 'includes/preview/template.php';
 require_once BFLM_PLUGIN_DIR . 'includes/preview/endpoint.php';
 require_once BFLM_PLUGIN_DIR . 'includes/editor-assets.php';

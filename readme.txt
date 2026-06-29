@@ -3,7 +3,7 @@ Contributors:      jesusyesares
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.8
 Tested up to:      7.0
-Stable tag:        1.1.1
+Stable tag:        1.2.0
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -72,16 +72,15 @@ Blocks for Leaflet Map adds a native Gutenberg block that wraps the [Leaflet Map
 
 **Requirements:**
 
-* The [Leaflet Map](https://wordpress.org/plugins/leaflet-map/) plugin must be installed and active.
-* WordPress 6.0 or higher.
+* The [Leaflet Map](https://wordpress.org/plugins/leaflet-map/) plugin must be installed and active. This is declared as a plugin dependency, so WordPress will guide you to install and activate it before this plugin can be activated.
+* WordPress 6.8 or higher.
 * PHP 7.4 or higher.
 
 == Installation ==
 
-1. Make sure the [Leaflet Map](https://wordpress.org/plugins/leaflet-map/) plugin is installed and active.
-2. Upload the `blocks-for-leaflet-map` folder to `/wp-content/plugins/`, or install the plugin through the WordPress plugins screen.
-3. Activate the plugin through the Plugins screen.
-4. In the block editor, search for "Leaflet Map Block" and add it to your page or post.
+1. Upload the `blocks-for-leaflet-map` folder to `/wp-content/plugins/`, or install the plugin through the WordPress plugins screen.
+2. Activate the plugin through the Plugins screen. If the [Leaflet Map](https://wordpress.org/plugins/leaflet-map/) plugin is not yet installed and active, WordPress prompts you to install and activate it first (it is a required dependency).
+3. In the block editor, search for "Leaflet Map Block" and add it to your page or post.
 
 == External services ==
 
@@ -194,6 +193,11 @@ Yes. All user-facing strings are wrapped in `__()` with the `blocks-for-leaflet-
 7. Frontend rendering — map with markers, lines, and a GeoJSON layer.
 
 == Changelog ==\
+\
+= 1.2.0 =\
+* Changed: Replaced the bundled TGM Plugin Activation library with WordPress 6.5+ native plugin dependencies (the "Requires Plugins" header). WordPress now guides you to install and activate the required Leaflet Map plugin before activation. Minimum WordPress version is 6.8.\
+* Changed: The editor preview iframe now enqueues its CSS/JS via the WordPress enqueue API instead of printing inline <style>/<script> tags, per WordPress Plugin Review guidelines.\
+* Removed: ~3,900 lines of vendored third-party code (TGM Plugin Activation).\
 \
 = 1.1.1 =\
 * i18n: Wrapped the remaining untranslated UI placeholder and added translator comments for two placeholder strings so all user-facing text is translation-ready. Regenerated the translation template (.pot). No change to plugin behaviour.\
