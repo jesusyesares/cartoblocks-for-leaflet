@@ -3,7 +3,7 @@ Contributors:      glycymeris
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.8
 Tested up to:      7.0
-Stable tag:        1.2.0
+Stable tag:        1.2.1
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -193,6 +193,10 @@ Yes. All user-facing strings are wrapped in `__()` with the `cartoblocks-for-lea
 7. Frontend rendering — map with markers, lines, and a GeoJSON layer.
 
 == Changelog ==\
+\
+= 1.2.1 =\
+* Changed: Renamed the plugin to "CartoBlocks for Leaflet" (slug `cartoblocks-for-leaflet`) for a more distinctive name, per WordPress Plugin Review guidelines. Updated the Contributors list and plugin metadata.\
+* Changed: Moved the block to the Media category and gave its icon the Leaflet green accent.\
 \
 = 1.2.0 =\
 * Changed: Replaced the bundled TGM Plugin Activation library with WordPress 6.5+ native plugin dependencies (the "Requires Plugins" header). WordPress now guides you to install and activate the required Leaflet Map plugin before activation. Minimum WordPress version is 6.8.\
