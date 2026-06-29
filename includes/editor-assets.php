@@ -38,7 +38,7 @@ function bflm_localise_editor_script(): void {
 	);
 
 	wp_localize_script(
-		'blocks-for-leaflet-map-leaflet-map-block-editor-script',
+		'cartoblocks-for-leaflet-leaflet-map-block-editor-script',
 		'bflmEditor',
 		array(
 			'previewUrl'      => admin_url( 'admin-ajax.php' ),
@@ -48,8 +48,8 @@ function bflm_localise_editor_script(): void {
 		)
 	);
 	wp_set_script_translations(
-		'blocks-for-leaflet-map-leaflet-map-block-editor-script',
-		'blocks-for-leaflet-map',
+		'cartoblocks-for-leaflet-leaflet-map-block-editor-script',
+		'cartoblocks-for-leaflet',
 		BFLM_PLUGIN_DIR . 'languages'
 	);
 }

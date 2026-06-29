@@ -22,6 +22,6 @@
 
 /* eslint-disable no-console */
 console.log(
-	'Hello World! (from blocks-for-leaflet-map-leaflet-map-block block)'
+	'Hello World! (from cartoblocks-for-leaflet-leaflet-map-block block)'
 );
 /* eslint-enable no-console */

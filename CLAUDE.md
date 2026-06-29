@@ -1,4 +1,4 @@
-# WordPress Development Standards for 'Blocks for Leaflet Map'
+# WordPress Development Standards for 'CartoBlocks for Leaflet'
 
 ## Role
 You are an expert WordPress Senior Developer. You follow the official WordPress Coding Standards (WPCS).
@@ -9,7 +9,7 @@ You are an expert WordPress Senior Developer. You follow the official WordPress 
 - **Security First:** - Sanitize all inputs (`sanitize_text_field`, `absint`, etc.).
     - Escape all outputs (`esc_html`, `esc_attr`, `esc_url`, `wp_kses_post`).
     - Use nonces for all state-changing actions.
-- **Internationalization (i18n):** All strings must use `__()`, `_e()`, etc., with the `blocks-for-leaflet-map` text domain.
+- **Internationalization (i18n):** All strings must use `__()`, `_e()`, etc., with the `cartoblocks-for-leaflet` text domain.
 - **Database:** Use `$wpdb` and its methods. Never write raw SQL without `prepare()`.
 
 ## Block Development (Gutenberg)
@@ -24,9 +24,9 @@ You are an expert WordPress Senior Developer. You follow the official WordPress 
 ## Project Overview
 WordPress Gutenberg block plugin that wraps the "Leaflet Map" plugin by bozdoz,
 converting its shortcodes into a single configurable Gutenberg block.
-- **Plugin slug:** `blocks-for-leaflet-map`
-- **Block:** `leaflet-map-block`
-- **Repo:** https://github.com/jesusyesares/blocks-for-leaflet-map
+- **Plugin slug:** `cartoblocks-for-leaflet` (display name "CartoBlocks for Leaflet"; renamed from "Blocks for Leaflet Map" / `blocks-for-leaflet-map` for the wp.org Plugin Review trademark concern)
+- **Block:** `cartoblocks-for-leaflet/leaflet-map-block` (inserter title "Map for Leaflet")
+- **Repo:** https://github.com/jesusyesares/blocks-for-leaflet-map (GitHub repo name unchanged)
 - **Current version:** 1.0.7 (released — internal modularization, v1.1.0 milestone)
 - **Goal:** Public release, eventually WordPress.org submission
 - **Requires:** "Leaflet Map" plugin by bozdoz installed and active
@@ -38,7 +38,7 @@ converting its shortcodes into a single configurable Gutenberg block.
 ### File layout (post v1.1.0 modularization)
 
 ```
-blocks-for-leaflet-map.php           ~95 lines, bootstrap only
+cartoblocks-for-leaflet.php          ~95 lines, bootstrap only
 includes/
 ├── filetypes.php                    upload_mimes / wp_check_filetype_and_ext filters
 ├── geocoder.php                     bflm_geocode_address() + AJAX hook
@@ -85,7 +85,7 @@ function trivially testable and keeps the security check in one place.
 
 ### Leaflet Map dependency — native plugin dependencies
 The "Leaflet Map" dependency is declared with the `Requires Plugins: leaflet-map`
-header in `blocks-for-leaflet-map.php` (WordPress 6.5+ native plugin
+header in `cartoblocks-for-leaflet.php` (WordPress 6.5+ native plugin
 dependencies). WordPress core blocks activation until Leaflet Map is installed
 and active and shows the install/activate prompt on the Plugins screen — no
 vendored installer library. `bflm_is_leaflet_map_active()` remains as a
@@ -118,8 +118,8 @@ break functionality.
 
 ## Version Bump Locations
 All five locations must be updated on every release:
-1. `blocks-for-leaflet-map.php` — plugin header comment
-2. `blocks-for-leaflet-map.php` — `BFLM_VERSION` constant
+1. `cartoblocks-for-leaflet.php` — plugin header comment
+2. `cartoblocks-for-leaflet.php` — `BFLM_VERSION` constant
 3. `src/leaflet-map-block/block.json`
 4. `readme.txt`
 5. `package.json`

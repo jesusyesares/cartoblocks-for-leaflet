@@ -1,6 +1,6 @@
 {
-	"name": "blocks-for-leaflet-map",
-	"version": "1.2.0",
+	"name": "cartoblocks-for-leaflet",
+	"version": "1.2.1",
 	"description": "A dynamic block that renders Leaflet Map shortcodes from block attributes.",
 	"author": "The WordPress Contributors",
 	"license": "GPL-2.0-or-later",
@@ -11,9 +11,9 @@
 		"lint:css": "wp-scripts lint-style",
 		"lint:js": "wp-scripts lint-js",
 		"packages-update": "wp-scripts packages-update",
-		"plugin-zip": "cd ../../.. && rm -f blocks-for-leaflet-map-*.zip && wp dist-archive wp-content/plugins/blocks-for-leaflet-map . --filename-format=\"{name}-{version}\"",
+		"plugin-zip": "cd ../../.. && rm -f cartoblocks-for-leaflet-*.zip && wp dist-archive wp-content/plugins/cartoblocks-for-leaflet . --filename-format=\"{name}-{version}\"",
 		"start": "wp-scripts start --webpack-copy-php --blocks-manifest",
-		"make-pot": "wp i18n make-pot . languages/blocks-for-leaflet-map.pot --domain=blocks-for-leaflet-map --exclude=node_modules,vendor,build",
+		"make-pot": "wp i18n make-pot . languages/cartoblocks-for-leaflet.pot --domain=cartoblocks-for-leaflet --exclude=node_modules,vendor,build",
 		"test": "wp-scripts test-unit-js"
 	},
 	"dependencies": {

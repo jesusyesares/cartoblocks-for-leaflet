@@ -27,6 +27,16 @@ import metadata from './block.json';
  */
 registerBlockType( metadata.name, {
 	/**
+	 * Icon override: keep the `location-alt` dashicon from block.json but tint
+	 * it with the Leaflet green. block.json's `icon` can only be a plain slug,
+	 * so the colour is applied here via the icon object's `foreground`.
+	 */
+	icon: {
+		src: metadata.icon,
+		foreground: '#199900',
+	},
+
+	/**
 	 * @see ./edit.js
 	 */
 	edit: Edit,
