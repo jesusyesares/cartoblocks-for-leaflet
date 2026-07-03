@@ -3,7 +3,7 @@ Contributors:      glycymeris
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.8
 Tested up to:      7.0
-Stable tag:        1.2.1
+Stable tag:        1.2.2
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -193,6 +193,10 @@ Yes. All user-facing strings are wrapped in `__()` with the `cartoblocks-for-lea
 7. Frontend rendering — map with markers, lines, and a GeoJSON layer.
 
 == Changelog ==\
+\
+= 1.2.2 =\
+* Changed: The frontend no longer prints inline <script> tags. Map resize and image-map fit logic moved to the block's view script, enqueued via the WordPress enqueue API, per WordPress Plugin Review guidelines.\
+* Improved: Image-map fit now targets the correct map when multiple map blocks are on the same page.\
 \
 = 1.2.1 =\
 * Changed: Renamed the plugin to "CartoBlocks for Leaflet" (slug `cartoblocks-for-leaflet`) for a more distinctive name, per WordPress Plugin Review guidelines. Updated the Contributors list and plugin metadata.\
