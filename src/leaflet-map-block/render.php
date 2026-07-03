@@ -27,16 +27,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Canonicalise input + build all shortcodes via shared helpers.
 $bflm_attrs = bflm_normalise_map_attrs( is_array( $attributes ) ? $attributes : array() );
 
-$bflm_marker_shortcodes = bflm_build_marker_shortcodes(
+$bflm_marker_shortcodes  = bflm_build_marker_shortcodes(
 	isset( $bflm_attrs['markers'] ) && is_array( $bflm_attrs['markers'] ) ? $bflm_attrs['markers'] : array()
 );
-$bflm_line_shortcodes = bflm_build_line_shortcodes(
+$bflm_line_shortcodes    = bflm_build_line_shortcodes(
 	isset( $bflm_attrs['lines'] ) && is_array( $bflm_attrs['lines'] ) ? $bflm_attrs['lines'] : array()
 );
-$bflm_circle_shortcodes = bflm_build_circle_shortcodes(
+$bflm_circle_shortcodes  = bflm_build_circle_shortcodes(
 	isset( $bflm_attrs['circles'] ) && is_array( $bflm_attrs['circles'] ) ? $bflm_attrs['circles'] : array()
 );
-$bflm_layer_shortcodes = bflm_build_layer_shortcodes(
+$bflm_layer_shortcodes   = bflm_build_layer_shortcodes(
 	isset( $bflm_attrs['layers'] ) && is_array( $bflm_attrs['layers'] ) ? $bflm_attrs['layers'] : array()
 );
 $bflm_overlay_shortcodes = bflm_build_overlay_shortcodes(
