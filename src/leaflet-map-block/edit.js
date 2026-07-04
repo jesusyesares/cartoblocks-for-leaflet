@@ -50,7 +50,7 @@
  *   from incoming iframe messages. The lat/lng/zoom view-change effect reads
  *   this flag, skips the echo postMessage, then clears the flag.
  *
- * @package BlocksForLeafletMap
+ * @package
  */
 
 import { __, sprintf } from '@wordpress/i18n';
@@ -72,7 +72,9 @@ import {
 	Spinner,
 	ToolbarGroup,
 	ToolbarButton,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalNumberControl as NumberControl,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
 	RangeControl,
 	SelectControl,
@@ -254,36 +256,55 @@ const LEAFLET_MAP_DESCRIPTORS = [
  * Keep in sync with the lines section in render.php and bflm_preview_map().
  *
  * @param {Array} lines Block lines attribute.
- * @return {string}
+ * @return {string} Concatenated shortcode markup.
  */
 function buildLineShortcodes( lines ) {
-	if ( ! lines || lines.length === 0 ) return '';
+	if ( ! lines || lines.length === 0 ) {
+		return '';
+	}
 	let out = '';
 	for ( const line of lines ) {
 		const points = line.points || [];
-		if ( points.length < 2 ) continue;
+		if ( points.length < 2 ) {
+			continue;
+		}
 		const tag =
 			line.type === 'polygon' ? 'leaflet-polygon' : 'leaflet-line';
 		const latlngs = points
 			.map( ( p ) => `${ p.lat },${ p.lng }` )
 			.join( '; ' );
 		let attrs = ` latlngs="${ latlngs }"`;
-		if ( line.fitbounds ) attrs += ` fitbounds="true"`;
-		if ( line.color && line.color.trim() )
+		if ( line.fitbounds ) {
+			attrs += ` fitbounds="true"`;
+		}
+		if ( line.color && line.color.trim() ) {
 			attrs += ` color="${ line.color.trim() }"`;
-		if ( line.weight != null ) attrs += ` weight="${ line.weight }"`;
-		if ( line.opacity != null ) attrs += ` opacity="${ line.opacity }"`;
-		if ( line.dashArray && line.dashArray.trim() )
+		}
+		if ( line.weight != null ) {
+			attrs += ` weight="${ line.weight }"`;
+		}
+		if ( line.opacity != null ) {
+			attrs += ` opacity="${ line.opacity }"`;
+		}
+		if ( line.dashArray && line.dashArray.trim() ) {
 			attrs += ` dasharray="${ line.dashArray.trim() }"`;
-		if ( line.classname && line.classname.trim() )
+		}
+		if ( line.classname && line.classname.trim() ) {
 			attrs += ` classname="${ line.classname.trim() }"`;
-		if ( line.fill ) attrs += ` fill="true"`;
-		if ( line.fillColor && line.fillColor.trim() )
+		}
+		if ( line.fill ) {
+			attrs += ` fill="true"`;
+		}
+		if ( line.fillColor && line.fillColor.trim() ) {
 			attrs += ` fillcolor="${ line.fillColor.trim() }"`;
-		if ( line.fillOpacity != null )
+		}
+		if ( line.fillOpacity != null ) {
 			attrs += ` fillopacity="${ line.fillOpacity }"`;
+		}
 		const popup = line.popup || '';
-		if ( line.visible && popup ) attrs += ` visible="1"`;
+		if ( line.visible && popup ) {
+			attrs += ` visible="1"`;
+		}
 		if ( popup ) {
 			out += `\n[${ tag }${ attrs }]${ popup }[/${ tag }]`;
 		} else {
@@ -299,32 +320,53 @@ function buildLineShortcodes( lines ) {
  * Keep in sync with render.php and bflm_preview_map() in cartoblocks-for-leaflet.php.
  *
  * @param {Array} circles
- * @return {string}
+ * @return {string} Concatenated shortcode markup.
  */
 function buildCircleShortcodes( circles ) {
-	if ( ! circles || circles.length === 0 ) return '';
+	if ( ! circles || circles.length === 0 ) {
+		return '';
+	}
 	let out = '';
 	for ( const circle of circles ) {
-		if ( circle.lat == null || circle.lng == null ) continue;
+		if ( circle.lat == null || circle.lng == null ) {
+			continue;
+		}
 		const r = circle.radius != null ? Number( circle.radius ) : 1000;
-		if ( r <= 0 ) continue;
+		if ( r <= 0 ) {
+			continue;
+		}
 		let attrs = ` lat="${ circle.lat }" lng="${ circle.lng }" radius="${ r }"`;
-		if ( circle.fitbounds ) attrs += ` fitbounds="true"`;
-		if ( circle.color && circle.color.trim() )
+		if ( circle.fitbounds ) {
+			attrs += ` fitbounds="true"`;
+		}
+		if ( circle.color && circle.color.trim() ) {
 			attrs += ` color="${ circle.color.trim() }"`;
-		if ( circle.weight != null ) attrs += ` weight="${ circle.weight }"`;
-		if ( circle.opacity != null ) attrs += ` opacity="${ circle.opacity }"`;
-		if ( circle.dashArray && circle.dashArray.trim() )
+		}
+		if ( circle.weight != null ) {
+			attrs += ` weight="${ circle.weight }"`;
+		}
+		if ( circle.opacity != null ) {
+			attrs += ` opacity="${ circle.opacity }"`;
+		}
+		if ( circle.dashArray && circle.dashArray.trim() ) {
 			attrs += ` dasharray="${ circle.dashArray.trim() }"`;
-		if ( circle.classname && circle.classname.trim() )
+		}
+		if ( circle.classname && circle.classname.trim() ) {
 			attrs += ` classname="${ circle.classname.trim() }"`;
-		if ( circle.fill ) attrs += ` fill="true"`;
-		if ( circle.fillColor && circle.fillColor.trim() )
+		}
+		if ( circle.fill ) {
+			attrs += ` fill="true"`;
+		}
+		if ( circle.fillColor && circle.fillColor.trim() ) {
 			attrs += ` fillcolor="${ circle.fillColor.trim() }"`;
-		if ( circle.fillOpacity != null )
+		}
+		if ( circle.fillOpacity != null ) {
 			attrs += ` fillopacity="${ circle.fillOpacity }"`;
+		}
 		const popup = circle.popup || '';
-		if ( circle.visible && popup ) attrs += ` visible="1"`;
+		if ( circle.visible && popup ) {
+			attrs += ` visible="1"`;
+		}
 		if ( popup ) {
 			out += `\n[leaflet-circle${ attrs }]${ popup }[/leaflet-circle]`;
 		} else {
@@ -347,45 +389,68 @@ const LAYER_TYPE_TAGS = {
  * Keep in sync with render.php and bflm_preview_map() in cartoblocks-for-leaflet.php.
  *
  * @param {Array} layers
- * @return {string}
+ * @return {string} Concatenated shortcode markup.
  */
 function buildLayerShortcodes( layers ) {
-	if ( ! layers || layers.length === 0 ) return '';
+	if ( ! layers || layers.length === 0 ) {
+		return '';
+	}
 	let out = '';
 	for ( const layer of layers ) {
 		const src = ( layer.src || '' ).trim();
-		if ( ! src ) continue;
+		if ( ! src ) {
+			continue;
+		}
 		const tag = LAYER_TYPE_TAGS[ layer.type ] || LAYER_TYPE_TAGS.geojson;
 
 		let attrs = ` src="${ src }"`;
-		if ( layer.fitbounds ) attrs += ` fitbounds="true"`;
+		if ( layer.fitbounds ) {
+			attrs += ` fitbounds="true"`;
+		}
 
 		const sanitize = ( s ) =>
 			s.replace( /"/g, '&quot;' ).replace( /\]/g, '&#93;' );
-		if ( layer.popupText && layer.popupText.trim() )
+		if ( layer.popupText && layer.popupText.trim() ) {
 			attrs += ` popup_text="${ sanitize( layer.popupText.trim() ) }"`;
-		if ( layer.popupProperty && layer.popupProperty.trim() )
+		}
+		if ( layer.popupProperty && layer.popupProperty.trim() ) {
 			attrs += ` popup_property="${ sanitize(
 				layer.popupProperty.trim()
 			) }"`;
-		if ( layer.tableView ) attrs += ` table_view="1"`;
+		}
+		if ( layer.tableView ) {
+			attrs += ` table_view="1"`;
+		}
 
-		if ( layer.color && layer.color.trim() )
+		if ( layer.color && layer.color.trim() ) {
 			attrs += ` color="${ layer.color.trim() }"`;
-		if ( layer.weight != null ) attrs += ` weight="${ layer.weight }"`;
-		if ( layer.opacity != null ) attrs += ` opacity="${ layer.opacity }"`;
-		if ( layer.dashArray && layer.dashArray.trim() )
+		}
+		if ( layer.weight != null ) {
+			attrs += ` weight="${ layer.weight }"`;
+		}
+		if ( layer.opacity != null ) {
+			attrs += ` opacity="${ layer.opacity }"`;
+		}
+		if ( layer.dashArray && layer.dashArray.trim() ) {
 			attrs += ` dasharray="${ layer.dashArray.trim() }"`;
-		if ( layer.classname && layer.classname.trim() )
+		}
+		if ( layer.classname && layer.classname.trim() ) {
 			attrs += ` classname="${ layer.classname.trim() }"`;
-		if ( layer.fill ) attrs += ` fill="true"`;
-		if ( layer.fillColor && layer.fillColor.trim() )
+		}
+		if ( layer.fill ) {
+			attrs += ` fill="true"`;
+		}
+		if ( layer.fillColor && layer.fillColor.trim() ) {
 			attrs += ` fillcolor="${ layer.fillColor.trim() }"`;
-		if ( layer.fillOpacity != null )
+		}
+		if ( layer.fillOpacity != null ) {
 			attrs += ` fillopacity="${ layer.fillOpacity }"`;
+		}
 
 		if ( layer.useCustomIcon ) {
-			if ( layer.iconUrl ) attrs += ` iconurl="${ layer.iconUrl }"`;
+			if ( layer.iconUrl ) {
+				attrs += ` iconurl="${ layer.iconUrl }"`;
+			}
 			if (
 				layer.iconWidth != null &&
 				layer.iconHeight != null &&
@@ -394,10 +459,12 @@ function buildLayerShortcodes( layers ) {
 			) {
 				attrs += ` iconsize="${ layer.iconWidth },${ layer.iconHeight }"`;
 			}
-			if ( layer.iconAnchorX != null && layer.iconAnchorY != null )
+			if ( layer.iconAnchorX != null && layer.iconAnchorY != null ) {
 				attrs += ` iconanchor="${ layer.iconAnchorX },${ layer.iconAnchorY }"`;
-			if ( layer.popupAnchorX != null && layer.popupAnchorY != null )
+			}
+			if ( layer.popupAnchorX != null && layer.popupAnchorY != null ) {
 				attrs += ` popupanchor="${ layer.popupAnchorX },${ layer.popupAnchorY }"`;
+			}
 		}
 
 		out += `\n[${ tag }${ attrs } /]`;
@@ -411,29 +478,42 @@ function buildLayerShortcodes( layers ) {
  * Keep in sync with render.php and bflm_preview_map() in cartoblocks-for-leaflet.php.
  *
  * @param {Array} overlays
- * @return {string}
+ * @return {string} Concatenated shortcode markup.
  */
 function buildOverlayShortcodes( overlays ) {
-	if ( ! overlays || overlays.length === 0 ) return '';
+	if ( ! overlays || overlays.length === 0 ) {
+		return '';
+	}
 	let out = '';
 	for ( const overlay of overlays ) {
 		const src = ( overlay.src || '' ).trim();
 		const bounds = ( overlay.bounds || '' ).trim();
-		if ( ! src || ! bounds ) continue;
+		if ( ! src || ! bounds ) {
+			continue;
+		}
 		const tag =
 			overlay.type === 'video'
 				? 'leaflet-video-overlay'
 				: 'leaflet-image-overlay';
 		let attrs = ` src="${ src }" bounds="${ bounds }"`;
-		if ( overlay.opacity != null ) attrs += ` opacity="${ overlay.opacity }"`;
-		if ( overlay.interactive ) attrs += ` interactive="true"`;
-		if ( overlay.alt && overlay.alt.trim() )
+		if ( overlay.opacity != null ) {
+			attrs += ` opacity="${ overlay.opacity }"`;
+		}
+		if ( overlay.interactive ) {
+			attrs += ` interactive="true"`;
+		}
+		if ( overlay.alt && overlay.alt.trim() ) {
 			attrs += ` alt="${ overlay.alt.trim() }"`;
-		if ( overlay.zIndex != null ) attrs += ` zindex="${ overlay.zIndex }"`;
-		if ( overlay.classname && overlay.classname.trim() )
+		}
+		if ( overlay.zIndex != null ) {
+			attrs += ` zindex="${ overlay.zIndex }"`;
+		}
+		if ( overlay.classname && overlay.classname.trim() ) {
 			attrs += ` classname="${ overlay.classname.trim() }"`;
-		if ( overlay.type !== 'video' && overlay.keepAspectRatio === false )
+		}
+		if ( overlay.type !== 'video' && overlay.keepAspectRatio === false ) {
 			attrs += ` keepaspectratio="false"`;
+		}
 		out += `\n[${ tag }${ attrs } /]`;
 	}
 	return out;
@@ -454,12 +534,10 @@ function buildShortcode( attributes ) {
 		imageSrc,
 		imageX,
 		imageY,
-		imageZoom,
 		wmsEnabled,
 		wmsSource,
 		wmsLayer,
 		wmsCrs,
-		zoom,
 		height,
 	} = attributes;
 
@@ -472,7 +550,9 @@ function buildShortcode( attributes ) {
 			( typeof height === 'string' && /^\d+$/.test( height ) )
 				? `${ height }px`
 				: height || '400px';
-		shortcode = `[leaflet-image src="${ src }" x="${ imageX ?? 0 }" y="${ imageY ?? 0 }" zoom="0" height="${ h }"]`;
+		shortcode = `[leaflet-image src="${ src }" x="${ imageX ?? 0 }" y="${
+			imageY ?? 0
+		}" zoom="0" height="${ h }"]`;
 	} else if ( wmsEnabled ) {
 		const parts = [];
 		for ( const {
@@ -489,9 +569,13 @@ function buildShortcode( attributes ) {
 		const src = ( wmsSource || '' ).trim();
 		let wmsAttrs = src ? ` src="${ src }"` : '';
 		const layer = ( wmsLayer || '' ).trim();
-		if ( layer ) wmsAttrs += ` layer="${ layer }"`;
+		if ( layer ) {
+			wmsAttrs += ` layer="${ layer }"`;
+		}
 		const crs = ( wmsCrs || '' ).trim();
-		if ( crs ) wmsAttrs += ` crs="${ crs }"`;
+		if ( crs ) {
+			wmsAttrs += ` crs="${ crs }"`;
+		}
 		shortcode = '[leaflet-wms ' + parts.join( ' ' ) + wmsAttrs + ']';
 	} else {
 		const parts = [];
@@ -524,27 +608,45 @@ function buildShortcode( attributes ) {
 
 		// Build open tag incrementally, mirroring render.php conditional emission.
 		let mTag = `[leaflet-marker lat="${ mLat }" lng="${ mLng }"`;
-		if ( mTitle ) mTag += ` title="${ mTitle }"`;
-		if ( mAlt ) mTag += ` alt="${ mAlt }"`;
-		if ( marker.visible ) mTag += ` visible="1"`;
-		if ( marker.draggable ) mTag += ` draggable="1"`;
-		if ( marker.opacity != null && Math.abs( marker.opacity - 1 ) > 0.001 )
+		if ( mTitle ) {
+			mTag += ` title="${ mTitle }"`;
+		}
+		if ( mAlt ) {
+			mTag += ` alt="${ mAlt }"`;
+		}
+		if ( marker.visible ) {
+			mTag += ` visible="1"`;
+		}
+		if ( marker.draggable ) {
+			mTag += ` draggable="1"`;
+		}
+		if (
+			marker.opacity != null &&
+			Math.abs( marker.opacity - 1 ) > 0.001
+		) {
 			mTag += ` opacity="${ marker.opacity }"`;
-		if ( marker.zIndexOffset != null && marker.zIndexOffset !== 0 )
+		}
+		if ( marker.zIndexOffset != null && marker.zIndexOffset !== 0 ) {
 			mTag += ` zindexoffset="${ marker.zIndexOffset }"`;
+		}
 
 		// SVG marker and custom image icon are mutually exclusive: SVG wins when both flags are set.
 		if ( marker.useSvgMarker ) {
 			mTag += ` svg="true"`;
-			if ( marker.svgBackground && marker.svgBackground.trim() )
+			if ( marker.svgBackground && marker.svgBackground.trim() ) {
 				mTag += ` background="${ marker.svgBackground.trim() }"`;
-			if ( marker.svgIconClass && marker.svgIconClass.trim() )
+			}
+			if ( marker.svgIconClass && marker.svgIconClass.trim() ) {
 				mTag += ` iconclass="${ marker.svgIconClass.trim() }"`;
-			if ( marker.svgColor && marker.svgColor.trim() )
+			}
+			if ( marker.svgColor && marker.svgColor.trim() ) {
 				mTag += ` color="${ marker.svgColor.trim() }"`;
+			}
 		} else if ( marker.useCustomIcon ) {
 			// Custom icon: only emit when useCustomIcon is true.
-			if ( marker.iconUrl ) mTag += ` iconurl="${ marker.iconUrl }"`;
+			if ( marker.iconUrl ) {
+				mTag += ` iconurl="${ marker.iconUrl }"`;
+			}
 			if (
 				marker.iconWidth != null &&
 				marker.iconHeight != null &&
@@ -561,8 +663,9 @@ function buildShortcode( attributes ) {
 			}
 			// Shadow: only when useShadow is also true.
 			if ( marker.useShadow ) {
-				if ( marker.shadowUrl )
+				if ( marker.shadowUrl ) {
 					mTag += ` shadowurl="${ marker.shadowUrl }"`;
+				}
 				if (
 					marker.shadowWidth != null &&
 					marker.shadowHeight != null &&
@@ -634,20 +737,20 @@ function fallbackCopy( text, onSuccess ) {
  * ratio cannot be determined (caller should fall back to a plain
  * single-value update).
  *
- * @param {Object}           p
- * @param {'w'|'h'}          p.axis    Which dimension the user directly changed.
- * @param {number}           p.newVal  New integer value for that dimension (>= 1).
- * @param {string}           p.wKey    Attribute key for width  (e.g. 'iconWidth').
- * @param {string}           p.hKey    Attribute key for height (e.g. 'iconHeight').
- * @param {number|null}      p.origW   Stored original width  (preferred ratio source).
- * @param {number|null}      p.origH   Stored original height.
- * @param {number|null}      p.curW    Current width  (ratio fallback + anchor base).
- * @param {number|null}      p.curH    Current height.
+ * @param {Object}                                      p
+ * @param {'w'|'h'}                                     p.axis    Which dimension the user directly changed.
+ * @param {number}                                      p.newVal  New integer value for that dimension (>= 1).
+ * @param {string}                                      p.wKey    Attribute key for width  (e.g. 'iconWidth').
+ * @param {string}                                      p.hKey    Attribute key for height (e.g. 'iconHeight').
+ * @param {number|null}                                 p.origW   Stored original width  (preferred ratio source).
+ * @param {number|null}                                 p.origH   Stored original height.
+ * @param {number|null}                                 p.curW    Current width  (ratio fallback + anchor base).
+ * @param {number|null}                                 p.curH    Current height.
  * @param {Array<{key: string, val: *, axis: 'w'|'h'}>} p.anchors
- *   Anchors to rescale. Each entry: key to write, current value, which new
- *   dimension to scale against ('w' for X-axis anchors, 'h' for Y-axis anchors).
+ *                                                                Anchors to rescale. Each entry: key to write, current value, which new
+ *                                                                dimension to scale against ('w' for X-axis anchors, 'h' for Y-axis anchors).
  *
- * @return {Object|null}
+ * @return {Object|null} New attribute values for the resize, or null when the input is invalid.
  */
 function computeProportionalResize( {
 	axis,
@@ -710,7 +813,7 @@ function computeProportionalResize( {
  * xFn/yFn receive (width, height) and return the integer coordinate.
  */
 const ANCHOR_PRESETS = [
-	{ id: 'top-left', xFn: ( w ) => 0, yFn: () => 0 },
+	{ id: 'top-left', xFn: () => 0, yFn: () => 0 },
 	{ id: 'top-center', xFn: ( w ) => Math.round( w / 2 ), yFn: () => 0 },
 	{ id: 'top-right', xFn: ( w ) => w, yFn: () => 0 },
 	{ id: 'middle-left', xFn: () => 0, yFn: ( w, h ) => Math.round( h / 2 ) },
@@ -779,7 +882,7 @@ function getAnchorPreset( anchorX, anchorY, width, height ) {
  * @param {string} presetId
  * @param {*}      width
  * @param {*}      height
- * @return {{ x: number, y: number }|null}
+ * @return {{ x: number, y: number }|null} Anchor coordinates, or null for the custom preset or an invalid size.
  */
 function computeAnchorFromPreset( presetId, width, height ) {
 	if (
@@ -830,15 +933,26 @@ function AnchorGrid( {
 
 	// keyboard navigation: arrow keys move focus within the 3×3 grid
 	function handleKeyDown( e, idx ) {
-		const moves = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: 3, ArrowUp: -3 };
+		const moves = {
+			ArrowRight: 1,
+			ArrowLeft: -1,
+			ArrowDown: 3,
+			ArrowUp: -3,
+		};
 		const delta = moves[ e.key ];
-		if ( delta == null ) return;
+		if ( delta == null ) {
+			return;
+		}
 		e.preventDefault();
 		const next = idx + delta;
-		if ( next < 0 || next > 8 ) return;
+		if ( next < 0 || next > 8 ) {
+			return;
+		}
 		const grid = e.currentTarget.parentElement;
 		const cells = grid.querySelectorAll( 'button' );
-		if ( cells[ next ] ) cells[ next ].focus();
+		if ( cells[ next ] ) {
+			cells[ next ].focus();
+		}
 	}
 
 	return (
@@ -863,10 +977,14 @@ function AnchorGrid( {
 							disabled={ isDisabled }
 							className={
 								'bflm-anchor-grid__cell' +
-								( isActive ? ' bflm-anchor-grid__cell--active' : '' )
+								( isActive
+									? ' bflm-anchor-grid__cell--active'
+									: '' )
 							}
 							onClick={ () => {
-								if ( ! isDisabled ) onChange( preset.id );
+								if ( ! isDisabled ) {
+									onChange( preset.id );
+								}
 							} }
 							onKeyDown={ ( e ) => handleKeyDown( e, idx ) }
 							tabIndex={ isActive ? 0 : -1 }
@@ -962,7 +1080,7 @@ function buildPreviewUrl( attributes, clientId ) {
 		scrollWheelZoom: scrollWheelZoom ? 'true' : 'false',
 		zoomControl: zoomControl ? 'true' : 'false',
 		fitMarkers: fitMarkers ? 'true' : 'false',
-		attribution: attribution,
+		attribution,
 		showScale: showScale ? 'true' : 'false',
 		markers: JSON.stringify( markers ),
 		lines: JSON.stringify( lines || [] ),
@@ -981,25 +1099,60 @@ function buildPreviewUrl( attributes, clientId ) {
 	} );
 
 	// Only include interaction params when explicitly set (not "Default").
-	if ( dragging ) params.set( 'dragging', dragging );
-	if ( keyboard ) params.set( 'keyboard', keyboard );
-	if ( doubleClickZoom ) params.set( 'doubleClickZoom', doubleClickZoom );
-	if ( boxZoom ) params.set( 'boxZoom', boxZoom );
-	if ( closePopupOnClick )
+	if ( dragging ) {
+		params.set( 'dragging', dragging );
+	}
+	if ( keyboard ) {
+		params.set( 'keyboard', keyboard );
+	}
+	if ( doubleClickZoom ) {
+		params.set( 'doubleClickZoom', doubleClickZoom );
+	}
+	if ( boxZoom ) {
+		params.set( 'boxZoom', boxZoom );
+	}
+	if ( closePopupOnClick ) {
 		params.set( 'closePopupOnClick', closePopupOnClick );
-	if ( tap ) params.set( 'tap', tap );
-	if ( inertia ) params.set( 'inertia', inertia );
-	if ( minZoom ) params.set( 'minZoom', minZoom );
-	if ( maxZoom ) params.set( 'maxZoom', maxZoom );
-	if ( maxBounds ) params.set( 'maxBounds', maxBounds );
-	if ( tileurl ) params.set( 'tileurl', tileurl );
-	if ( tilesize ) params.set( 'tilesize', tilesize );
-	if ( subdomains ) params.set( 'subdomains', subdomains );
-	if ( mapid ) params.set( 'mapid', mapid );
-	if ( accesstoken ) params.set( 'accesstoken', accesstoken );
-	if ( zoomoffset ) params.set( 'zoomoffset', zoomoffset );
-	if ( nowrap ) params.set( 'nowrap', nowrap );
-	if ( detectretina ) params.set( 'detectretina', detectretina );
+	}
+	if ( tap ) {
+		params.set( 'tap', tap );
+	}
+	if ( inertia ) {
+		params.set( 'inertia', inertia );
+	}
+	if ( minZoom ) {
+		params.set( 'minZoom', minZoom );
+	}
+	if ( maxZoom ) {
+		params.set( 'maxZoom', maxZoom );
+	}
+	if ( maxBounds ) {
+		params.set( 'maxBounds', maxBounds );
+	}
+	if ( tileurl ) {
+		params.set( 'tileurl', tileurl );
+	}
+	if ( tilesize ) {
+		params.set( 'tilesize', tilesize );
+	}
+	if ( subdomains ) {
+		params.set( 'subdomains', subdomains );
+	}
+	if ( mapid ) {
+		params.set( 'mapid', mapid );
+	}
+	if ( accesstoken ) {
+		params.set( 'accesstoken', accesstoken );
+	}
+	if ( zoomoffset ) {
+		params.set( 'zoomoffset', zoomoffset );
+	}
+	if ( nowrap ) {
+		params.set( 'nowrap', nowrap );
+	}
+	if ( detectretina ) {
+		params.set( 'detectretina', detectretina );
+	}
 
 	return previewUrl + '?' + params.toString();
 }
@@ -1063,6 +1216,8 @@ async function bflmGeocodeAddress( address ) {
  * @param {Object}   props               Component props.
  * @param {Object}   props.attributes    Block attributes.
  * @param {Function} props.setAttributes Attribute setter.
+ * @param {boolean}  props.isSelected    Whether the block is currently selected.
+ * @param {string}   props.clientId      Unique block client ID.
  * @return {Element} Element to render.
  */
 export default function Edit( {
@@ -1127,37 +1282,69 @@ export default function Edit( {
 	// saved blocks will have already-persisted values and are never touched.
 	useEffect( () => {
 		const ld = window.bflmEditor?.leafletDefaults;
-		if ( ! ld ) return;
+		if ( ! ld ) {
+			return;
+		}
 
-		const BLOCK_JSON_LAT  = 37.1773;
-		const BLOCK_JSON_LNG  = -3.5986;
+		const BLOCK_JSON_LAT = 37.1773;
+		const BLOCK_JSON_LNG = -3.5986;
 		const BLOCK_JSON_ZOOM = 13;
 
 		if (
-			lat  === BLOCK_JSON_LAT &&
-			lng  === BLOCK_JSON_LNG &&
+			lat === BLOCK_JSON_LAT &&
+			lng === BLOCK_JSON_LNG &&
 			zoom === BLOCK_JSON_ZOOM
 		) {
 			const updates = {};
-			if ( ld.lat  !== BLOCK_JSON_LAT )  updates.lat  = ld.lat;
-			if ( ld.lng  !== BLOCK_JSON_LNG )  updates.lng  = ld.lng;
-			if ( ld.zoom !== BLOCK_JSON_ZOOM ) updates.zoom = ld.zoom;
+			if ( ld.lat !== BLOCK_JSON_LAT ) {
+				updates.lat = ld.lat;
+			}
+			if ( ld.lng !== BLOCK_JSON_LNG ) {
+				updates.lng = ld.lng;
+			}
+			if ( ld.zoom !== BLOCK_JSON_ZOOM ) {
+				updates.zoom = ld.zoom;
+			}
 			if ( ld.height ) {
 				const h = String( ld.height );
-				updates.height = ( h.includes( 'px' ) || h.includes( '%' ) || h.includes( 'vh' ) ) ? h : h + 'px';
+				updates.height =
+					h.includes( 'px' ) ||
+					h.includes( '%' ) ||
+					h.includes( 'vh' )
+						? h
+						: h + 'px';
 			}
 			if ( ld.width ) {
 				const w = String( ld.width );
-				updates.width = ( w.includes( 'px' ) || w.includes( '%' ) || w.includes( 'vh' ) ) ? w : w + 'px';
+				updates.width =
+					w.includes( 'px' ) ||
+					w.includes( '%' ) ||
+					w.includes( 'vh' )
+						? w
+						: w + 'px';
 			}
-			if ( ld.fitMarkers )      updates.fitMarkers      = true;
-			if ( ld.zoomControl     !== undefined ) updates.zoomControl     = ld.zoomControl;
-			if ( ld.scrollWheelZoom !== undefined ) updates.scrollWheelZoom = ld.scrollWheelZoom;
+			if ( ld.fitMarkers ) {
+				updates.fitMarkers = true;
+			}
+			if ( ld.zoomControl !== undefined ) {
+				updates.zoomControl = ld.zoomControl;
+			}
+			if ( ld.scrollWheelZoom !== undefined ) {
+				updates.scrollWheelZoom = ld.scrollWheelZoom;
+			}
 			// doubleClickZoom is a three-state string: '' / 'true' / 'false'
-			if ( ld.doubleClickZoom ) updates.doubleClickZoom = 'true';
-			if ( ld.minZoom ) updates.minZoom = String( ld.minZoom );
-			if ( ld.maxZoom ) updates.maxZoom = String( ld.maxZoom );
-			if ( Object.keys( updates ).length ) setAttributes( updates );
+			if ( ld.doubleClickZoom ) {
+				updates.doubleClickZoom = 'true';
+			}
+			if ( ld.minZoom ) {
+				updates.minZoom = String( ld.minZoom );
+			}
+			if ( ld.maxZoom ) {
+				updates.maxZoom = String( ld.maxZoom );
+			}
+			if ( Object.keys( updates ).length ) {
+				setAttributes( updates );
+			}
 		}
 	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1303,8 +1490,11 @@ export default function Edit( {
 			setTimeout( () => setIsCopied( false ), 2000 );
 		};
 
-		if ( navigator.clipboard && navigator.clipboard.writeText ) {
-			navigator.clipboard
+		if (
+			window.navigator.clipboard &&
+			window.navigator.clipboard.writeText
+		) {
+			window.navigator.clipboard
 				.writeText( shortcode )
 				.then( fire, () => fallbackCopy( shortcode, fire ) );
 			return;
@@ -1777,7 +1967,9 @@ export default function Edit( {
 				const li = msg.lineIndex;
 				const pi = msg.pointIndex;
 				const updatedLines = currentLines.map( ( l, i ) => {
-					if ( i !== li ) return l;
+					if ( i !== li ) {
+						return l;
+					}
 					return {
 						...l,
 						points: ( l.points || [] ).map( ( p, j ) =>
@@ -1800,7 +1992,9 @@ export default function Edit( {
 				const li = msg.lineIndex;
 				const currentLines = attributesRef.current.lines || [];
 				const line = currentLines[ li ];
-				if ( ! line ) return;
+				if ( ! line ) {
+					return;
+				}
 				setAttributes( {
 					lines: currentLines.map( ( l, i ) =>
 						i !== li
@@ -1839,7 +2033,9 @@ export default function Edit( {
 			// Re-send bflm_draw_start / bflm_draw_circle_start if still in draw mode.
 			if ( msg.type === 'bflm_iframe_ready' ) {
 				const iframe = iframeRef.current;
-				if ( ! iframe || ! iframe.contentWindow ) return;
+				if ( ! iframe || ! iframe.contentWindow ) {
+					return;
+				}
 				const activeLineIdx = drawingLineIndexRef.current;
 				if ( activeLineIdx !== null ) {
 					const currentLines = attributesRef.current.lines || [];
@@ -1888,7 +2084,9 @@ export default function Edit( {
 			if ( msg.type === 'bflm_draw_circle_center' ) {
 				const ci = msg.circleIndex;
 				const currentCircles = attributesRef.current.circles || [];
-				if ( ! currentCircles[ ci ] ) return;
+				if ( ! currentCircles[ ci ] ) {
+					return;
+				}
 				isIframeUpdateRef.current = true;
 				setAttributes( {
 					circles: currentCircles.map( ( c, i ) =>
@@ -1908,7 +2106,9 @@ export default function Edit( {
 			if ( msg.type === 'bflm_draw_circle_radius' ) {
 				const ci = msg.circleIndex;
 				const currentCircles = attributesRef.current.circles || [];
-				if ( ! currentCircles[ ci ] ) return;
+				if ( ! currentCircles[ ci ] ) {
+					return;
+				}
 				isIframeUpdateRef.current = true;
 				setAttributes( {
 					circles: currentCircles.map( ( c, i ) =>
@@ -1926,7 +2126,6 @@ export default function Edit( {
 					drawingCircleIndexRef.current = null;
 					setDrawingCircleIndex( null );
 				}
-				return;
 			}
 		}
 
@@ -1990,7 +2189,8 @@ export default function Edit( {
 		setCandidates( [] );
 		setGeocodeError( '' );
 
-		const { candidates, error } = await bflmGeocodeAddress( addressInput );
+		const { candidates: results, error } =
+			await bflmGeocodeAddress( addressInput );
 
 		if ( error ) {
 			setGeocodeStatus( 'error' );
@@ -1998,10 +2198,10 @@ export default function Edit( {
 			return;
 		}
 
-		if ( candidates.length === 1 ) {
-			applyCandidate( candidates[ 0 ] );
+		if ( results.length === 1 ) {
+			applyCandidate( results[ 0 ] );
 		} else {
-			setCandidates( candidates );
+			setCandidates( results );
 			setGeocodeStatus( 'candidates' );
 		}
 	}
@@ -2050,12 +2250,17 @@ export default function Edit( {
 		setAttributes( {
 			markers: markers.filter( ( _, i ) => i !== index ),
 		} );
-		/** Shift keyed-by-index state: drop deleted entry, decrement keys above it. */
+		/**
+		 * Shift keyed-by-index state: drop deleted entry, decrement keys above it.
+		 * @param {Object} prev Previous keyed-by-index state object.
+		 */
 		function shiftDown( prev ) {
 			const next = {};
 			for ( const [ k, v ] of Object.entries( prev ) ) {
 				const n = Number( k );
-				if ( n === index ) continue;
+				if ( n === index ) {
+					continue;
+				}
 				next[ n > index ? n - 1 : n ] = v;
 			}
 			return next;
@@ -2088,7 +2293,7 @@ export default function Edit( {
 	 * Apply a geocode candidate to a specific marker: update its lat/lng and
 	 * collapse the candidate list. The search input text is kept as-is.
 	 *
-	 * @param {number} index     Marker index.
+	 * @param {number}                       index     Marker index.
 	 * @param {{ lat: number, lng: number }} candidate
 	 */
 	function applyMarkerCandidate( index, candidate ) {
@@ -2120,17 +2325,21 @@ export default function Edit( {
 			error: '',
 		} );
 
-		const { candidates, error } = await bflmGeocodeAddress( query );
+		const { candidates: results, error } =
+			await bflmGeocodeAddress( query );
 
 		if ( error ) {
 			updateMarkerSearch( index, { status: 'error', error } );
 			return;
 		}
 
-		if ( candidates.length === 1 ) {
-			applyMarkerCandidate( index, candidates[ 0 ] );
+		if ( results.length === 1 ) {
+			applyMarkerCandidate( index, results[ 0 ] );
 		} else {
-			updateMarkerSearch( index, { status: 'candidates', candidates } );
+			updateMarkerSearch( index, {
+				status: 'candidates',
+				candidates: results,
+			} );
 		}
 	}
 
@@ -2185,14 +2394,20 @@ export default function Edit( {
 			const next = {};
 			for ( const [ k, v ] of Object.entries( prev ) ) {
 				const [ li, pi ] = k.split( '_' ).map( Number );
-				if ( li === index ) continue;
+				if ( li === index ) {
+					continue;
+				}
 				next[ `${ li > index ? li - 1 : li }_${ pi }` ] = v;
 			}
 			return next;
 		} );
 		setExpandedLineIndex( ( prev ) => {
-			if ( prev === null ) return null;
-			if ( prev === index ) return null;
+			if ( prev === null ) {
+				return null;
+			}
+			if ( prev === index ) {
+				return null;
+			}
 			return prev > index ? prev - 1 : prev;
 		} );
 	}
@@ -2216,7 +2431,9 @@ export default function Edit( {
 	 */
 	function handleAddPoint( lineIndex ) {
 		const line = ( lines || [] )[ lineIndex ];
-		if ( ! line ) return;
+		if ( ! line ) {
+			return;
+		}
 		handleUpdateLine( lineIndex, {
 			points: [
 				...( line.points || [] ),
@@ -2235,7 +2452,9 @@ export default function Edit( {
 	 */
 	function handleRemovePoint( lineIndex, pointIndex ) {
 		const line = ( lines || [] )[ lineIndex ];
-		if ( ! line ) return;
+		if ( ! line ) {
+			return;
+		}
 		handleUpdateLine( lineIndex, {
 			points: ( line.points || [] ).filter(
 				( _, i ) => i !== pointIndex
@@ -2249,7 +2468,9 @@ export default function Edit( {
 					next[ k ] = v;
 					continue;
 				}
-				if ( pi === pointIndex ) continue;
+				if ( pi === pointIndex ) {
+					continue;
+				}
 				next[ `${ li }_${ pi > pointIndex ? pi - 1 : pi }` ] = v;
 			}
 			return next;
@@ -2264,7 +2485,9 @@ export default function Edit( {
 	 */
 	function handleUpdatePoint( lineIndex, pointIndex, updates ) {
 		const line = ( lines || [] )[ lineIndex ];
-		if ( ! line ) return;
+		if ( ! line ) {
+			return;
+		}
 		handleUpdateLine( lineIndex, {
 			points: ( line.points || [] ).map( ( p, i ) =>
 				i === pointIndex ? { ...p, ...updates } : p
@@ -2300,7 +2523,9 @@ export default function Edit( {
 	 */
 	function handleLocatePoint( pointLat, pointLng ) {
 		const iframe = iframeRef.current;
-		if ( ! iframe || ! iframe.contentWindow ) return;
+		if ( ! iframe || ! iframe.contentWindow ) {
+			return;
+		}
 		iframe.contentWindow.postMessage(
 			{
 				type: 'bflm_set_view',
@@ -2326,9 +2551,13 @@ export default function Edit( {
 		setDrawingLineIndex( lineIndex );
 		drawingLineIndexRef.current = lineIndex;
 		const iframe = iframeRef.current;
-		if ( ! iframe || ! iframe.contentWindow ) return;
+		if ( ! iframe || ! iframe.contentWindow ) {
+			return;
+		}
 		const line = ( attributesRef.current.lines || [] )[ lineIndex ];
-		if ( ! line ) return;
+		if ( ! line ) {
+			return;
+		}
 		iframe.contentWindow.postMessage(
 			{
 				type: 'bflm_draw_start',
@@ -2355,7 +2584,9 @@ export default function Edit( {
 		setDrawingLineIndex( null );
 		drawingLineIndexRef.current = null;
 		const iframe = iframeRef.current;
-		if ( ! iframe ) return;
+		if ( ! iframe ) {
+			return;
+		}
 		if ( iframe.contentWindow ) {
 			iframe.contentWindow.postMessage(
 				{ type: 'bflm_draw_end', blockId: clientId },
@@ -2366,8 +2597,8 @@ export default function Edit( {
 
 	/**
 	 * Apply a geocode candidate to a specific line point and pan to it.
-	 * @param {number} lineIndex
-	 * @param {number} pointIndex
+	 * @param {number}                       lineIndex
+	 * @param {number}                       pointIndex
 	 * @param {{ lat: number, lng: number }} candidate
 	 */
 	function applyLinePointCandidate( lineIndex, pointIndex, candidate ) {
@@ -2393,7 +2624,9 @@ export default function Edit( {
 		const key = `${ lineIndex }_${ pointIndex }`;
 		const entry = linePointSearch[ key ] || {};
 		const query = ( entry.input || '' ).trim();
-		if ( ! query ) return;
+		if ( ! query ) {
+			return;
+		}
 		updateLinePointSearch( lineIndex, pointIndex, {
 			status: 'loading',
 			candidates: [],
@@ -2470,7 +2703,9 @@ export default function Edit( {
 			const next = {};
 			for ( const [ k, v ] of Object.entries( prev ) ) {
 				const ki = Number( k );
-				if ( ki === index ) continue;
+				if ( ki === index ) {
+					continue;
+				}
 				next[ String( ki > index ? ki - 1 : ki ) ] = v;
 			}
 			return next;
@@ -2479,19 +2714,29 @@ export default function Edit( {
 			const next = {};
 			for ( const [ k, v ] of Object.entries( prev ) ) {
 				const ki = Number( k );
-				if ( ki === index ) continue;
+				if ( ki === index ) {
+					continue;
+				}
 				next[ String( ki > index ? ki - 1 : ki ) ] = v;
 			}
 			return next;
 		} );
 		setExpandedCircleIndex( ( prev ) => {
-			if ( prev === null ) return null;
-			if ( prev === index ) return null;
+			if ( prev === null ) {
+				return null;
+			}
+			if ( prev === index ) {
+				return null;
+			}
 			return prev > index ? prev - 1 : prev;
 		} );
 		setDrawingCircleIndex( ( prev ) => {
-			if ( prev === null ) return null;
-			if ( prev === index ) return null;
+			if ( prev === null ) {
+				return null;
+			}
+			if ( prev === index ) {
+				return null;
+			}
 			return prev > index ? prev - 1 : prev;
 		} );
 	}
@@ -2509,7 +2754,10 @@ export default function Edit( {
 		} );
 	}
 
-	/** Add a new data layer of the given type and expand it. */
+	/**
+	 * Add a new data layer of the given type and expand it.
+	 * @param {string} type Layer type: geojson, gpx or kml.
+	 */
 	function handleAddLayer( type ) {
 		const next = [
 			...( attributes.layers || [] ),
@@ -2545,7 +2793,10 @@ export default function Edit( {
 		setExpandedLayerIndex( next.length - 1 );
 	}
 
-	/** Remove a layer by index. */
+	/**
+	 * Remove a layer by index.
+	 * @param {number} index Layer index to remove.
+	 */
 	function handleRemoveLayer( index ) {
 		setAttributes( {
 			layers: ( attributes.layers || [] ).filter(
@@ -2559,7 +2810,11 @@ export default function Edit( {
 		}
 	}
 
-	/** Shallow-merge updates into a layer at the given index. */
+	/**
+	 * Shallow-merge updates into a layer at the given index.
+	 * @param {number} index   Layer index.
+	 * @param {Object} updates Attribute updates to merge.
+	 */
 	function handleUpdateLayer( index, updates ) {
 		setAttributes( {
 			layers: ( attributes.layers || [] ).map( ( l, i ) =>
@@ -2592,14 +2847,22 @@ export default function Edit( {
 
 		const latOffset = metersOffset / 111320;
 		const lngOffset =
-			metersOffset / ( 111320 * Math.cos( ( centerLat * Math.PI ) / 180 ) );
+			metersOffset /
+			( 111320 * Math.cos( ( centerLat * Math.PI ) / 180 ) );
 
-		const sw = `${ ( centerLat - latOffset ).toFixed( 6 ) },${ ( centerLng - lngOffset ).toFixed( 6 ) }`;
-		const ne = `${ ( centerLat + latOffset ).toFixed( 6 ) },${ ( centerLng + lngOffset ).toFixed( 6 ) }`;
+		const sw = `${ ( centerLat - latOffset ).toFixed( 6 ) },${ (
+			centerLng - lngOffset
+		).toFixed( 6 ) }`;
+		const ne = `${ ( centerLat + latOffset ).toFixed( 6 ) },${ (
+			centerLng + lngOffset
+		).toFixed( 6 ) }`;
 		return `${ sw };${ ne }`;
 	}
 
-	/** Add a new overlay of the given type and expand it. */
+	/**
+	 * Add a new overlay of the given type and expand it.
+	 * @param {string} type Overlay type: image or video.
+	 */
 	function handleAddOverlay( type ) {
 		const next = [
 			...( attributes.overlays || [] ),
@@ -2619,7 +2882,10 @@ export default function Edit( {
 		setExpandedOverlayIndex( next.length - 1 );
 	}
 
-	/** Remove an overlay by index. */
+	/**
+	 * Remove an overlay by index.
+	 * @param {number} index Overlay index to remove.
+	 */
 	function handleRemoveOverlay( index ) {
 		setAttributes( {
 			overlays: ( attributes.overlays || [] ).filter(
@@ -2633,7 +2899,11 @@ export default function Edit( {
 		}
 	}
 
-	/** Shallow-merge updates into an overlay at the given index. */
+	/**
+	 * Shallow-merge updates into an overlay at the given index.
+	 * @param {number} index   Overlay index.
+	 * @param {Object} updates Attribute updates to merge.
+	 */
 	function handleUpdateOverlay( index, updates ) {
 		setAttributes( {
 			overlays: ( attributes.overlays || [] ).map( ( o, i ) =>
@@ -2654,9 +2924,13 @@ export default function Edit( {
 		setDrawingCircleIndex( circleIndex );
 		drawingCircleIndexRef.current = circleIndex;
 		const iframe = iframeRef.current;
-		if ( ! iframe || ! iframe.contentWindow ) return;
+		if ( ! iframe || ! iframe.contentWindow ) {
+			return;
+		}
 		const circle = ( attributesRef.current.circles || [] )[ circleIndex ];
-		if ( ! circle ) return;
+		if ( ! circle ) {
+			return;
+		}
 		iframe.contentWindow.postMessage(
 			{
 				type: 'bflm_draw_circle_start',
@@ -2681,7 +2955,9 @@ export default function Edit( {
 		setDrawingCircleIndex( null );
 		drawingCircleIndexRef.current = null;
 		const iframe = iframeRef.current;
-		if ( ! iframe ) return;
+		if ( ! iframe ) {
+			return;
+		}
 		if ( iframe.contentWindow ) {
 			iframe.contentWindow.postMessage(
 				{ type: 'bflm_draw_circle_end', blockId: clientId },
@@ -2712,7 +2988,7 @@ export default function Edit( {
 
 	/**
 	 * Apply a geocode candidate to a specific circle (sets lat/lng, pans map).
-	 * @param {number} index
+	 * @param {number}                       index
 	 * @param {{ lat: number, lng: number }} candidate
 	 */
 	function applyCircleCandidate( index, candidate ) {
@@ -2731,7 +3007,9 @@ export default function Edit( {
 		const key = String( index );
 		const entry = circleSearch[ key ] || {};
 		const query = ( entry.input || '' ).trim();
-		if ( ! query ) return;
+		if ( ! query ) {
+			return;
+		}
 		updateCircleSearch( index, {
 			status: 'loading',
 			candidates: [],
@@ -2942,32 +3220,36 @@ export default function Edit( {
 					) }
 
 					{ ! imageMap && (
-					<RadioControl
-						label={ __( 'Input mode', 'cartoblocks-for-leaflet' ) }
-						selected={ locationMode }
-						options={ [
-							{
-								label: __(
-									'Coordinates',
-									'cartoblocks-for-leaflet'
-								),
-								value: 'coordinates',
-							},
-							{
-								label: __(
-									'Address',
-									'cartoblocks-for-leaflet'
-								),
-								value: 'address',
-							},
-						] }
-						onChange={ ( value ) => {
-							setLocationMode( value );
-							setGeocodeStatus( 'idle' );
-							setCandidates( [] );
-							setGeocodeError( '' );
-						} }
-					/> ) }
+						<RadioControl
+							label={ __(
+								'Input mode',
+								'cartoblocks-for-leaflet'
+							) }
+							selected={ locationMode }
+							options={ [
+								{
+									label: __(
+										'Coordinates',
+										'cartoblocks-for-leaflet'
+									),
+									value: 'coordinates',
+								},
+								{
+									label: __(
+										'Address',
+										'cartoblocks-for-leaflet'
+									),
+									value: 'address',
+								},
+							] }
+							onChange={ ( value ) => {
+								setLocationMode( value );
+								setGeocodeStatus( 'idle' );
+								setCandidates( [] );
+								setGeocodeError( '' );
+							} }
+						/>
+					) }
 
 					{ ! imageMap && locationMode === 'coordinates' && (
 						<>
@@ -3120,7 +3402,10 @@ export default function Edit( {
 
 					{ ! imageMap && (
 						<RangeControl
-							label={ __( 'Zoom Level', 'cartoblocks-for-leaflet' ) }
+							label={ __(
+								'Zoom Level',
+								'cartoblocks-for-leaflet'
+							) }
 							value={ zoom }
 							onChange={ ( value ) =>
 								setAttributes( { zoom: value } )
@@ -3189,470 +3474,545 @@ export default function Edit( {
 				</PanelBody>
 
 				{ /* ── Interaction panel ───────────────────────────────────── */ }
-				{ ! imageMap && <PanelBody
-					title={ __( 'Interaction', 'cartoblocks-for-leaflet' ) }
-					initialOpen={ false }
-				>
-					<ToggleControl
-						label={ __(
-							'Scroll Wheel Zoom',
-							'cartoblocks-for-leaflet'
-						) }
-						checked={ scrollWheelZoom }
-						onChange={ ( value ) =>
-							setAttributes( { scrollWheelZoom: value } )
-						}
-						__nextHasNoMarginBottom
-					/>
-					<SelectControl
-						label={ __( 'Dragging', 'cartoblocks-for-leaflet' ) }
-						value={ dragging }
-						options={ THREE_STATE_OPTIONS }
-						onChange={ ( value ) =>
-							setAttributes( { dragging: value } )
-						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-					<SelectControl
-						label={ __(
-							'Keyboard Navigation',
-							'cartoblocks-for-leaflet'
-						) }
-						value={ keyboard }
-						options={ THREE_STATE_OPTIONS }
-						onChange={ ( value ) =>
-							setAttributes( { keyboard: value } )
-						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-					<SelectControl
-						label={ __(
-							'Double Click Zoom',
-							'cartoblocks-for-leaflet'
-						) }
-						value={ doubleClickZoom }
-						options={ THREE_STATE_OPTIONS }
-						onChange={ ( value ) =>
-							setAttributes( { doubleClickZoom: value } )
-						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-					<SelectControl
-						label={ __( 'Box Zoom', 'cartoblocks-for-leaflet' ) }
-						help={ __(
-							'Shift + drag to zoom to area.',
-							'cartoblocks-for-leaflet'
-						) }
-						value={ boxZoom }
-						options={ THREE_STATE_OPTIONS }
-						onChange={ ( value ) =>
-							setAttributes( { boxZoom: value } )
-						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-					<SelectControl
-						label={ __(
-							'Close Popup on Click',
-							'cartoblocks-for-leaflet'
-						) }
-						value={ closePopupOnClick }
-						options={ THREE_STATE_OPTIONS }
-						onChange={ ( value ) =>
-							setAttributes( { closePopupOnClick: value } )
-						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-					<SelectControl
-						label={ __( 'Tap', 'cartoblocks-for-leaflet' ) }
-						help={ __(
-							'Mobile tap interaction.',
-							'cartoblocks-for-leaflet'
-						) }
-						value={ tap }
-						options={ THREE_STATE_OPTIONS }
-						onChange={ ( value ) =>
-							setAttributes( { tap: value } )
-						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-					<SelectControl
-						label={ __( 'Inertia', 'cartoblocks-for-leaflet' ) }
-						help={ __(
-							'Pan inertia after dragging.',
-							'cartoblocks-for-leaflet'
-						) }
-						value={ inertia }
-						options={ THREE_STATE_OPTIONS }
-						onChange={ ( value ) =>
-							setAttributes( { inertia: value } )
-						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody> }
+				{ ! imageMap && (
+					<PanelBody
+						title={ __( 'Interaction', 'cartoblocks-for-leaflet' ) }
+						initialOpen={ false }
+					>
+						<ToggleControl
+							label={ __(
+								'Scroll Wheel Zoom',
+								'cartoblocks-for-leaflet'
+							) }
+							checked={ scrollWheelZoom }
+							onChange={ ( value ) =>
+								setAttributes( { scrollWheelZoom: value } )
+							}
+							__nextHasNoMarginBottom
+						/>
+						<SelectControl
+							label={ __(
+								'Dragging',
+								'cartoblocks-for-leaflet'
+							) }
+							value={ dragging }
+							options={ THREE_STATE_OPTIONS }
+							onChange={ ( value ) =>
+								setAttributes( { dragging: value } )
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+						<SelectControl
+							label={ __(
+								'Keyboard Navigation',
+								'cartoblocks-for-leaflet'
+							) }
+							value={ keyboard }
+							options={ THREE_STATE_OPTIONS }
+							onChange={ ( value ) =>
+								setAttributes( { keyboard: value } )
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+						<SelectControl
+							label={ __(
+								'Double Click Zoom',
+								'cartoblocks-for-leaflet'
+							) }
+							value={ doubleClickZoom }
+							options={ THREE_STATE_OPTIONS }
+							onChange={ ( value ) =>
+								setAttributes( { doubleClickZoom: value } )
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+						<SelectControl
+							label={ __(
+								'Box Zoom',
+								'cartoblocks-for-leaflet'
+							) }
+							help={ __(
+								'Shift + drag to zoom to area.',
+								'cartoblocks-for-leaflet'
+							) }
+							value={ boxZoom }
+							options={ THREE_STATE_OPTIONS }
+							onChange={ ( value ) =>
+								setAttributes( { boxZoom: value } )
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+						<SelectControl
+							label={ __(
+								'Close Popup on Click',
+								'cartoblocks-for-leaflet'
+							) }
+							value={ closePopupOnClick }
+							options={ THREE_STATE_OPTIONS }
+							onChange={ ( value ) =>
+								setAttributes( { closePopupOnClick: value } )
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+						<SelectControl
+							label={ __( 'Tap', 'cartoblocks-for-leaflet' ) }
+							help={ __(
+								'Mobile tap interaction.',
+								'cartoblocks-for-leaflet'
+							) }
+							value={ tap }
+							options={ THREE_STATE_OPTIONS }
+							onChange={ ( value ) =>
+								setAttributes( { tap: value } )
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+						<SelectControl
+							label={ __( 'Inertia', 'cartoblocks-for-leaflet' ) }
+							help={ __(
+								'Pan inertia after dragging.',
+								'cartoblocks-for-leaflet'
+							) }
+							value={ inertia }
+							options={ THREE_STATE_OPTIONS }
+							onChange={ ( value ) =>
+								setAttributes( { inertia: value } )
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</PanelBody>
+				) }
 
 				{ /* ── Zoom & Bounds panel ────────────────────────────────── */ }
-				{ ! imageMap && <PanelBody
-					title={ __( 'Zoom & Bounds', 'cartoblocks-for-leaflet' ) }
-					initialOpen={ false }
-				>
-					<TextControl
-						label={ __( 'Min Zoom', 'cartoblocks-for-leaflet' ) }
-						help={ __(
-							'Minimum zoom level allowed. Leave empty for global default.',
+				{ ! imageMap && (
+					<PanelBody
+						title={ __(
+							'Zoom & Bounds',
 							'cartoblocks-for-leaflet'
 						) }
-						type="number"
-						min={ 0 }
-						max={ 25 }
-						step={ 1 }
-						value={ minZoom }
-						onChange={ ( value ) =>
-							setAttributes( { minZoom: value } )
-						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-					<TextControl
-						label={ __( 'Max Zoom', 'cartoblocks-for-leaflet' ) }
-						help={ __(
-							'Maximum zoom level allowed. Leave empty for global default.',
-							'cartoblocks-for-leaflet'
-						) }
-						type="number"
-						min={ 0 }
-						max={ 25 }
-						step={ 1 }
-						value={ maxZoom }
-						onChange={ ( value ) =>
-							setAttributes( { maxZoom: value } )
-						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-					<TextControl
-						label={ __( 'Max Bounds', 'cartoblocks-for-leaflet' ) }
-						help={ __(
-							'Restrict the map view to a bounding box. Format: lat,lng;lat,lng (southwest;northeast). Example: 40.0,-4.0;38.0,-3.0',
-							'cartoblocks-for-leaflet'
-						) }
-						value={ maxBounds }
-						onChange={ ( value ) =>
-							setAttributes( { maxBounds: value } )
-						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody> }
+						initialOpen={ false }
+					>
+						<TextControl
+							label={ __(
+								'Min Zoom',
+								'cartoblocks-for-leaflet'
+							) }
+							help={ __(
+								'Minimum zoom level allowed. Leave empty for global default.',
+								'cartoblocks-for-leaflet'
+							) }
+							type="number"
+							min={ 0 }
+							max={ 25 }
+							step={ 1 }
+							value={ minZoom }
+							onChange={ ( value ) =>
+								setAttributes( { minZoom: value } )
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+						<TextControl
+							label={ __(
+								'Max Zoom',
+								'cartoblocks-for-leaflet'
+							) }
+							help={ __(
+								'Maximum zoom level allowed. Leave empty for global default.',
+								'cartoblocks-for-leaflet'
+							) }
+							type="number"
+							min={ 0 }
+							max={ 25 }
+							step={ 1 }
+							value={ maxZoom }
+							onChange={ ( value ) =>
+								setAttributes( { maxZoom: value } )
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+						<TextControl
+							label={ __(
+								'Max Bounds',
+								'cartoblocks-for-leaflet'
+							) }
+							help={ __(
+								'Restrict the map view to a bounding box. Format: lat,lng;lat,lng (southwest;northeast). Example: 40.0,-4.0;38.0,-3.0',
+								'cartoblocks-for-leaflet'
+							) }
+							value={ maxBounds }
+							onChange={ ( value ) =>
+								setAttributes( { maxBounds: value } )
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</PanelBody>
+				) }
 
 				{ /* ── Tile Layer panel ──────────────────────────────────── */ }
-				{ ! imageMap && <PanelBody
-					title={ __( 'Tile Layer', 'cartoblocks-for-leaflet' ) }
-					initialOpen={ false }
-				>
-					<p>
-						{ __(
-							'Override the global Leaflet Map tile settings for this specific map.',
-							'cartoblocks-for-leaflet'
+				{ ! imageMap && (
+					<PanelBody
+						title={ __( 'Tile Layer', 'cartoblocks-for-leaflet' ) }
+						initialOpen={ false }
+					>
+						<p>
+							{ __(
+								'Override the global Leaflet Map tile settings for this specific map.',
+								'cartoblocks-for-leaflet'
+							) }
+						</p>
+						<ToggleControl
+							label={ __(
+								'Use WMS tile source',
+								'cartoblocks-for-leaflet'
+							) }
+							help={ __(
+								'Replaces the standard tile layer with a WMS (Web Map Service) source. Emits [leaflet-wms] instead of [leaflet-map].',
+								'cartoblocks-for-leaflet'
+							) }
+							checked={ wmsEnabled }
+							onChange={ ( value ) =>
+								setAttributes( { wmsEnabled: value } )
+							}
+							__nextHasNoMarginBottom
+						/>
+						{ wmsEnabled && (
+							<>
+								<TextControl
+									label={ __(
+										'WMS URL',
+										'cartoblocks-for-leaflet'
+									) }
+									placeholder="https://ows.mundialis.de/services/service?"
+									help={ __(
+										'The WMS service endpoint URL. Must end with ? or &.',
+										'cartoblocks-for-leaflet'
+									) }
+									value={ wmsSource }
+									onChange={ ( value ) =>
+										setAttributes( { wmsSource: value } )
+									}
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+								<TextControl
+									label={ __(
+										'Layer',
+										'cartoblocks-for-leaflet'
+									) }
+									placeholder="TOPO-OSM-WMS"
+									help={ __(
+										'WMS layer name. Leave empty to use the bozdoz default (TOPO-OSM-WMS).',
+										'cartoblocks-for-leaflet'
+									) }
+									value={ wmsLayer }
+									onChange={ ( value ) =>
+										setAttributes( { wmsLayer: value } )
+									}
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+								<TextControl
+									label={ __(
+										'CRS',
+										'cartoblocks-for-leaflet'
+									) }
+									placeholder="EPSG:3857"
+									help={ __(
+										'Coordinate Reference System (e.g. EPSG:3857, EPSG:4326). Leave empty to use the bozdoz default.',
+										'cartoblocks-for-leaflet'
+									) }
+									value={ wmsCrs }
+									onChange={ ( value ) =>
+										setAttributes( { wmsCrs: value } )
+									}
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+							</>
 						) }
-					</p>
-					<ToggleControl
-						label={ __( 'Use WMS tile source', 'cartoblocks-for-leaflet' ) }
-						help={ __(
-							'Replaces the standard tile layer with a WMS (Web Map Service) source. Emits [leaflet-wms] instead of [leaflet-map].',
-							'cartoblocks-for-leaflet'
-						) }
-						checked={ wmsEnabled }
-						onChange={ ( value ) =>
-							setAttributes( { wmsEnabled: value } )
-						}
-						__nextHasNoMarginBottom
-					/>
-					{ wmsEnabled && (
-						<>
-							<TextControl
-								label={ __( 'WMS URL', 'cartoblocks-for-leaflet' ) }
-								placeholder="https://ows.mundialis.de/services/service?"
-								help={ __(
-									'The WMS service endpoint URL. Must end with ? or &.',
-									'cartoblocks-for-leaflet'
-								) }
-								value={ wmsSource }
-								onChange={ ( value ) =>
-									setAttributes( { wmsSource: value } )
-								}
-								__next40pxDefaultSize
-								__nextHasNoMarginBottom
-							/>
-							<TextControl
-								label={ __( 'Layer', 'cartoblocks-for-leaflet' ) }
-								placeholder="TOPO-OSM-WMS"
-								help={ __(
-									'WMS layer name. Leave empty to use the bozdoz default (TOPO-OSM-WMS).',
-									'cartoblocks-for-leaflet'
-								) }
-								value={ wmsLayer }
-								onChange={ ( value ) =>
-									setAttributes( { wmsLayer: value } )
-								}
-								__next40pxDefaultSize
-								__nextHasNoMarginBottom
-							/>
-							<TextControl
-								label={ __( 'CRS', 'cartoblocks-for-leaflet' ) }
-								placeholder="EPSG:3857"
-								help={ __(
-									'Coordinate Reference System (e.g. EPSG:3857, EPSG:4326). Leave empty to use the bozdoz default.',
-									'cartoblocks-for-leaflet'
-								) }
-								value={ wmsCrs }
-								onChange={ ( value ) =>
-									setAttributes( { wmsCrs: value } )
-								}
-								__next40pxDefaultSize
-								__nextHasNoMarginBottom
-							/>
-						</>
-					) }
-					{ ! wmsEnabled && (
-						<>
-							<TextControl
-								label={ __( 'Tile URL', 'cartoblocks-for-leaflet' ) }
-								placeholder="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-								help={
-									<>
-										{ __(
-											'Browse providers: ',
-											'cartoblocks-for-leaflet'
-										) }
-										<a
-											href="https://alexurquhart.github.io/free-tiles/"
-											target="_blank"
-											rel="noopener noreferrer"
-											aria-label={ sprintf(
-												// translators: %s is the name of the external link's destination.
-												__(
-													'%s (opens in new tab)',
-													'cartoblocks-for-leaflet'
-												),
-												__(
+						{ ! wmsEnabled && (
+							<>
+								<TextControl
+									label={ __(
+										'Tile URL',
+										'cartoblocks-for-leaflet'
+									) }
+									placeholder="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+									help={
+										<>
+											{ __(
+												'Browse providers:',
+												'cartoblocks-for-leaflet'
+											) }
+											<a
+												href="https://alexurquhart.github.io/free-tiles/"
+												target="_blank"
+												rel="noopener noreferrer"
+												aria-label={ sprintf(
+													// translators: %s is the name of the external link's destination.
+													__(
+														'%s (opens in new tab)',
+														'cartoblocks-for-leaflet'
+													),
+													__(
+														'Free Tile Services',
+														'cartoblocks-for-leaflet'
+													)
+												) }
+											>
+												{ __(
 													'Free Tile Services',
 													'cartoblocks-for-leaflet'
-												)
-											) }
-										>
-											{ __(
-												'Free Tile Services',
-												'cartoblocks-for-leaflet'
-											) }
-											↗
-										</a>
-										{ ' · ' }
-										<a
-											href="https://leaflet-extras.github.io/leaflet-providers/preview/"
-											target="_blank"
-											rel="noopener noreferrer"
-											aria-label={ sprintf(
-												// translators: %s is the name of the external link's destination.
-												__(
-													'%s (opens in new tab)',
-													'cartoblocks-for-leaflet'
-												),
-												__(
+												) }
+												↗
+											</a>
+											{ ' · ' }
+											<a
+												href="https://leaflet-extras.github.io/leaflet-providers/preview/"
+												target="_blank"
+												rel="noopener noreferrer"
+												aria-label={ sprintf(
+													// translators: %s is the name of the external link's destination.
+													__(
+														'%s (opens in new tab)',
+														'cartoblocks-for-leaflet'
+													),
+													__(
+														'Leaflet Providers Preview',
+														'cartoblocks-for-leaflet'
+													)
+												) }
+											>
+												{ __(
 													'Leaflet Providers Preview',
 													'cartoblocks-for-leaflet'
-												)
-											) }
-										>
-											{ __(
-												'Leaflet Providers Preview',
-												'cartoblocks-for-leaflet'
-											) }
-											↗
-										</a>
-										{ ' · ' }
-										<a
-											href="https://wiki.openstreetmap.org/wiki/Raster_tile_providers"
-											target="_blank"
-											rel="noopener noreferrer"
-											aria-label={ sprintf(
-												// translators: %s is the name of the external link's destination.
-												__(
-													'%s (opens in new tab)',
-													'cartoblocks-for-leaflet'
-												),
-												__(
+												) }
+												↗
+											</a>
+											{ ' · ' }
+											<a
+												href="https://wiki.openstreetmap.org/wiki/Raster_tile_providers"
+												target="_blank"
+												rel="noopener noreferrer"
+												aria-label={ sprintf(
+													// translators: %s is the name of the external link's destination.
+													__(
+														'%s (opens in new tab)',
+														'cartoblocks-for-leaflet'
+													),
+													__(
+														'OSM Wiki',
+														'cartoblocks-for-leaflet'
+													)
+												) }
+											>
+												{ __(
 													'OSM Wiki',
 													'cartoblocks-for-leaflet'
-												)
-											) }
-										>
-											{ __(
-												'OSM Wiki',
-												'cartoblocks-for-leaflet'
-											) }
-											↗
-										</a>
-									</>
-								}
-								value={ tileurl }
-								onChange={ ( value ) =>
-									setAttributes( { tileurl: value } )
-								}
-								__next40pxDefaultSize
-								__nextHasNoMarginBottom
-							/>
-							<NumberControl
-								label={ __( 'Tile Size', 'cartoblocks-for-leaflet' ) }
-								help={ __(
-									"Default: 256. Most providers (OpenStreetMap, ArcGIS, CartoDB) use 256 — leave empty unless your provider's documentation explicitly requires a different value (e.g., Mapbox: 512). Changing this incorrectly will distort the map.",
-									'cartoblocks-for-leaflet'
-								) }
-								value={ localTilesize }
-								min={ 64 }
-								onChange={ ( value ) =>
-									setLocalTilesize( value ?? '' )
-								}
-								onBlur={ () =>
-									setAttributes( { tilesize: localTilesize } )
-								}
-								__next40pxDefaultSize
-								__nextHasNoMarginBottom
-							/>
-							<TextControl
-								label={ __( 'Subdomains', 'cartoblocks-for-leaflet' ) }
-								help={ __(
-									'Comma-separated list (e.g., a,b,c) matching the {s} placeholder in the Tile URL. Leave empty if not used.',
-									'cartoblocks-for-leaflet'
-								) }
-								value={ subdomains }
-								onChange={ ( value ) =>
-									setAttributes( { subdomains: value } )
-								}
-								__next40pxDefaultSize
-								__nextHasNoMarginBottom
-							/>
-							<TextControl
-								label={ __( 'Map ID', 'cartoblocks-for-leaflet' ) }
-								help={ __(
-									'Required only for Mapbox tiles. Leave empty for other providers.',
-									'cartoblocks-for-leaflet'
-								) }
-								value={ mapid }
-								onChange={ ( value ) =>
-									setAttributes( { mapid: value } )
-								}
-								__next40pxDefaultSize
-								__nextHasNoMarginBottom
-							/>
-							<TextControl
-								label={ __( 'Access Token', 'cartoblocks-for-leaflet' ) }
-								help={ __(
-									"Required only for providers that need authentication (e.g., Mapbox, Stadia, Thunderforest). This token will be visible in the page's HTML source — restrict it to your domain in the provider's dashboard.",
-									'cartoblocks-for-leaflet'
-								) }
-								value={ accesstoken }
-								onChange={ ( value ) =>
-									setAttributes( { accesstoken: value } )
-								}
-								__next40pxDefaultSize
-								__nextHasNoMarginBottom
-							/>
-							<NumberControl
-								label={ __( 'Zoom Offset', 'cartoblocks-for-leaflet' ) }
-								help={ __(
-									'Default: 0. Only change for specific providers (Mapbox typically requires -1 when Tile Size is 512).',
-									'cartoblocks-for-leaflet'
-								) }
-								value={ localZoomoffset }
-								onChange={ ( value ) =>
-									setLocalZoomoffset( value ?? '' )
-								}
-								onBlur={ () =>
-									setAttributes( { zoomoffset: localZoomoffset } )
-								}
-								__next40pxDefaultSize
-								__nextHasNoMarginBottom
-							/>
-							<SelectControl
-								label={ __( 'No Wrap', 'cartoblocks-for-leaflet' ) }
-								help={ __(
-									'Prevents the map from repeating horizontally when scrolled past the edges. Default: off.',
-									'cartoblocks-for-leaflet'
-								) }
-								value={ nowrap }
-								options={ THREE_STATE_OPTIONS }
-								onChange={ ( value ) =>
-									setAttributes( { nowrap: value } )
-								}
-								__next40pxDefaultSize
-								__nextHasNoMarginBottom
-							/>
-							<SelectControl
-								label={ __(
-									'Detect Retina',
-									'cartoblocks-for-leaflet'
-								) }
-								help={ __(
-									'Loads higher-resolution tiles on Retina/HiDPI screens. Only enable if the provider serves @2x tiles, otherwise the map will fail on those screens.',
-									'cartoblocks-for-leaflet'
-								) }
-								value={ detectretina }
-								options={ THREE_STATE_OPTIONS }
-								onChange={ ( value ) =>
-									setAttributes( { detectretina: value } )
-								}
-								__next40pxDefaultSize
-								__nextHasNoMarginBottom
-							/>
-							<TextareaControl
-								label={ __( 'Attribution', 'cartoblocks-for-leaflet' ) }
-								help={ __(
-									'Custom attribution HTML. Leave empty to use the default from Leaflet Map settings.',
-									'cartoblocks-for-leaflet'
-								) }
-								value={ attribution }
-								onChange={ ( value ) =>
-									setAttributes( { attribution: value } )
-								}
-								rows={ 2 }
-							/>
-						</>
-					) }
-				</PanelBody> }
+												) }
+												↗
+											</a>
+										</>
+									}
+									value={ tileurl }
+									onChange={ ( value ) =>
+										setAttributes( { tileurl: value } )
+									}
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+								<NumberControl
+									label={ __(
+										'Tile Size',
+										'cartoblocks-for-leaflet'
+									) }
+									help={ __(
+										"Default: 256. Most providers (OpenStreetMap, ArcGIS, CartoDB) use 256 — leave empty unless your provider's documentation explicitly requires a different value (e.g., Mapbox: 512). Changing this incorrectly will distort the map.",
+										'cartoblocks-for-leaflet'
+									) }
+									value={ localTilesize }
+									min={ 64 }
+									onChange={ ( value ) =>
+										setLocalTilesize( value ?? '' )
+									}
+									onBlur={ () =>
+										setAttributes( {
+											tilesize: localTilesize,
+										} )
+									}
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+								<TextControl
+									label={ __(
+										'Subdomains',
+										'cartoblocks-for-leaflet'
+									) }
+									help={ __(
+										'Comma-separated list (e.g., a,b,c) matching the {s} placeholder in the Tile URL. Leave empty if not used.',
+										'cartoblocks-for-leaflet'
+									) }
+									value={ subdomains }
+									onChange={ ( value ) =>
+										setAttributes( { subdomains: value } )
+									}
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+								<TextControl
+									label={ __(
+										'Map ID',
+										'cartoblocks-for-leaflet'
+									) }
+									help={ __(
+										'Required only for Mapbox tiles. Leave empty for other providers.',
+										'cartoblocks-for-leaflet'
+									) }
+									value={ mapid }
+									onChange={ ( value ) =>
+										setAttributes( { mapid: value } )
+									}
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+								<TextControl
+									label={ __(
+										'Access Token',
+										'cartoblocks-for-leaflet'
+									) }
+									help={ __(
+										"Required only for providers that need authentication (e.g., Mapbox, Stadia, Thunderforest). This token will be visible in the page's HTML source — restrict it to your domain in the provider's dashboard.",
+										'cartoblocks-for-leaflet'
+									) }
+									value={ accesstoken }
+									onChange={ ( value ) =>
+										setAttributes( { accesstoken: value } )
+									}
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+								<NumberControl
+									label={ __(
+										'Zoom Offset',
+										'cartoblocks-for-leaflet'
+									) }
+									help={ __(
+										'Default: 0. Only change for specific providers (Mapbox typically requires -1 when Tile Size is 512).',
+										'cartoblocks-for-leaflet'
+									) }
+									value={ localZoomoffset }
+									onChange={ ( value ) =>
+										setLocalZoomoffset( value ?? '' )
+									}
+									onBlur={ () =>
+										setAttributes( {
+											zoomoffset: localZoomoffset,
+										} )
+									}
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+								<SelectControl
+									label={ __(
+										'No Wrap',
+										'cartoblocks-for-leaflet'
+									) }
+									help={ __(
+										'Prevents the map from repeating horizontally when scrolled past the edges. Default: off.',
+										'cartoblocks-for-leaflet'
+									) }
+									value={ nowrap }
+									options={ THREE_STATE_OPTIONS }
+									onChange={ ( value ) =>
+										setAttributes( { nowrap: value } )
+									}
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+								<SelectControl
+									label={ __(
+										'Detect Retina',
+										'cartoblocks-for-leaflet'
+									) }
+									help={ __(
+										'Loads higher-resolution tiles on Retina/HiDPI screens. Only enable if the provider serves @2x tiles, otherwise the map will fail on those screens.',
+										'cartoblocks-for-leaflet'
+									) }
+									value={ detectretina }
+									options={ THREE_STATE_OPTIONS }
+									onChange={ ( value ) =>
+										setAttributes( { detectretina: value } )
+									}
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+								<TextareaControl
+									label={ __(
+										'Attribution',
+										'cartoblocks-for-leaflet'
+									) }
+									help={ __(
+										'Custom attribution HTML. Leave empty to use the default from Leaflet Map settings.',
+										'cartoblocks-for-leaflet'
+									) }
+									value={ attribution }
+									onChange={ ( value ) =>
+										setAttributes( { attribution: value } )
+									}
+									rows={ 2 }
+								/>
+							</>
+						) }
+					</PanelBody>
+				) }
 
 				{ /* ── Map Controls panel ──────────────────────────────────── */ }
-				{ ! imageMap && <PanelBody
-					title={ __( 'Map Controls', 'cartoblocks-for-leaflet' ) }
-					initialOpen={ false }
-				>
-					<ToggleControl
-						label={ __( 'Zoom Control', 'cartoblocks-for-leaflet' ) }
-						checked={ zoomControl }
-						onChange={ ( value ) =>
-							setAttributes( { zoomControl: value } )
-						}
-						__nextHasNoMarginBottom
-					/>
-					<ToggleControl
-						label={ __( 'Show Scale', 'cartoblocks-for-leaflet' ) }
-						help={ __(
-							'Display a scale indicator on the map.',
+				{ ! imageMap && (
+					<PanelBody
+						title={ __(
+							'Map Controls',
 							'cartoblocks-for-leaflet'
 						) }
-						checked={ showScale }
-						onChange={ ( value ) =>
-							setAttributes( { showScale: value } )
-						}
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody> }
+						initialOpen={ false }
+					>
+						<ToggleControl
+							label={ __(
+								'Zoom Control',
+								'cartoblocks-for-leaflet'
+							) }
+							checked={ zoomControl }
+							onChange={ ( value ) =>
+								setAttributes( { zoomControl: value } )
+							}
+							__nextHasNoMarginBottom
+						/>
+						<ToggleControl
+							label={ __(
+								'Show Scale',
+								'cartoblocks-for-leaflet'
+							) }
+							help={ __(
+								'Display a scale indicator on the map.',
+								'cartoblocks-for-leaflet'
+							) }
+							checked={ showScale }
+							onChange={ ( value ) =>
+								setAttributes( { showScale: value } )
+							}
+							__nextHasNoMarginBottom
+						/>
+					</PanelBody>
+				) }
 
 				{ /* ── Markers panel ────────────────────────────────────────── */ }
 				<PanelBody
@@ -3689,152 +4049,169 @@ export default function Edit( {
 							initialOpen={ false }
 						>
 							{ /* ── Per-marker address search ─────────────────── */ }
-							{ ! imageMap && ( () => {
-								const ms = markerSearch[ index ] || {};
-								const msInput = ms.input || '';
-								const msStatus = ms.status || 'idle';
-								const msCandidates = ms.candidates || [];
-								return (
-									<>
-										<TextControl
-											label={ __(
-												'Search by address',
-												'cartoblocks-for-leaflet'
-											) }
-											value={ msInput }
-											placeholder={ __(
-												'Enter an address…',
-												'cartoblocks-for-leaflet'
-											) }
-											onChange={ ( value ) => {
-												updateMarkerSearch( index, {
-													input: value,
-													status: 'idle',
-													candidates: [],
-													error: '',
-												} );
-											} }
-											onKeyDown={ ( e ) => {
-												if ( e.key === 'Enter' ) {
-													e.preventDefault();
-													handleMarkerGeocode(
-														index
-													);
+							{ ! imageMap &&
+								( () => {
+									const ms = markerSearch[ index ] || {};
+									const msInput = ms.input || '';
+									const msStatus = ms.status || 'idle';
+									const msCandidates = ms.candidates || [];
+									return (
+										<>
+											<TextControl
+												label={ __(
+													'Search by address',
+													'cartoblocks-for-leaflet'
+												) }
+												value={ msInput }
+												placeholder={ __(
+													'Enter an address…',
+													'cartoblocks-for-leaflet'
+												) }
+												onChange={ ( value ) => {
+													updateMarkerSearch( index, {
+														input: value,
+														status: 'idle',
+														candidates: [],
+														error: '',
+													} );
+												} }
+												onKeyDown={ ( e ) => {
+													if ( e.key === 'Enter' ) {
+														e.preventDefault();
+														handleMarkerGeocode(
+															index
+														);
+													}
+												} }
+												__next40pxDefaultSize
+												__nextHasNoMarginBottom
+											/>
+											<Button
+												variant="secondary"
+												onClick={ () =>
+													handleMarkerGeocode( index )
 												}
-											} }
-											__next40pxDefaultSize
-											__nextHasNoMarginBottom
-										/>
-										<Button
-											variant="secondary"
-											onClick={ () =>
-												handleMarkerGeocode( index )
-											}
-											isBusy={ msStatus === 'loading' }
-											disabled={
-												msStatus === 'loading' ||
-												! msInput.trim()
-											}
-											style={ {
-												width: '100%',
-												justifyContent: 'center',
-												marginTop: '8px',
-											} }
-										>
-											{ __(
-												'Search',
-												'cartoblocks-for-leaflet'
-											) }
-										</Button>
-
-										{ msStatus === 'loading' && (
-											<div
+												isBusy={
+													msStatus === 'loading'
+												}
+												disabled={
+													msStatus === 'loading' ||
+													! msInput.trim()
+												}
 												style={ {
-													display: 'flex',
+													width: '100%',
 													justifyContent: 'center',
 													marginTop: '8px',
 												} }
 											>
-												<Spinner />
-											</div>
-										) }
+												{ __(
+													'Search',
+													'cartoblocks-for-leaflet'
+												) }
+											</Button>
 
-										{ msStatus === 'error' && (
-											<Notice
-												status="error"
-												isDismissible={ false }
-												style={ { marginTop: '8px' } }
-											>
-												{ ms.error }
-											</Notice>
-										) }
-
-										{ msStatus === 'candidates' &&
-											msCandidates.length > 0 && (
+											{ msStatus === 'loading' && (
 												<div
+													style={ {
+														display: 'flex',
+														justifyContent:
+															'center',
+														marginTop: '8px',
+													} }
+												>
+													<Spinner />
+												</div>
+											) }
+
+											{ msStatus === 'error' && (
+												<Notice
+													status="error"
+													isDismissible={ false }
 													style={ {
 														marginTop: '8px',
 													} }
 												>
-													<p
+													{ ms.error }
+												</Notice>
+											) }
+
+											{ msStatus === 'candidates' &&
+												msCandidates.length > 0 && (
+													<div
 														style={ {
-															margin: '0 0 4px',
-															fontWeight: 600,
-															fontSize: '11px',
-															textTransform:
-																'uppercase',
-															color: '#1e1e1e',
+															marginTop: '8px',
 														} }
 													>
-														{ __(
-															'Select a location:',
-															'cartoblocks-for-leaflet'
+														<p
+															style={ {
+																margin: '0 0 4px',
+																fontWeight: 600,
+																fontSize:
+																	'11px',
+																textTransform:
+																	'uppercase',
+																color: '#1e1e1e',
+															} }
+														>
+															{ __(
+																'Select a location:',
+																'cartoblocks-for-leaflet'
+															) }
+														</p>
+														{ msCandidates.map(
+															(
+																candidate,
+																ci
+															) => (
+																<Button
+																	key={ ci }
+																	variant="tertiary"
+																	onClick={ () =>
+																		applyMarkerCandidate(
+																			index,
+																			candidate
+																		)
+																	}
+																	style={ {
+																		display:
+																			'block',
+																		width: '100%',
+																		textAlign:
+																			'left',
+																		marginBottom:
+																			'4px',
+																		whiteSpace:
+																			'normal',
+																		height: 'auto',
+																		padding:
+																			'6px 8px',
+																		wordBreak:
+																			'break-word',
+																	} }
+																>
+																	{
+																		candidate.display_name
+																	}
+																</Button>
+															)
 														) }
-													</p>
-													{ msCandidates.map(
-														( candidate, ci ) => (
-															<Button
-																key={ ci }
-																variant="tertiary"
-																onClick={ () =>
-																	applyMarkerCandidate(
-																		index,
-																		candidate
-																	)
-																}
-																style={ {
-																	display:
-																		'block',
-																	width: '100%',
-																	textAlign:
-																		'left',
-																	marginBottom:
-																		'4px',
-																	whiteSpace:
-																		'normal',
-																	height: 'auto',
-																	padding:
-																		'6px 8px',
-																	wordBreak:
-																		'break-word',
-																} }
-															>
-																{
-																	candidate.display_name
-																}
-															</Button>
-														)
-													) }
-												</div>
-											) }
-									</>
-								);
-							} )() }
+													</div>
+												) }
+										</>
+									);
+								} )() }
 
 							<NumberControl
-								label={ imageMap
-									? __( 'Y (pixels)', 'cartoblocks-for-leaflet' )
-									: __( 'Latitude', 'cartoblocks-for-leaflet' )
+								label={
+									imageMap
+										? __(
+												'Y (pixels)',
+												'cartoblocks-for-leaflet'
+										  )
+										: __(
+												'Latitude',
+												'cartoblocks-for-leaflet'
+										  )
 								}
 								value={ marker.lat }
 								onChange={ ( value ) =>
@@ -3846,9 +4223,16 @@ export default function Edit( {
 								__next40pxDefaultSize
 							/>
 							<NumberControl
-								label={ imageMap
-									? __( 'X (pixels)', 'cartoblocks-for-leaflet' )
-									: __( 'Longitude', 'cartoblocks-for-leaflet' )
+								label={
+									imageMap
+										? __(
+												'X (pixels)',
+												'cartoblocks-for-leaflet'
+										  )
+										: __(
+												'Longitude',
+												'cartoblocks-for-leaflet'
+										  )
 								}
 								value={ marker.lng }
 								onChange={ ( value ) =>
@@ -4381,11 +4765,12 @@ export default function Edit( {
 												'cartoblocks-for-leaflet'
 											) }
 											onChange={ ( presetId ) => {
-												const coords = computeAnchorFromPreset(
-													presetId,
-													marker.iconWidth,
-													marker.iconHeight
-												);
+												const coords =
+													computeAnchorFromPreset(
+														presetId,
+														marker.iconWidth,
+														marker.iconHeight
+													);
 												if ( coords ) {
 													handleUpdateMarker( index, {
 														iconAnchorX: coords.x,
@@ -4890,25 +5275,37 @@ export default function Edit( {
 														'Anchor position',
 														'cartoblocks-for-leaflet'
 													) }
-													anchorX={ marker.shadowAnchorX }
-													anchorY={ marker.shadowAnchorY }
+													anchorX={
+														marker.shadowAnchorX
+													}
+													anchorY={
+														marker.shadowAnchorY
+													}
 													width={ marker.shadowWidth }
-													height={ marker.shadowHeight }
+													height={
+														marker.shadowHeight
+													}
 													disabledHelp={ __(
 														'Set shadow size first',
 														'cartoblocks-for-leaflet'
 													) }
 													onChange={ ( presetId ) => {
-														const coords = computeAnchorFromPreset(
-															presetId,
-															marker.shadowWidth,
-															marker.shadowHeight
-														);
+														const coords =
+															computeAnchorFromPreset(
+																presetId,
+																marker.shadowWidth,
+																marker.shadowHeight
+															);
 														if ( coords ) {
-															handleUpdateMarker( index, {
-																shadowAnchorX: coords.x,
-																shadowAnchorY: coords.y,
-															} );
+															handleUpdateMarker(
+																index,
+																{
+																	shadowAnchorX:
+																		coords.x,
+																	shadowAnchorY:
+																		coords.y,
+																}
+															);
 														}
 													} }
 												/>
@@ -5167,7 +5564,10 @@ export default function Edit( {
 				<PanelBody
 					title={ sprintf(
 						/* translators: %d: number of shapes */
-						__( 'Lines & Polygons (%d)', 'cartoblocks-for-leaflet' ),
+						__(
+							'Lines & Polygons (%d)',
+							'cartoblocks-for-leaflet'
+						),
 						( lines || [] ).length
 					) }
 					initialOpen={ false }
@@ -5198,19 +5598,25 @@ export default function Edit( {
 					{ ( lines || [] ).map( ( line, lineIdx ) => (
 						<PanelBody
 							key={ lineIdx }
-							title={ sprintf(
+							title={
 								line.type === 'polygon'
-									? /* translators: 1: index, 2: point count */ __(
-											'Polygon %1$d (%2$d pts)',
-											'cartoblocks-for-leaflet'
+									? sprintf(
+											/* translators: 1: index, 2: point count */ __(
+												'Polygon %1$d (%2$d pts)',
+												'cartoblocks-for-leaflet'
+											),
+											lineIdx + 1,
+											( line.points || [] ).length
 									  )
-									: /* translators: 1: index, 2: point count */ __(
-											'Line %1$d (%2$d pts)',
-											'cartoblocks-for-leaflet'
-									  ),
-								lineIdx + 1,
-								( line.points || [] ).length
-							) }
+									: sprintf(
+											/* translators: 1: index, 2: point count */ __(
+												'Line %1$d (%2$d pts)',
+												'cartoblocks-for-leaflet'
+											),
+											lineIdx + 1,
+											( line.points || [] ).length
+									  )
+							}
 							opened={ expandedLineIndex === lineIdx }
 							onToggle={ () =>
 								setExpandedLineIndex( ( prev ) =>
@@ -5219,7 +5625,10 @@ export default function Edit( {
 							}
 						>
 							<SelectControl
-								label={ __( 'Type', 'cartoblocks-for-leaflet' ) }
+								label={ __(
+									'Type',
+									'cartoblocks-for-leaflet'
+								) }
 								value={ line.type || 'line' }
 								options={ [
 									{
@@ -5306,7 +5715,7 @@ export default function Edit( {
 												if (
 													e.key === 'Enter' ||
 													e.key === ' '
-												)
+												) {
 													setOpenPoints(
 														( prev ) => ( {
 															...prev,
@@ -5314,6 +5723,7 @@ export default function Edit( {
 																! prev[ lpKey ],
 														} )
 													);
+												}
 											} }
 										>
 											<span
@@ -5355,12 +5765,21 @@ export default function Edit( {
 										{ isOpen && (
 											<>
 												<NumberControl
-													label={ imageMap
-														? __( 'Y (pixels)', 'cartoblocks-for-leaflet' )
-														: __( 'Latitude', 'cartoblocks-for-leaflet' )
+													label={
+														imageMap
+															? __(
+																	'Y (pixels)',
+																	'cartoblocks-for-leaflet'
+															  )
+															: __(
+																	'Latitude',
+																	'cartoblocks-for-leaflet'
+															  )
 													}
 													value={ point.lat }
-													step={ imageMap ? 1 : 0.000001 }
+													step={
+														imageMap ? 1 : 0.000001
+													}
 													onChange={ ( v ) =>
 														handleUpdatePoint(
 															lineIdx,
@@ -5378,12 +5797,21 @@ export default function Edit( {
 													}
 												/>
 												<NumberControl
-													label={ imageMap
-														? __( 'X (pixels)', 'cartoblocks-for-leaflet' )
-														: __( 'Longitude', 'cartoblocks-for-leaflet' )
+													label={
+														imageMap
+															? __(
+																	'X (pixels)',
+																	'cartoblocks-for-leaflet'
+															  )
+															: __(
+																	'Longitude',
+																	'cartoblocks-for-leaflet'
+															  )
 													}
 													value={ point.lng }
-													step={ imageMap ? 1 : 0.000001 }
+													step={
+														imageMap ? 1 : 0.000001
+													}
 													onChange={ ( v ) =>
 														handleUpdatePoint(
 															lineIdx,
@@ -5420,158 +5848,166 @@ export default function Edit( {
 														'cartoblocks-for-leaflet'
 													) }
 												</Button>
-												{ ! imageMap && <div
-													style={ {
-														marginTop: '6px',
-													} }
-												>
-													<TextControl
-														label={ __(
-															'Search by address',
-															'cartoblocks-for-leaflet'
-														) }
-														placeholder={ __(
-															'e.g. Paris, France',
-															'cartoblocks-for-leaflet'
-														) }
-														value={ lpsInput }
-														onChange={ ( v ) =>
-															updateLinePointSearch(
-																lineIdx,
-																pi,
-																{ input: v }
-															)
-														}
-														onKeyDown={ ( e ) => {
-															if (
-																e.key ===
-																'Enter'
-															) {
-																e.preventDefault();
+												{ ! imageMap && (
+													<div
+														style={ {
+															marginTop: '6px',
+														} }
+													>
+														<TextControl
+															label={ __(
+																'Search by address',
+																'cartoblocks-for-leaflet'
+															) }
+															placeholder={ __(
+																'e.g. Paris, France',
+																'cartoblocks-for-leaflet'
+															) }
+															value={ lpsInput }
+															onChange={ ( v ) =>
+																updateLinePointSearch(
+																	lineIdx,
+																	pi,
+																	{ input: v }
+																)
+															}
+															onKeyDown={ (
+																e
+															) => {
+																if (
+																	e.key ===
+																	'Enter'
+																) {
+																	e.preventDefault();
+																	handleLinePointGeocode(
+																		lineIdx,
+																		pi
+																	);
+																}
+															} }
+															__nextHasNoMarginBottom={
+																true
+															}
+														/>
+														<Button
+															variant="secondary"
+															onClick={ () =>
 																handleLinePointGeocode(
 																	lineIdx,
 																	pi
-																);
+																)
 															}
-														} }
-														__nextHasNoMarginBottom={
-															true
-														}
-													/>
-													<Button
-														variant="secondary"
-														onClick={ () =>
-															handleLinePointGeocode(
-																lineIdx,
-																pi
-															)
-														}
-														isBusy={
-															lpsStatus ===
+															isBusy={
+																lpsStatus ===
+																'loading'
+															}
+															disabled={
+																lpsStatus ===
+																	'loading' ||
+																! lpsInput.trim()
+															}
+															style={ {
+																marginTop:
+																	'4px',
+																width: '100%',
+																justifyContent:
+																	'center',
+															} }
+														>
+															{ lpsStatus ===
 															'loading'
-														}
-														disabled={
-															lpsStatus ===
-																'loading' ||
-															! lpsInput.trim()
-														}
-														style={ {
-															marginTop: '4px',
-															width: '100%',
-															justifyContent:
-																'center',
-														} }
-													>
+																? __(
+																		'Searching…',
+																		'cartoblocks-for-leaflet'
+																  )
+																: __(
+																		'Search',
+																		'cartoblocks-for-leaflet'
+																  ) }
+														</Button>
 														{ lpsStatus ===
-														'loading'
-															? __(
-																	'Searching…',
-																	'cartoblocks-for-leaflet'
-															  )
-															: __(
-																	'Search',
-																	'cartoblocks-for-leaflet'
-															  ) }
-													</Button>
-													{ lpsStatus === 'error' &&
-														lps.error && (
-															<Notice
-																status="warning"
-																isDismissible={
-																	false
-																}
-																style={ {
-																	marginTop:
-																		'6px',
-																} }
-															>
-																{ lps.error }
-															</Notice>
-														) }
-													{ lpsStatus ===
-														'candidates' &&
-														lpsCandidates.length >
-															0 && (
-															<div
-																style={ {
-																	marginTop:
-																		'6px',
-																} }
-															>
-																<p
+															'error' &&
+															lps.error && (
+																<Notice
+																	status="warning"
+																	isDismissible={
+																		false
+																	}
 																	style={ {
-																		margin: '0 0 4px',
-																		fontSize:
-																			'11px',
-																		color: '#757575',
+																		marginTop:
+																			'6px',
 																	} }
 																>
-																	{ __(
-																		'Select a result:',
-																		'cartoblocks-for-leaflet'
+																	{
+																		lps.error
+																	}
+																</Notice>
+															) }
+														{ lpsStatus ===
+															'candidates' &&
+															lpsCandidates.length >
+																0 && (
+																<div
+																	style={ {
+																		marginTop:
+																			'6px',
+																	} }
+																>
+																	<p
+																		style={ {
+																			margin: '0 0 4px',
+																			fontSize:
+																				'11px',
+																			color: '#757575',
+																		} }
+																	>
+																		{ __(
+																			'Select a result:',
+																			'cartoblocks-for-leaflet'
+																		) }
+																	</p>
+																	{ lpsCandidates.map(
+																		(
+																			candidate,
+																			ci
+																		) => (
+																			<Button
+																				key={
+																					ci
+																				}
+																				variant="tertiary"
+																				onClick={ () =>
+																					applyLinePointCandidate(
+																						lineIdx,
+																						pi,
+																						candidate
+																					)
+																				}
+																				style={ {
+																					display:
+																						'block',
+																					width: '100%',
+																					textAlign:
+																						'left',
+																					marginBottom:
+																						'4px',
+																					whiteSpace:
+																						'normal',
+																					height: 'auto',
+																					minHeight:
+																						'32px',
+																				} }
+																			>
+																				{
+																					candidate.display_name
+																				}
+																			</Button>
+																		)
 																	) }
-																</p>
-																{ lpsCandidates.map(
-																	(
-																		candidate,
-																		ci
-																	) => (
-																		<Button
-																			key={
-																				ci
-																			}
-																			variant="tertiary"
-																			onClick={ () =>
-																				applyLinePointCandidate(
-																					lineIdx,
-																					pi,
-																					candidate
-																				)
-																			}
-																			style={ {
-																				display:
-																					'block',
-																				width: '100%',
-																				textAlign:
-																					'left',
-																				marginBottom:
-																					'4px',
-																				whiteSpace:
-																					'normal',
-																				height: 'auto',
-																				minHeight:
-																					'32px',
-																			} }
-																		>
-																			{
-																				candidate.display_name
-																			}
-																		</Button>
-																	)
-																) }
-															</div>
-														) }
-												</div> }
+																</div>
+															) }
+													</div>
+												) }
 											</>
 										) }
 										<Button
@@ -5784,7 +6220,10 @@ export default function Edit( {
 
 							{ /* Fill subsection */ }
 							<PanelBody
-								title={ __( 'Fill', 'cartoblocks-for-leaflet' ) }
+								title={ __(
+									'Fill',
+									'cartoblocks-for-leaflet'
+								) }
 								initialOpen={ false }
 							>
 								<ToggleControl
@@ -5968,9 +6407,16 @@ export default function Edit( {
 									</p>
 
 									<NumberControl
-										label={ imageMap
-											? __( 'Y (pixels)', 'cartoblocks-for-leaflet' )
-											: __( 'Latitude', 'cartoblocks-for-leaflet' )
+										label={
+											imageMap
+												? __(
+														'Y (pixels)',
+														'cartoblocks-for-leaflet'
+												  )
+												: __(
+														'Latitude',
+														'cartoblocks-for-leaflet'
+												  )
 										}
 										value={ circle.lat ?? '' }
 										step={ imageMap ? 1 : 0.000001 }
@@ -5985,9 +6431,16 @@ export default function Edit( {
 										__next40pxDefaultSize={ true }
 									/>
 									<NumberControl
-										label={ imageMap
-											? __( 'X (pixels)', 'cartoblocks-for-leaflet' )
-											: __( 'Longitude', 'cartoblocks-for-leaflet' )
+										label={
+											imageMap
+												? __(
+														'X (pixels)',
+														'cartoblocks-for-leaflet'
+												  )
+												: __(
+														'Longitude',
+														'cartoblocks-for-leaflet'
+												  )
 										}
 										value={ circle.lng ?? '' }
 										step={ imageMap ? 1 : 0.000001 }
@@ -6022,121 +6475,137 @@ export default function Edit( {
 									</Button>
 
 									{ /* Geocoder */ }
-									{ ! imageMap && <div style={ { marginTop: '6px' } }>
-										<TextControl
-											label={ __(
-												'Search by address',
-												'cartoblocks-for-leaflet'
-											) }
-											placeholder={ __(
-												'e.g. Paris, France',
-												'cartoblocks-for-leaflet'
-											) }
-											value={ csInput }
-											onChange={ ( v ) =>
-												updateCircleSearch( circleIdx, {
-													input: v,
-												} )
-											}
-											onKeyDown={ ( e ) => {
-												if ( e.key === 'Enter' ) {
-													e.preventDefault();
+									{ ! imageMap && (
+										<div style={ { marginTop: '6px' } }>
+											<TextControl
+												label={ __(
+													'Search by address',
+													'cartoblocks-for-leaflet'
+												) }
+												placeholder={ __(
+													'e.g. Paris, France',
+													'cartoblocks-for-leaflet'
+												) }
+												value={ csInput }
+												onChange={ ( v ) =>
+													updateCircleSearch(
+														circleIdx,
+														{
+															input: v,
+														}
+													)
+												}
+												onKeyDown={ ( e ) => {
+													if ( e.key === 'Enter' ) {
+														e.preventDefault();
+														handleCircleGeocode(
+															circleIdx
+														);
+													}
+												} }
+												__nextHasNoMarginBottom={ true }
+											/>
+											<Button
+												variant="secondary"
+												onClick={ () =>
 													handleCircleGeocode(
 														circleIdx
-													);
+													)
 												}
-											} }
-											__nextHasNoMarginBottom={ true }
-										/>
-										<Button
-											variant="secondary"
-											onClick={ () =>
-												handleCircleGeocode( circleIdx )
-											}
-											isBusy={ csStatus === 'loading' }
-											disabled={
-												csStatus === 'loading' ||
-												! csInput.trim()
-											}
-											style={ {
-												marginTop: '4px',
-												width: '100%',
-												justifyContent: 'center',
-											} }
-										>
-											{ csStatus === 'loading'
-												? __(
-														'Searching…',
-														'cartoblocks-for-leaflet'
-												  )
-												: __(
-														'Search',
-														'cartoblocks-for-leaflet'
-												  ) }
-										</Button>
-										{ csStatus === 'error' && cs.error && (
-											<Notice
-												status="warning"
-												isDismissible={ false }
-												style={ { marginTop: '6px' } }
+												isBusy={
+													csStatus === 'loading'
+												}
+												disabled={
+													csStatus === 'loading' ||
+													! csInput.trim()
+												}
+												style={ {
+													marginTop: '4px',
+													width: '100%',
+													justifyContent: 'center',
+												} }
 											>
-												{ cs.error }
-											</Notice>
-										) }
-										{ csStatus === 'candidates' &&
-											csCandidates.length > 0 && (
-												<div
-													style={ {
-														marginTop: '6px',
-													} }
-												>
-													<p
+												{ csStatus === 'loading'
+													? __(
+															'Searching…',
+															'cartoblocks-for-leaflet'
+													  )
+													: __(
+															'Search',
+															'cartoblocks-for-leaflet'
+													  ) }
+											</Button>
+											{ csStatus === 'error' &&
+												cs.error && (
+													<Notice
+														status="warning"
+														isDismissible={ false }
 														style={ {
-															margin: '0 0 4px',
-															fontSize: '11px',
-															color: '#757575',
+															marginTop: '6px',
 														} }
 													>
-														{ __(
-															'Select a result:',
-															'cartoblocks-for-leaflet'
+														{ cs.error }
+													</Notice>
+												) }
+											{ csStatus === 'candidates' &&
+												csCandidates.length > 0 && (
+													<div
+														style={ {
+															marginTop: '6px',
+														} }
+													>
+														<p
+															style={ {
+																margin: '0 0 4px',
+																fontSize:
+																	'11px',
+																color: '#757575',
+															} }
+														>
+															{ __(
+																'Select a result:',
+																'cartoblocks-for-leaflet'
+															) }
+														</p>
+														{ csCandidates.map(
+															(
+																candidate,
+																cIdx
+															) => (
+																<Button
+																	key={ cIdx }
+																	variant="tertiary"
+																	onClick={ () =>
+																		applyCircleCandidate(
+																			circleIdx,
+																			candidate
+																		)
+																	}
+																	style={ {
+																		display:
+																			'block',
+																		width: '100%',
+																		textAlign:
+																			'left',
+																		marginBottom:
+																			'4px',
+																		whiteSpace:
+																			'normal',
+																		height: 'auto',
+																		minHeight:
+																			'32px',
+																	} }
+																>
+																	{
+																		candidate.display_name
+																	}
+																</Button>
+															)
 														) }
-													</p>
-													{ csCandidates.map(
-														( candidate, cIdx ) => (
-															<Button
-																key={ cIdx }
-																variant="tertiary"
-																onClick={ () =>
-																	applyCircleCandidate(
-																		circleIdx,
-																		candidate
-																	)
-																}
-																style={ {
-																	display:
-																		'block',
-																	width: '100%',
-																	textAlign:
-																		'left',
-																	marginBottom:
-																		'4px',
-																	whiteSpace:
-																		'normal',
-																	height: 'auto',
-																	minHeight:
-																		'32px',
-																} }
-															>
-																{
-																	candidate.display_name
-																}
-															</Button>
-														)
-													) }
-												</div>
-											) }
-									</div> }
+													</div>
+												) }
+										</div>
+									) }
 
 									{ /* Radius + unit toggle */ }
 									<div
@@ -6198,9 +6667,18 @@ export default function Edit( {
 											<SelectControl
 												value={ radiusUnit }
 												options={ [
-													{ label: __( 'm', 'cartoblocks-for-leaflet' ), value: 'm' },
 													{
-														label: __( 'km', 'cartoblocks-for-leaflet' ),
+														label: __(
+															'm',
+															'cartoblocks-for-leaflet'
+														),
+														value: 'm',
+													},
+													{
+														label: __(
+															'km',
+															'cartoblocks-for-leaflet'
+														),
 														value: 'km',
 													},
 												] }
@@ -6364,9 +6842,9 @@ export default function Edit( {
 											) }
 											value={ circle.dashArray || '' }
 											placeholder={ __(
-											'e.g. 5,10',
-											'cartoblocks-for-leaflet'
-										) }
+												'e.g. 5,10',
+												'cartoblocks-for-leaflet'
+											) }
 											onChange={ ( v ) =>
 												handleUpdateCircle( circleIdx, {
 													dashArray: v,
@@ -6527,167 +7005,1151 @@ export default function Edit( {
 					) }
 				</PanelBody>
 				{ /* ── Data Layers panel ────────────────────────────────── */ }
-				{ ! imageMap && <PanelBody
-					title={ __( 'Data Layers', 'cartoblocks-for-leaflet' ) }
-					initialOpen={ false }
-				>
-					<p
-						style={ {
-							margin: '0 0 8px',
-							fontSize: '11px',
-							color: '#757575',
-						} }
+				{ ! imageMap && (
+					<PanelBody
+						title={ __( 'Data Layers', 'cartoblocks-for-leaflet' ) }
+						initialOpen={ false }
 					>
-						{ __(
-							'Load GeoJSON, GPX, or KML data from a URL. Each layer renders on the map as vector features.',
-							'cartoblocks-for-leaflet'
-						) }
-					</p>
-					<div
-						style={ {
-							display: 'flex',
-							gap: '4px',
-							marginBottom: '8px',
-						} }
-					>
-						<Button
-							variant="secondary"
-							onClick={ () => handleAddLayer( 'geojson' ) }
-							style={ { flex: 1, justifyContent: 'center' } }
+						<p
+							style={ {
+								margin: '0 0 8px',
+								fontSize: '11px',
+								color: '#757575',
+							} }
 						>
-							{ __( '+ GeoJSON', 'cartoblocks-for-leaflet' ) }
-						</Button>
-						<Button
-							variant="secondary"
-							onClick={ () => handleAddLayer( 'gpx' ) }
-							style={ { flex: 1, justifyContent: 'center' } }
+							{ __(
+								'Load GeoJSON, GPX, or KML data from a URL. Each layer renders on the map as vector features.',
+								'cartoblocks-for-leaflet'
+							) }
+						</p>
+						<div
+							style={ {
+								display: 'flex',
+								gap: '4px',
+								marginBottom: '8px',
+							} }
 						>
-							{ __( '+ GPX', 'cartoblocks-for-leaflet' ) }
-						</Button>
-						<Button
-							variant="secondary"
-							onClick={ () => handleAddLayer( 'kml' ) }
-							style={ { flex: 1, justifyContent: 'center' } }
-						>
-							{ __( '+ KML', 'cartoblocks-for-leaflet' ) }
-						</Button>
-					</div>
-
-					{ ( attributes.layers || [] ).map( ( layer, layerIdx ) => (
-						<PanelBody
-							key={ layerIdx }
-							title={ `${ layer.type.toUpperCase() } ${
-								layerIdx + 1
-							}${
-								layer.src
-									? ' — ' +
-									  layer.src
-											.split( '/' )
-											.pop()
-											.substring( 0, 30 )
-									: ''
-							}` }
-							opened={ expandedLayerIndex === layerIdx }
-							onToggle={ () =>
-								setExpandedLayerIndex( ( prev ) =>
-									prev === layerIdx ? null : layerIdx
-								)
-							}
-						>
-							<SelectControl
-								label={ __( 'Type', 'cartoblocks-for-leaflet' ) }
-								value={ layer.type || 'geojson' }
-								options={ [
-									{ label: __( 'GeoJSON', 'cartoblocks-for-leaflet' ), value: 'geojson' },
-									{ label: __( 'GPX', 'cartoblocks-for-leaflet' ), value: 'gpx' },
-									{ label: __( 'KML', 'cartoblocks-for-leaflet' ), value: 'kml' },
-								] }
-								onChange={ ( v ) =>
-									handleUpdateLayer( layerIdx, { type: v } )
-								}
-								__next40pxDefaultSize
-								__nextHasNoMarginBottom
-							/>
-							<TextControl
-								label={ __(
-									'Source URL',
-									'cartoblocks-for-leaflet'
-								) }
-								value={ layer.src || '' }
-								type="url"
-								help={ __(
-									'Full URL to a .geojson, .gpx, or .kml file. Must be publicly accessible (CORS-enabled).',
-									'cartoblocks-for-leaflet'
-								) }
-								onChange={ ( v ) =>
-									handleUpdateLayer( layerIdx, { src: v } )
-								}
-								__next40pxDefaultSize
-								__nextHasNoMarginBottom
-							/>
-							<ToggleControl
-								label={ __(
-									'Fit map to layer bounds',
-									'cartoblocks-for-leaflet'
-								) }
-								checked={ layer.fitbounds || false }
-								onChange={ ( v ) =>
-									handleUpdateLayer( layerIdx, {
-										fitbounds: v,
-									} )
-								}
-								__nextHasNoMarginBottom
-							/>
-							{ /* Popup configuration */ }
-							<PanelBody
-								title={ __(
-									'Popup configuration',
-									'cartoblocks-for-leaflet'
-								) }
-								initialOpen={ false }
+							<Button
+								variant="secondary"
+								onClick={ () => handleAddLayer( 'geojson' ) }
+								style={ { flex: 1, justifyContent: 'center' } }
 							>
-								<p
-									style={ {
-										margin: '0 0 8px',
-										fontSize: '11px',
-										color: '#757575',
-									} }
+								{ __( '+ GeoJSON', 'cartoblocks-for-leaflet' ) }
+							</Button>
+							<Button
+								variant="secondary"
+								onClick={ () => handleAddLayer( 'gpx' ) }
+								style={ { flex: 1, justifyContent: 'center' } }
+							>
+								{ __( '+ GPX', 'cartoblocks-for-leaflet' ) }
+							</Button>
+							<Button
+								variant="secondary"
+								onClick={ () => handleAddLayer( 'kml' ) }
+								style={ { flex: 1, justifyContent: 'center' } }
+							>
+								{ __( '+ KML', 'cartoblocks-for-leaflet' ) }
+							</Button>
+						</div>
+
+						{ ( attributes.layers || [] ).map(
+							( layer, layerIdx ) => (
+								<PanelBody
+									key={ layerIdx }
+									title={ `${ layer.type.toUpperCase() } ${
+										layerIdx + 1
+									}${
+										layer.src
+											? ' — ' +
+											  layer.src
+													.split( '/' )
+													.pop()
+													.substring( 0, 30 )
+											: ''
+									}` }
+									opened={ expandedLayerIndex === layerIdx }
+									onToggle={ () =>
+										setExpandedLayerIndex( ( prev ) =>
+											prev === layerIdx ? null : layerIdx
+										)
+									}
 								>
-									{ __(
-										'Precedence (highest first): Show all properties as table → Single property → Popup template. GPX/KML files rarely expose feature properties — popup config is most useful for GeoJSON.',
+									<SelectControl
+										label={ __(
+											'Type',
+											'cartoblocks-for-leaflet'
+										) }
+										value={ layer.type || 'geojson' }
+										options={ [
+											{
+												label: __(
+													'GeoJSON',
+													'cartoblocks-for-leaflet'
+												),
+												value: 'geojson',
+											},
+											{
+												label: __(
+													'GPX',
+													'cartoblocks-for-leaflet'
+												),
+												value: 'gpx',
+											},
+											{
+												label: __(
+													'KML',
+													'cartoblocks-for-leaflet'
+												),
+												value: 'kml',
+											},
+										] }
+										onChange={ ( v ) =>
+											handleUpdateLayer( layerIdx, {
+												type: v,
+											} )
+										}
+										__next40pxDefaultSize
+										__nextHasNoMarginBottom
+									/>
+									<TextControl
+										label={ __(
+											'Source URL',
+											'cartoblocks-for-leaflet'
+										) }
+										value={ layer.src || '' }
+										type="url"
+										help={ __(
+											'Full URL to a .geojson, .gpx, or .kml file. Must be publicly accessible (CORS-enabled).',
+											'cartoblocks-for-leaflet'
+										) }
+										onChange={ ( v ) =>
+											handleUpdateLayer( layerIdx, {
+												src: v,
+											} )
+										}
+										__next40pxDefaultSize
+										__nextHasNoMarginBottom
+									/>
+									<ToggleControl
+										label={ __(
+											'Fit map to layer bounds',
+											'cartoblocks-for-leaflet'
+										) }
+										checked={ layer.fitbounds || false }
+										onChange={ ( v ) =>
+											handleUpdateLayer( layerIdx, {
+												fitbounds: v,
+											} )
+										}
+										__nextHasNoMarginBottom
+									/>
+									{ /* Popup configuration */ }
+									<PanelBody
+										title={ __(
+											'Popup configuration',
+											'cartoblocks-for-leaflet'
+										) }
+										initialOpen={ false }
+									>
+										<p
+											style={ {
+												margin: '0 0 8px',
+												fontSize: '11px',
+												color: '#757575',
+											} }
+										>
+											{ __(
+												'Precedence (highest first): Show all properties as table → Single property → Popup template. GPX/KML files rarely expose feature properties — popup config is most useful for GeoJSON.',
+												'cartoblocks-for-leaflet'
+											) }
+										</p>
+										<TextareaControl
+											label={ __(
+												'Popup template',
+												'cartoblocks-for-leaflet'
+											) }
+											value={ layer.popupText || '' }
+											help={ __(
+												'Use {property_name} placeholders to interpolate feature properties. E.g. "Name: {name}".',
+												'cartoblocks-for-leaflet'
+											) }
+											onChange={ ( v ) =>
+												handleUpdateLayer( layerIdx, {
+													popupText: v,
+												} )
+											}
+											__nextHasNoMarginBottom
+										/>
+										<TextControl
+											label={ __(
+												'Single property to display',
+												'cartoblocks-for-leaflet'
+											) }
+											value={ layer.popupProperty || '' }
+											help={ __(
+												'Bare property name (e.g. "ciudad", not "{ciudad}"). When set, overrides the popup template above.',
+												'cartoblocks-for-leaflet'
+											) }
+											onChange={ ( v ) =>
+												handleUpdateLayer( layerIdx, {
+													popupProperty: v,
+												} )
+											}
+											__next40pxDefaultSize
+											__nextHasNoMarginBottom
+										/>
+										<ToggleControl
+											label={ __(
+												'Show all properties as table',
+												'cartoblocks-for-leaflet'
+											) }
+											help={ __(
+												'Displays every feature property as an HTML table in the popup. Overrides the two fields above.',
+												'cartoblocks-for-leaflet'
+											) }
+											checked={ layer.tableView || false }
+											onChange={ ( v ) =>
+												handleUpdateLayer( layerIdx, {
+													tableView: v,
+												} )
+											}
+											__nextHasNoMarginBottom
+										/>
+									</PanelBody>
+
+									{ /* Default feature style */ }
+									<PanelBody
+										title={ __(
+											'Default feature style',
+											'cartoblocks-for-leaflet'
+										) }
+										initialOpen={ false }
+									>
+										<p
+											style={ {
+												margin: '0 0 8px',
+												fontSize: '11px',
+												color: '#757575',
+											} }
+										>
+											{ __(
+												'Applied as the default layer style. Feature properties (e.g. geojson.io stroke/fill) override these defaults per-feature.',
+												'cartoblocks-for-leaflet'
+											) }
+										</p>
+										<p
+											style={ {
+												margin: '0 0 8px',
+												fontSize: '11px',
+												color: '#b45309',
+											} }
+										>
+											{ __(
+												'Style applies to line and polygon features only. Point markers are not affected — use Custom point icon to customise them.',
+												'cartoblocks-for-leaflet'
+											) }
+										</p>
+										<p
+											style={ {
+												margin: '8px 0 4px',
+												fontSize: '11px',
+												fontWeight: 600,
+											} }
+										>
+											{ __(
+												'Stroke color',
+												'cartoblocks-for-leaflet'
+											) }
+										</p>
+										<ColorPalette
+											value={ layer.color || '' }
+											onChange={ ( v ) =>
+												handleUpdateLayer( layerIdx, {
+													color: v || '',
+												} )
+											}
+										/>
+										<RangeControl
+											label={ __(
+												'Weight',
+												'cartoblocks-for-leaflet'
+											) }
+											value={ layer.weight ?? undefined }
+											min={ 0 }
+											max={ 20 }
+											step={ 1 }
+											allowReset
+											onChange={ ( v ) =>
+												handleUpdateLayer( layerIdx, {
+													weight: v ?? null,
+												} )
+											}
+											__nextHasNoMarginBottom
+											__next40pxDefaultSize
+										/>
+										<RangeControl
+											label={ __(
+												'Stroke opacity',
+												'cartoblocks-for-leaflet'
+											) }
+											value={ layer.opacity ?? undefined }
+											min={ 0 }
+											max={ 1 }
+											step={ 0.05 }
+											allowReset
+											onChange={ ( v ) =>
+												handleUpdateLayer( layerIdx, {
+													opacity: v ?? null,
+												} )
+											}
+											__nextHasNoMarginBottom
+											__next40pxDefaultSize
+										/>
+										<TextControl
+											label={ __(
+												'Dash array',
+												'cartoblocks-for-leaflet'
+											) }
+											value={ layer.dashArray || '' }
+											placeholder="5,5"
+											onChange={ ( v ) =>
+												handleUpdateLayer( layerIdx, {
+													dashArray: v,
+												} )
+											}
+											__next40pxDefaultSize
+											__nextHasNoMarginBottom
+										/>
+										<TextControl
+											label={ __(
+												'CSS class',
+												'cartoblocks-for-leaflet'
+											) }
+											value={ layer.classname || '' }
+											onChange={ ( v ) =>
+												handleUpdateLayer( layerIdx, {
+													classname: v,
+												} )
+											}
+											__next40pxDefaultSize
+											__nextHasNoMarginBottom
+										/>
+										<ToggleControl
+											label={ __(
+												'Fill',
+												'cartoblocks-for-leaflet'
+											) }
+											checked={ layer.fill || false }
+											onChange={ ( v ) =>
+												handleUpdateLayer( layerIdx, {
+													fill: v,
+												} )
+											}
+											__nextHasNoMarginBottom
+										/>
+										{ layer.fill && (
+											<>
+												<p
+													style={ {
+														margin: '8px 0 4px',
+														fontSize: '11px',
+														fontWeight: 600,
+													} }
+												>
+													{ __(
+														'Fill color',
+														'cartoblocks-for-leaflet'
+													) }
+												</p>
+												<ColorPalette
+													value={
+														layer.fillColor || ''
+													}
+													onChange={ ( v ) =>
+														handleUpdateLayer(
+															layerIdx,
+															{
+																fillColor:
+																	v || '',
+															}
+														)
+													}
+												/>
+												<RangeControl
+													label={ __(
+														'Fill opacity',
+														'cartoblocks-for-leaflet'
+													) }
+													value={
+														layer.fillOpacity ??
+														undefined
+													}
+													min={ 0 }
+													max={ 1 }
+													step={ 0.05 }
+													allowReset
+													onChange={ ( v ) =>
+														handleUpdateLayer(
+															layerIdx,
+															{
+																fillOpacity:
+																	v ?? null,
+															}
+														)
+													}
+													__nextHasNoMarginBottom
+													__next40pxDefaultSize
+												/>
+											</>
+										) }
+									</PanelBody>
+
+									{ /* Custom point icon */ }
+									<PanelBody
+										title={ __(
+											'Custom point icon',
+											'cartoblocks-for-leaflet'
+										) }
+										initialOpen={ false }
+									>
+										<ToggleControl
+											label={ __(
+												'Use custom icon',
+												'cartoblocks-for-leaflet'
+											) }
+											checked={
+												layer.useCustomIcon || false
+											}
+											onChange={ ( v ) =>
+												handleUpdateLayer( layerIdx, {
+													useCustomIcon: v,
+												} )
+											}
+											__nextHasNoMarginBottom
+										/>
+										{ layer.useCustomIcon && (
+											<>
+												<MediaUploadCheck>
+													<MediaUpload
+														onSelect={ (
+															media
+														) => {
+															const updates = {
+																iconUrl:
+																	media.url,
+															};
+															if (
+																media.width &&
+																media.height
+															) {
+																updates.iconWidth =
+																	media.width;
+																updates.iconHeight =
+																	media.height;
+																updates.iconAnchorX =
+																	Math.round(
+																		media.width /
+																			2
+																	);
+																updates.iconAnchorY =
+																	media.height;
+																updates.popupAnchorX = 0;
+																updates.popupAnchorY =
+																	-media.height;
+																updates.iconOriginalWidth =
+																	media.width;
+																updates.iconOriginalHeight =
+																	media.height;
+															}
+															handleUpdateLayer(
+																layerIdx,
+																updates
+															);
+														} }
+														allowedTypes={ [
+															'image',
+														] }
+														render={ ( {
+															open,
+														} ) => (
+															<>
+																<Button
+																	variant="secondary"
+																	onClick={
+																		open
+																	}
+																	style={ {
+																		width: '100%',
+																		justifyContent:
+																			'center',
+																		marginTop:
+																			'8px',
+																	} }
+																>
+																	{ layer.iconUrl
+																		? __(
+																				'Replace image',
+																				'cartoblocks-for-leaflet'
+																		  )
+																		: __(
+																				'Select image',
+																				'cartoblocks-for-leaflet'
+																		  ) }
+																</Button>
+																{ layer.iconUrl && (
+																	<>
+																		<p
+																			style={ {
+																				fontSize:
+																					'11px',
+																				wordBreak:
+																					'break-all',
+																				margin: '4px 0',
+																			} }
+																		>
+																			{
+																				layer.iconUrl
+																			}
+																		</p>
+																		<Button
+																			variant="link"
+																			isDestructive
+																			onClick={ () =>
+																				handleUpdateLayer(
+																					layerIdx,
+																					{
+																						iconUrl:
+																							'',
+																					}
+																				)
+																			}
+																		>
+																			{ __(
+																				'Remove',
+																				'cartoblocks-for-leaflet'
+																			) }
+																		</Button>
+																	</>
+																) }
+															</>
+														) }
+													/>
+												</MediaUploadCheck>
+												<p
+													style={ {
+														margin: '12px 0 4px',
+														fontSize: '11px',
+														fontWeight: 600,
+														textTransform:
+															'uppercase',
+														color: '#1e1e1e',
+													} }
+												>
+													{ __(
+														'Icon Size (px)',
+														'cartoblocks-for-leaflet'
+													) }
+												</p>
+												<div
+													style={ {
+														display: 'flex',
+														gap: '8px',
+													} }
+												>
+													<NumberControl
+														label={ __(
+															'Width',
+															'cartoblocks-for-leaflet'
+														) }
+														value={
+															layer.iconWidth ??
+															''
+														}
+														min={ 1 }
+														onChange={ (
+															value
+														) => {
+															const val =
+																parseInt(
+																	value,
+																	10
+																);
+															if (
+																isNaN( val ) ||
+																val < 1
+															) {
+																handleUpdateLayer(
+																	layerIdx,
+																	{
+																		iconWidth:
+																			isNaN(
+																				val
+																			)
+																				? null
+																				: val,
+																	}
+																);
+																return;
+															}
+															if (
+																layer.lockIconAspectRatio !==
+																	false &&
+																layer.iconHeight >=
+																	1
+															) {
+																const result =
+																	computeProportionalResize(
+																		{
+																			axis: 'w',
+																			newVal: val,
+																			wKey: 'iconWidth',
+																			hKey: 'iconHeight',
+																			origW: layer.iconOriginalWidth,
+																			origH: layer.iconOriginalHeight,
+																			curW: layer.iconWidth,
+																			curH: layer.iconHeight,
+																			anchors:
+																				[
+																					{
+																						key: 'iconAnchorX',
+																						val: layer.iconAnchorX,
+																						axis: 'w',
+																					},
+																					{
+																						key: 'iconAnchorY',
+																						val: layer.iconAnchorY,
+																						axis: 'h',
+																					},
+																					{
+																						key: 'popupAnchorX',
+																						val: layer.popupAnchorX,
+																						axis: 'w',
+																					},
+																					{
+																						key: 'popupAnchorY',
+																						val: layer.popupAnchorY,
+																						axis: 'h',
+																					},
+																				],
+																		}
+																	);
+																if ( result ) {
+																	handleUpdateLayer(
+																		layerIdx,
+																		result
+																	);
+																	return;
+																}
+															}
+															handleUpdateLayer(
+																layerIdx,
+																{
+																	iconWidth:
+																		val,
+																}
+															);
+														} }
+														style={ { flex: 1 } }
+														__next40pxDefaultSize
+													/>
+													<NumberControl
+														label={ __(
+															'Height',
+															'cartoblocks-for-leaflet'
+														) }
+														value={
+															layer.iconHeight ??
+															''
+														}
+														min={ 1 }
+														onChange={ (
+															value
+														) => {
+															const val =
+																parseInt(
+																	value,
+																	10
+																);
+															if (
+																isNaN( val ) ||
+																val < 1
+															) {
+																handleUpdateLayer(
+																	layerIdx,
+																	{
+																		iconHeight:
+																			isNaN(
+																				val
+																			)
+																				? null
+																				: val,
+																	}
+																);
+																return;
+															}
+															if (
+																layer.lockIconAspectRatio !==
+																	false &&
+																layer.iconWidth >=
+																	1
+															) {
+																const result =
+																	computeProportionalResize(
+																		{
+																			axis: 'h',
+																			newVal: val,
+																			wKey: 'iconWidth',
+																			hKey: 'iconHeight',
+																			origW: layer.iconOriginalWidth,
+																			origH: layer.iconOriginalHeight,
+																			curW: layer.iconWidth,
+																			curH: layer.iconHeight,
+																			anchors:
+																				[
+																					{
+																						key: 'iconAnchorX',
+																						val: layer.iconAnchorX,
+																						axis: 'w',
+																					},
+																					{
+																						key: 'iconAnchorY',
+																						val: layer.iconAnchorY,
+																						axis: 'h',
+																					},
+																					{
+																						key: 'popupAnchorX',
+																						val: layer.popupAnchorX,
+																						axis: 'w',
+																					},
+																					{
+																						key: 'popupAnchorY',
+																						val: layer.popupAnchorY,
+																						axis: 'h',
+																					},
+																				],
+																		}
+																	);
+																if ( result ) {
+																	handleUpdateLayer(
+																		layerIdx,
+																		result
+																	);
+																	return;
+																}
+															}
+															handleUpdateLayer(
+																layerIdx,
+																{
+																	iconHeight:
+																		val,
+																}
+															);
+														} }
+														style={ { flex: 1 } }
+														__next40pxDefaultSize
+													/>
+												</div>
+												<ToggleControl
+													label={ __(
+														'Lock aspect ratio',
+														'cartoblocks-for-leaflet'
+													) }
+													checked={
+														layer.lockIconAspectRatio !==
+														false
+													}
+													onChange={ ( v ) =>
+														handleUpdateLayer(
+															layerIdx,
+															{
+																lockIconAspectRatio:
+																	v,
+															}
+														)
+													}
+													style={ {
+														marginTop: '8px',
+													} }
+													__nextHasNoMarginBottom
+												/>
+												{ /* Icon Anchor */ }
+												<AnchorGrid
+													label={ __(
+														'Anchor position',
+														'cartoblocks-for-leaflet'
+													) }
+													anchorX={
+														layer.iconAnchorX
+													}
+													anchorY={
+														layer.iconAnchorY
+													}
+													width={ layer.iconWidth }
+													height={ layer.iconHeight }
+													disabledHelp={ __(
+														'Set icon size first',
+														'cartoblocks-for-leaflet'
+													) }
+													onChange={ ( presetId ) => {
+														const coords =
+															computeAnchorFromPreset(
+																presetId,
+																layer.iconWidth,
+																layer.iconHeight
+															);
+														if ( coords ) {
+															handleUpdateLayer(
+																layerIdx,
+																{
+																	iconAnchorX:
+																		coords.x,
+																	iconAnchorY:
+																		coords.y,
+																}
+															);
+														}
+													} }
+												/>
+												<p
+													style={ {
+														margin: '8px 0 4px',
+														fontSize: '11px',
+														fontWeight: 600,
+														textTransform:
+															'uppercase',
+														color: '#1e1e1e',
+													} }
+												>
+													{ __(
+														'Icon Anchor (px)',
+														'cartoblocks-for-leaflet'
+													) }
+												</p>
+												<div
+													style={ {
+														display: 'flex',
+														gap: '8px',
+													} }
+												>
+													<NumberControl
+														label={ __(
+															'X',
+															'cartoblocks-for-leaflet'
+														) }
+														value={
+															layer.iconAnchorX ??
+															''
+														}
+														onChange={ (
+															value
+														) => {
+															const val =
+																parseInt(
+																	value,
+																	10
+																);
+															handleUpdateLayer(
+																layerIdx,
+																{
+																	iconAnchorX:
+																		isNaN(
+																			val
+																		)
+																			? null
+																			: val,
+																}
+															);
+														} }
+														style={ { flex: 1 } }
+														__next40pxDefaultSize
+													/>
+													<NumberControl
+														label={ __(
+															'Y',
+															'cartoblocks-for-leaflet'
+														) }
+														value={
+															layer.iconAnchorY ??
+															''
+														}
+														onChange={ (
+															value
+														) => {
+															const val =
+																parseInt(
+																	value,
+																	10
+																);
+															handleUpdateLayer(
+																layerIdx,
+																{
+																	iconAnchorY:
+																		isNaN(
+																			val
+																		)
+																			? null
+																			: val,
+																}
+															);
+														} }
+														style={ { flex: 1 } }
+														__next40pxDefaultSize
+													/>
+												</div>
+												<p
+													style={ {
+														margin: '12px 0 4px',
+														fontSize: '11px',
+														fontWeight: 600,
+														textTransform:
+															'uppercase',
+														color: '#1e1e1e',
+													} }
+												>
+													{ __(
+														'Popup Anchor (px)',
+														'cartoblocks-for-leaflet'
+													) }
+												</p>
+												<div
+													style={ {
+														display: 'flex',
+														gap: '8px',
+													} }
+												>
+													<NumberControl
+														label={ __(
+															'X',
+															'cartoblocks-for-leaflet'
+														) }
+														value={
+															layer.popupAnchorX ??
+															''
+														}
+														onChange={ (
+															value
+														) => {
+															const val =
+																parseInt(
+																	value,
+																	10
+																);
+															handleUpdateLayer(
+																layerIdx,
+																{
+																	popupAnchorX:
+																		isNaN(
+																			val
+																		)
+																			? null
+																			: val,
+																}
+															);
+														} }
+														style={ { flex: 1 } }
+														__next40pxDefaultSize
+													/>
+													<NumberControl
+														label={ __(
+															'Y',
+															'cartoblocks-for-leaflet'
+														) }
+														value={
+															layer.popupAnchorY ??
+															''
+														}
+														onChange={ (
+															value
+														) => {
+															const val =
+																parseInt(
+																	value,
+																	10
+																);
+															handleUpdateLayer(
+																layerIdx,
+																{
+																	popupAnchorY:
+																		isNaN(
+																			val
+																		)
+																			? null
+																			: val,
+																}
+															);
+														} }
+														style={ { flex: 1 } }
+														__next40pxDefaultSize
+													/>
+												</div>
+											</>
+										) }
+									</PanelBody>
+
+									<Button
+										variant="link"
+										isDestructive
+										onClick={ () =>
+											handleRemoveLayer( layerIdx )
+										}
+										style={ { marginTop: '8px' } }
+									>
+										{ __(
+											'Remove this layer',
+											'cartoblocks-for-leaflet'
+										) }
+									</Button>
+								</PanelBody>
+							)
+						) }
+					</PanelBody>
+				) }
+
+				{ /* ── Overlays panel ──────────────────────────────────── */ }
+				{ ! imageMap && (
+					<PanelBody
+						title={ sprintf(
+							/* translators: %d: number of overlays. */
+							__( 'Overlays (%d)', 'cartoblocks-for-leaflet' ),
+							( overlays || [] ).length
+						) }
+						initialOpen={ false }
+					>
+						<p>
+							{ __(
+								'Add image or video layers pinned to map coordinates.',
+								'cartoblocks-for-leaflet'
+							) }
+						</p>
+						<div
+							style={ {
+								display: 'flex',
+								gap: '8px',
+								marginBottom: '12px',
+							} }
+						>
+							<Button
+								variant="secondary"
+								onClick={ () => handleAddOverlay( 'image' ) }
+							>
+								{ __( '+ Image', 'cartoblocks-for-leaflet' ) }
+							</Button>
+							<Button
+								variant="secondary"
+								onClick={ () => handleAddOverlay( 'video' ) }
+							>
+								{ __( '+ Video', 'cartoblocks-for-leaflet' ) }
+							</Button>
+						</div>
+						{ ( overlays || [] ).map( ( overlay, overlayIdx ) => (
+							<PanelBody
+								key={ overlayIdx }
+								title={ sprintf(
+									/* translators: 1: overlay type, 2: index number. */
+									__(
+										'%1$s overlay %2$d',
 										'cartoblocks-for-leaflet'
-									) }
-								</p>
-								<TextareaControl
+									),
+									overlay.type === 'video'
+										? __(
+												'Video',
+												'cartoblocks-for-leaflet'
+										  )
+										: __(
+												'Image',
+												'cartoblocks-for-leaflet'
+										  ),
+									overlayIdx + 1
+								) }
+								initialOpen={
+									expandedOverlayIndex === overlayIdx
+								}
+								onToggle={ ( isOpen ) =>
+									setExpandedOverlayIndex(
+										isOpen ? overlayIdx : null
+									)
+								}
+							>
+								<SelectControl
 									label={ __(
-										'Popup template',
+										'Type',
 										'cartoblocks-for-leaflet'
 									) }
-									value={ layer.popupText || '' }
-									help={ __(
-										'Use {property_name} placeholders to interpolate feature properties. E.g. "Name: {name}".',
-										'cartoblocks-for-leaflet'
-									) }
-									onChange={ ( v ) =>
-										handleUpdateLayer( layerIdx, {
-											popupText: v,
+									value={ overlay.type }
+									options={ [
+										{
+											value: 'image',
+											label: __(
+												'Image overlay',
+												'cartoblocks-for-leaflet'
+											),
+										},
+										{
+											value: 'video',
+											label: __(
+												'Video overlay',
+												'cartoblocks-for-leaflet'
+											),
+										},
+									] }
+									onChange={ ( value ) =>
+										handleUpdateOverlay( overlayIdx, {
+											type: value,
 										} )
 									}
+									__next40pxDefaultSize
 									__nextHasNoMarginBottom
 								/>
 								<TextControl
 									label={ __(
-										'Single property to display',
+										'Source URL',
 										'cartoblocks-for-leaflet'
 									) }
-									value={ layer.popupProperty || '' }
+									placeholder={
+										overlay.type === 'video'
+											? 'https://example.com/video.mp4'
+											: 'https://example.com/image.jpg'
+									}
+									value={ overlay.src }
+									onChange={ ( value ) =>
+										handleUpdateOverlay( overlayIdx, {
+											src: value,
+										} )
+									}
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+								<TextControl
+									label={ __(
+										'Bounds',
+										'cartoblocks-for-leaflet'
+									) }
+									placeholder="40.712,-74.226;40.773,-74.125"
 									help={ __(
-										'Bare property name (e.g. "ciudad", not "{ciudad}"). When set, overrides the popup template above.',
+										'SW corner ; NE corner: lat1,lng1;lat2,lng2',
 										'cartoblocks-for-leaflet'
 									) }
-									onChange={ ( v ) =>
-										handleUpdateLayer( layerIdx, {
-											popupProperty: v,
+									value={ overlay.bounds }
+									onChange={ ( value ) =>
+										handleUpdateOverlay( overlayIdx, {
+											bounds: value,
+										} )
+									}
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+								<RangeControl
+									label={ __(
+										'Opacity',
+										'cartoblocks-for-leaflet'
+									) }
+									value={ overlay.opacity ?? 1 }
+									min={ 0 }
+									max={ 1 }
+									step={ 0.05 }
+									onChange={ ( value ) =>
+										handleUpdateOverlay( overlayIdx, {
+											opacity: value,
 										} )
 									}
 									__next40pxDefaultSize
@@ -6695,121 +8157,66 @@ export default function Edit( {
 								/>
 								<ToggleControl
 									label={ __(
-										'Show all properties as table',
+										'Interactive',
 										'cartoblocks-for-leaflet'
 									) }
 									help={ __(
-										'Displays every feature property as an HTML table in the popup. Overrides the two fields above.',
+										'Allow mouse/touch events on this overlay.',
 										'cartoblocks-for-leaflet'
 									) }
-									checked={ layer.tableView || false }
-									onChange={ ( v ) =>
-										handleUpdateLayer( layerIdx, {
-											tableView: v,
+									checked={ overlay.interactive }
+									onChange={ ( value ) =>
+										handleUpdateOverlay( overlayIdx, {
+											interactive: value,
 										} )
 									}
 									__nextHasNoMarginBottom
 								/>
-							</PanelBody>
-
-							{ /* Default feature style */ }
-							<PanelBody
-								title={ __(
-									'Default feature style',
-									'cartoblocks-for-leaflet'
+								{ overlay.type === 'image' && (
+									<>
+										<TextControl
+											label={ __(
+												'Alt text',
+												'cartoblocks-for-leaflet'
+											) }
+											value={ overlay.alt }
+											onChange={ ( value ) =>
+												handleUpdateOverlay(
+													overlayIdx,
+													{ alt: value }
+												)
+											}
+											__next40pxDefaultSize
+											__nextHasNoMarginBottom
+										/>
+										<ToggleControl
+											label={ __(
+												'Keep aspect ratio',
+												'cartoblocks-for-leaflet'
+											) }
+											checked={ overlay.keepAspectRatio }
+											onChange={ ( value ) =>
+												handleUpdateOverlay(
+													overlayIdx,
+													{ keepAspectRatio: value }
+												)
+											}
+											__nextHasNoMarginBottom
+										/>
+									</>
 								) }
-								initialOpen={ false }
-							>
-								<p
-									style={ {
-										margin: '0 0 8px',
-										fontSize: '11px',
-										color: '#757575',
-									} }
-								>
-									{ __(
-										'Applied as the default layer style. Feature properties (e.g. geojson.io stroke/fill) override these defaults per-feature.',
-										'cartoblocks-for-leaflet'
-									) }
-								</p>
-								<p
-									style={ {
-										margin: '0 0 8px',
-										fontSize: '11px',
-										color: '#b45309',
-									} }
-								>
-									{ __(
-										'Style applies to line and polygon features only. Point markers are not affected — use Custom point icon to customise them.',
-										'cartoblocks-for-leaflet'
-									) }
-								</p>
-								<p
-									style={ {
-										margin: '8px 0 4px',
-										fontSize: '11px',
-										fontWeight: 600,
-									} }
-								>
-									{ __(
-										'Stroke color',
-										'cartoblocks-for-leaflet'
-									) }
-								</p>
-								<ColorPalette
-									value={ layer.color || '' }
-									onChange={ ( v ) =>
-										handleUpdateLayer( layerIdx, {
-											color: v || '',
-										} )
-									}
-								/>
-								<RangeControl
+								<NumberControl
 									label={ __(
-										'Weight',
+										'Z-Index',
 										'cartoblocks-for-leaflet'
 									) }
-									value={ layer.weight ?? undefined }
-									min={ 0 }
-									max={ 20 }
-									step={ 1 }
-									allowReset
-									onChange={ ( v ) =>
-										handleUpdateLayer( layerIdx, {
-											weight: v ?? null,
-										} )
-									}
-									__nextHasNoMarginBottom
-									__next40pxDefaultSize
-								/>
-								<RangeControl
-									label={ __(
-										'Stroke opacity',
-										'cartoblocks-for-leaflet'
-									) }
-									value={ layer.opacity ?? undefined }
-									min={ 0 }
-									max={ 1 }
-									step={ 0.05 }
-									allowReset
-									onChange={ ( v ) =>
-										handleUpdateLayer( layerIdx, {
-											opacity: v ?? null,
-										} )
-									}
-									__nextHasNoMarginBottom
-									__next40pxDefaultSize
-								/>
-								<TextControl
-									label={ __(
-										'Dash array',
-										'cartoblocks-for-leaflet'
-									) }
-									value={ layer.dashArray || '' }
-									placeholder="5,5"
-									onChange={ ( v ) =>
-										handleUpdateLayer( layerIdx, {
-											dashArray: v,
+									value={ overlay.zIndex ?? '' }
+									onChange={ ( value ) =>
+										handleUpdateOverlay( overlayIdx, {
+											zIndex:
+												value !== '' && ! isNaN( value )
+													? parseInt( value, 10 )
+													: null,
 										} )
 									}
 									__next40pxDefaultSize
@@ -6820,747 +8227,31 @@ export default function Edit( {
 										'CSS class',
 										'cartoblocks-for-leaflet'
 									) }
-									value={ layer.classname || '' }
-									onChange={ ( v ) =>
-										handleUpdateLayer( layerIdx, {
-											classname: v,
+									value={ overlay.classname }
+									onChange={ ( value ) =>
+										handleUpdateOverlay( overlayIdx, {
+											classname: value,
 										} )
 									}
 									__next40pxDefaultSize
 									__nextHasNoMarginBottom
 								/>
-								<ToggleControl
-									label={ __(
-										'Fill',
+								<Button
+									isDestructive
+									variant="secondary"
+									onClick={ () =>
+										handleRemoveOverlay( overlayIdx )
+									}
+								>
+									{ __(
+										'Remove this overlay',
 										'cartoblocks-for-leaflet'
 									) }
-									checked={ layer.fill || false }
-									onChange={ ( v ) =>
-										handleUpdateLayer( layerIdx, {
-											fill: v,
-										} )
-									}
-									__nextHasNoMarginBottom
-								/>
-								{ layer.fill && (
-									<>
-										<p
-											style={ {
-												margin: '8px 0 4px',
-												fontSize: '11px',
-												fontWeight: 600,
-											} }
-										>
-											{ __(
-												'Fill color',
-												'cartoblocks-for-leaflet'
-											) }
-										</p>
-										<ColorPalette
-											value={ layer.fillColor || '' }
-											onChange={ ( v ) =>
-												handleUpdateLayer( layerIdx, {
-													fillColor: v || '',
-												} )
-											}
-										/>
-										<RangeControl
-											label={ __(
-												'Fill opacity',
-												'cartoblocks-for-leaflet'
-											) }
-											value={
-												layer.fillOpacity ?? undefined
-											}
-											min={ 0 }
-											max={ 1 }
-											step={ 0.05 }
-											allowReset
-											onChange={ ( v ) =>
-												handleUpdateLayer( layerIdx, {
-													fillOpacity: v ?? null,
-												} )
-											}
-											__nextHasNoMarginBottom
-											__next40pxDefaultSize
-										/>
-									</>
-								) }
+								</Button>
 							</PanelBody>
-
-							{ /* Custom point icon */ }
-							<PanelBody
-								title={ __(
-									'Custom point icon',
-									'cartoblocks-for-leaflet'
-								) }
-								initialOpen={ false }
-							>
-								<ToggleControl
-									label={ __(
-										'Use custom icon',
-										'cartoblocks-for-leaflet'
-									) }
-									checked={ layer.useCustomIcon || false }
-									onChange={ ( v ) =>
-										handleUpdateLayer( layerIdx, {
-											useCustomIcon: v,
-										} )
-									}
-									__nextHasNoMarginBottom
-								/>
-								{ layer.useCustomIcon && (
-									<>
-										<MediaUploadCheck>
-											<MediaUpload
-												onSelect={ ( media ) => {
-													const updates = {
-														iconUrl: media.url,
-													};
-													if (
-														media.width &&
-														media.height
-													) {
-														updates.iconWidth =
-															media.width;
-														updates.iconHeight =
-															media.height;
-														updates.iconAnchorX =
-															Math.round(
-																media.width / 2
-															);
-														updates.iconAnchorY =
-															media.height;
-														updates.popupAnchorX = 0;
-														updates.popupAnchorY =
-															-media.height;
-														updates.iconOriginalWidth =
-															media.width;
-														updates.iconOriginalHeight =
-															media.height;
-													}
-													handleUpdateLayer(
-														layerIdx,
-														updates
-													);
-												} }
-												allowedTypes={ [ 'image' ] }
-												render={ ( { open } ) => (
-													<>
-														<Button
-															variant="secondary"
-															onClick={ open }
-															style={ {
-																width: '100%',
-																justifyContent:
-																	'center',
-																marginTop:
-																	'8px',
-															} }
-														>
-															{ layer.iconUrl
-																? __(
-																		'Replace image',
-																		'cartoblocks-for-leaflet'
-																  )
-																: __(
-																		'Select image',
-																		'cartoblocks-for-leaflet'
-																  ) }
-														</Button>
-														{ layer.iconUrl && (
-															<>
-																<p
-																	style={ {
-																		fontSize:
-																			'11px',
-																		wordBreak:
-																			'break-all',
-																		margin: '4px 0',
-																	} }
-																>
-																	{
-																		layer.iconUrl
-																	}
-																</p>
-																<Button
-																	variant="link"
-																	isDestructive
-																	onClick={ () =>
-																		handleUpdateLayer(
-																			layerIdx,
-																			{
-																				iconUrl:
-																					'',
-																			}
-																		)
-																	}
-																>
-																	{ __(
-																		'Remove',
-																		'cartoblocks-for-leaflet'
-																	) }
-																</Button>
-															</>
-														) }
-													</>
-												) }
-											/>
-										</MediaUploadCheck>
-										<p
-											style={ {
-												margin: '12px 0 4px',
-												fontSize: '11px',
-												fontWeight: 600,
-												textTransform: 'uppercase',
-												color: '#1e1e1e',
-											} }
-										>
-											{ __(
-												'Icon Size (px)',
-												'cartoblocks-for-leaflet'
-											) }
-										</p>
-										<div
-											style={ {
-												display: 'flex',
-												gap: '8px',
-											} }
-										>
-											<NumberControl
-												label={ __(
-													'Width',
-													'cartoblocks-for-leaflet'
-												) }
-												value={ layer.iconWidth ?? '' }
-												min={ 1 }
-												onChange={ ( value ) => {
-													const val = parseInt(
-														value,
-														10
-													);
-													if (
-														isNaN( val ) ||
-														val < 1
-													) {
-														handleUpdateLayer(
-															layerIdx,
-															{
-																iconWidth:
-																	isNaN( val )
-																		? null
-																		: val,
-															}
-														);
-														return;
-													}
-													if (
-														layer.lockIconAspectRatio !==
-															false &&
-														layer.iconHeight >= 1
-													) {
-														const result =
-															computeProportionalResize(
-																{
-																	axis: 'w',
-																	newVal: val,
-																	wKey: 'iconWidth',
-																	hKey: 'iconHeight',
-																	origW: layer.iconOriginalWidth,
-																	origH: layer.iconOriginalHeight,
-																	curW: layer.iconWidth,
-																	curH: layer.iconHeight,
-																	anchors: [
-																		{
-																			key: 'iconAnchorX',
-																			val: layer.iconAnchorX,
-																			axis: 'w',
-																		},
-																		{
-																			key: 'iconAnchorY',
-																			val: layer.iconAnchorY,
-																			axis: 'h',
-																		},
-																		{
-																			key: 'popupAnchorX',
-																			val: layer.popupAnchorX,
-																			axis: 'w',
-																		},
-																		{
-																			key: 'popupAnchorY',
-																			val: layer.popupAnchorY,
-																			axis: 'h',
-																		},
-																	],
-																}
-															);
-														if ( result ) {
-															handleUpdateLayer(
-																layerIdx,
-																result
-															);
-															return;
-														}
-													}
-													handleUpdateLayer(
-														layerIdx,
-														{ iconWidth: val }
-													);
-												} }
-												style={ { flex: 1 } }
-												__next40pxDefaultSize
-											/>
-											<NumberControl
-												label={ __(
-													'Height',
-													'cartoblocks-for-leaflet'
-												) }
-												value={ layer.iconHeight ?? '' }
-												min={ 1 }
-												onChange={ ( value ) => {
-													const val = parseInt(
-														value,
-														10
-													);
-													if (
-														isNaN( val ) ||
-														val < 1
-													) {
-														handleUpdateLayer(
-															layerIdx,
-															{
-																iconHeight:
-																	isNaN( val )
-																		? null
-																		: val,
-															}
-														);
-														return;
-													}
-													if (
-														layer.lockIconAspectRatio !==
-															false &&
-														layer.iconWidth >= 1
-													) {
-														const result =
-															computeProportionalResize(
-																{
-																	axis: 'h',
-																	newVal: val,
-																	wKey: 'iconWidth',
-																	hKey: 'iconHeight',
-																	origW: layer.iconOriginalWidth,
-																	origH: layer.iconOriginalHeight,
-																	curW: layer.iconWidth,
-																	curH: layer.iconHeight,
-																	anchors: [
-																		{
-																			key: 'iconAnchorX',
-																			val: layer.iconAnchorX,
-																			axis: 'w',
-																		},
-																		{
-																			key: 'iconAnchorY',
-																			val: layer.iconAnchorY,
-																			axis: 'h',
-																		},
-																		{
-																			key: 'popupAnchorX',
-																			val: layer.popupAnchorX,
-																			axis: 'w',
-																		},
-																		{
-																			key: 'popupAnchorY',
-																			val: layer.popupAnchorY,
-																			axis: 'h',
-																		},
-																	],
-																}
-															);
-														if ( result ) {
-															handleUpdateLayer(
-																layerIdx,
-																result
-															);
-															return;
-														}
-													}
-													handleUpdateLayer(
-														layerIdx,
-														{ iconHeight: val }
-													);
-												} }
-												style={ { flex: 1 } }
-												__next40pxDefaultSize
-											/>
-										</div>
-										<ToggleControl
-											label={ __(
-												'Lock aspect ratio',
-												'cartoblocks-for-leaflet'
-											) }
-											checked={
-												layer.lockIconAspectRatio !==
-												false
-											}
-											onChange={ ( v ) =>
-												handleUpdateLayer( layerIdx, {
-													lockIconAspectRatio: v,
-												} )
-											}
-											style={ { marginTop: '8px' } }
-											__nextHasNoMarginBottom
-										/>
-										{ /* Icon Anchor */ }
-										<AnchorGrid
-											label={ __(
-												'Anchor position',
-												'cartoblocks-for-leaflet'
-											) }
-											anchorX={ layer.iconAnchorX }
-											anchorY={ layer.iconAnchorY }
-											width={ layer.iconWidth }
-											height={ layer.iconHeight }
-											disabledHelp={ __(
-												'Set icon size first',
-												'cartoblocks-for-leaflet'
-											) }
-											onChange={ ( presetId ) => {
-												const coords = computeAnchorFromPreset(
-													presetId,
-													layer.iconWidth,
-													layer.iconHeight
-												);
-												if ( coords ) {
-													handleUpdateLayer( layerIdx, {
-														iconAnchorX: coords.x,
-														iconAnchorY: coords.y,
-													} );
-												}
-											} }
-										/>
-										<p
-											style={ {
-												margin: '8px 0 4px',
-												fontSize: '11px',
-												fontWeight: 600,
-												textTransform: 'uppercase',
-												color: '#1e1e1e',
-											} }
-										>
-											{ __(
-												'Icon Anchor (px)',
-												'cartoblocks-for-leaflet'
-											) }
-										</p>
-										<div
-											style={ {
-												display: 'flex',
-												gap: '8px',
-											} }
-										>
-											<NumberControl
-												label={ __(
-													'X',
-													'cartoblocks-for-leaflet'
-												) }
-												value={
-													layer.iconAnchorX ?? ''
-												}
-												onChange={ ( value ) => {
-													const val = parseInt(
-														value,
-														10
-													);
-													handleUpdateLayer(
-														layerIdx,
-														{
-															iconAnchorX: isNaN(
-																val
-															)
-																? null
-																: val,
-														}
-													);
-												} }
-												style={ { flex: 1 } }
-												__next40pxDefaultSize
-											/>
-											<NumberControl
-												label={ __(
-													'Y',
-													'cartoblocks-for-leaflet'
-												) }
-												value={
-													layer.iconAnchorY ?? ''
-												}
-												onChange={ ( value ) => {
-													const val = parseInt(
-														value,
-														10
-													);
-													handleUpdateLayer(
-														layerIdx,
-														{
-															iconAnchorY: isNaN(
-																val
-															)
-																? null
-																: val,
-														}
-													);
-												} }
-												style={ { flex: 1 } }
-												__next40pxDefaultSize
-											/>
-										</div>
-										<p
-											style={ {
-												margin: '12px 0 4px',
-												fontSize: '11px',
-												fontWeight: 600,
-												textTransform: 'uppercase',
-												color: '#1e1e1e',
-											} }
-										>
-											{ __(
-												'Popup Anchor (px)',
-												'cartoblocks-for-leaflet'
-											) }
-										</p>
-										<div
-											style={ {
-												display: 'flex',
-												gap: '8px',
-											} }
-										>
-											<NumberControl
-												label={ __(
-													'X',
-													'cartoblocks-for-leaflet'
-												) }
-												value={
-													layer.popupAnchorX ?? ''
-												}
-												onChange={ ( value ) => {
-													const val = parseInt(
-														value,
-														10
-													);
-													handleUpdateLayer(
-														layerIdx,
-														{
-															popupAnchorX: isNaN(
-																val
-															)
-																? null
-																: val,
-														}
-													);
-												} }
-												style={ { flex: 1 } }
-												__next40pxDefaultSize
-											/>
-											<NumberControl
-												label={ __(
-													'Y',
-													'cartoblocks-for-leaflet'
-												) }
-												value={
-													layer.popupAnchorY ?? ''
-												}
-												onChange={ ( value ) => {
-													const val = parseInt(
-														value,
-														10
-													);
-													handleUpdateLayer(
-														layerIdx,
-														{
-															popupAnchorY: isNaN(
-																val
-															)
-																? null
-																: val,
-														}
-													);
-												} }
-												style={ { flex: 1 } }
-												__next40pxDefaultSize
-											/>
-										</div>
-									</>
-								) }
-							</PanelBody>
-
-							<Button
-								variant="link"
-								isDestructive
-								onClick={ () => handleRemoveLayer( layerIdx ) }
-								style={ { marginTop: '8px' } }
-							>
-								{ __(
-									'Remove this layer',
-									'cartoblocks-for-leaflet'
-								) }
-							</Button>
-						</PanelBody>
-					) ) }
-				</PanelBody> }
-
-				{ /* ── Overlays panel ──────────────────────────────────── */ }
-				{ ! imageMap && <PanelBody
-					title={ sprintf(
-						/* translators: %d: number of overlays. */
-						__( 'Overlays (%d)', 'cartoblocks-for-leaflet' ),
-						( overlays || [] ).length
-					) }
-					initialOpen={ false }
-				>
-					<p>{ __( 'Add image or video layers pinned to map coordinates.', 'cartoblocks-for-leaflet' ) }</p>
-					<div style={ { display: 'flex', gap: '8px', marginBottom: '12px' } }>
-						<Button
-							variant="secondary"
-							onClick={ () => handleAddOverlay( 'image' ) }
-						>
-							{ __( '+ Image', 'cartoblocks-for-leaflet' ) }
-						</Button>
-						<Button
-							variant="secondary"
-							onClick={ () => handleAddOverlay( 'video' ) }
-						>
-							{ __( '+ Video', 'cartoblocks-for-leaflet' ) }
-						</Button>
-					</div>
-					{ ( overlays || [] ).map( ( overlay, overlayIdx ) => (
-						<PanelBody
-							key={ overlayIdx }
-							title={ sprintf(
-								/* translators: 1: overlay type, 2: index number. */
-								__( '%1$s overlay %2$d', 'cartoblocks-for-leaflet' ),
-								overlay.type === 'video'
-									? __( 'Video', 'cartoblocks-for-leaflet' )
-									: __( 'Image', 'cartoblocks-for-leaflet' ),
-								overlayIdx + 1
-							) }
-							initialOpen={ expandedOverlayIndex === overlayIdx }
-							onToggle={ ( isOpen ) =>
-								setExpandedOverlayIndex(
-									isOpen ? overlayIdx : null
-								)
-							}
-						>
-							<SelectControl
-								label={ __( 'Type', 'cartoblocks-for-leaflet' ) }
-								value={ overlay.type }
-								options={ [
-									{ value: 'image', label: __( 'Image overlay', 'cartoblocks-for-leaflet' ) },
-									{ value: 'video', label: __( 'Video overlay', 'cartoblocks-for-leaflet' ) },
-								] }
-								onChange={ ( value ) =>
-									handleUpdateOverlay( overlayIdx, { type: value } )
-								}
-								__next40pxDefaultSize
-								__nextHasNoMarginBottom
-							/>
-							<TextControl
-								label={ __( 'Source URL', 'cartoblocks-for-leaflet' ) }
-								placeholder={ overlay.type === 'video'
-									? 'https://example.com/video.mp4'
-									: 'https://example.com/image.jpg'
-								}
-								value={ overlay.src }
-								onChange={ ( value ) =>
-									handleUpdateOverlay( overlayIdx, { src: value } )
-								}
-								__next40pxDefaultSize
-								__nextHasNoMarginBottom
-							/>
-							<TextControl
-								label={ __( 'Bounds', 'cartoblocks-for-leaflet' ) }
-								placeholder="40.712,-74.226;40.773,-74.125"
-								help={ __( 'SW corner ; NE corner: lat1,lng1;lat2,lng2', 'cartoblocks-for-leaflet' ) }
-								value={ overlay.bounds }
-								onChange={ ( value ) =>
-									handleUpdateOverlay( overlayIdx, { bounds: value } )
-								}
-								__next40pxDefaultSize
-								__nextHasNoMarginBottom
-							/>
-							<RangeControl
-								label={ __( 'Opacity', 'cartoblocks-for-leaflet' ) }
-								value={ overlay.opacity ?? 1 }
-								min={ 0 }
-								max={ 1 }
-								step={ 0.05 }
-								onChange={ ( value ) =>
-									handleUpdateOverlay( overlayIdx, { opacity: value } )
-								}
-								__next40pxDefaultSize
-								__nextHasNoMarginBottom
-							/>
-							<ToggleControl
-								label={ __( 'Interactive', 'cartoblocks-for-leaflet' ) }
-								help={ __( 'Allow mouse/touch events on this overlay.', 'cartoblocks-for-leaflet' ) }
-								checked={ overlay.interactive }
-								onChange={ ( value ) =>
-									handleUpdateOverlay( overlayIdx, { interactive: value } )
-								}
-								__nextHasNoMarginBottom
-							/>
-							{ overlay.type === 'image' && (
-								<>
-									<TextControl
-										label={ __( 'Alt text', 'cartoblocks-for-leaflet' ) }
-										value={ overlay.alt }
-										onChange={ ( value ) =>
-											handleUpdateOverlay( overlayIdx, { alt: value } )
-										}
-										__next40pxDefaultSize
-										__nextHasNoMarginBottom
-									/>
-									<ToggleControl
-										label={ __( 'Keep aspect ratio', 'cartoblocks-for-leaflet' ) }
-										checked={ overlay.keepAspectRatio }
-										onChange={ ( value ) =>
-											handleUpdateOverlay( overlayIdx, { keepAspectRatio: value } )
-										}
-										__nextHasNoMarginBottom
-									/>
-								</>
-							) }
-							<NumberControl
-								label={ __( 'Z-Index', 'cartoblocks-for-leaflet' ) }
-								value={ overlay.zIndex ?? '' }
-								onChange={ ( value ) =>
-									handleUpdateOverlay( overlayIdx, {
-										zIndex: value !== '' && ! isNaN( value )
-											? parseInt( value, 10 )
-											: null,
-									} )
-								}
-								__next40pxDefaultSize
-								__nextHasNoMarginBottom
-							/>
-							<TextControl
-								label={ __( 'CSS class', 'cartoblocks-for-leaflet' ) }
-								value={ overlay.classname }
-								onChange={ ( value ) =>
-									handleUpdateOverlay( overlayIdx, { classname: value } )
-								}
-								__next40pxDefaultSize
-								__nextHasNoMarginBottom
-							/>
-							<Button
-								isDestructive
-								variant="secondary"
-								onClick={ () => handleRemoveOverlay( overlayIdx ) }
-							>
-								{ __( 'Remove this overlay', 'cartoblocks-for-leaflet' ) }
-							</Button>
-						</PanelBody>
-					) ) }
-				</PanelBody> }
+						) ) }
+					</PanelBody>
+				) }
 			</InspectorControls>
 
 			<div
@@ -7594,7 +8285,10 @@ export default function Edit( {
 						ref={ iframeRef }
 						width="100%"
 						height={ normalizedHeight }
-						style={ { border: 'none', display: imageMap && ! imageSrc ? 'none' : 'block' } }
+						style={ {
+							border: 'none',
+							display: imageMap && ! imageSrc ? 'none' : 'block',
+						} }
 						sandbox="allow-scripts allow-same-origin"
 						title={ __( 'Map preview', 'cartoblocks-for-leaflet' ) }
 					/>

@@ -1,6 +1,6 @@
 {
 	"name": "cartoblocks-for-leaflet",
-	"version": "1.2.2",
+	"version": "1.2.3",
 	"description": "A dynamic block that renders Leaflet Map shortcodes from block attributes.",
 	"author": "The WordPress Contributors",
 	"license": "GPL-2.0-or-later",
@@ -19,7 +19,10 @@
 	"dependencies": {
 		"@wordpress/block-editor": "^15.16.0",
 		"@wordpress/blocks": "^15.16.0",
-		"@wordpress/i18n": "^6.16.0"
+		"@wordpress/components": "^32.5.0",
+		"@wordpress/element": "^6.43.0",
+		"@wordpress/i18n": "^6.16.0",
+		"@wordpress/icons": "^12.1.0"
 	},
 	"devDependencies": {
 		"@wordpress/scripts": "^31.8.0"

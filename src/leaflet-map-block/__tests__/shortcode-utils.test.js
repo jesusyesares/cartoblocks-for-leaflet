@@ -43,33 +43,52 @@ describe( 'normalizeHeight', () => {
 // ── buildLineShortcodes ───────────────────────────────────────────────────────
 
 function buildLineShortcodes( lines ) {
-	if ( ! lines || lines.length === 0 ) return '';
+	if ( ! lines || lines.length === 0 ) {
+		return '';
+	}
 	let out = '';
 	for ( const line of lines ) {
 		const points = line.points || [];
-		if ( points.length < 2 ) continue;
+		if ( points.length < 2 ) {
+			continue;
+		}
 		const tag =
 			line.type === 'polygon' ? 'leaflet-polygon' : 'leaflet-line';
 		const latlngs = points
 			.map( ( p ) => `${ p.lat },${ p.lng }` )
 			.join( '; ' );
 		let attrs = ` latlngs="${ latlngs }"`;
-		if ( line.fitbounds ) attrs += ` fitbounds="true"`;
-		if ( line.color && line.color.trim() )
+		if ( line.fitbounds ) {
+			attrs += ` fitbounds="true"`;
+		}
+		if ( line.color && line.color.trim() ) {
 			attrs += ` color="${ line.color.trim() }"`;
-		if ( line.weight != null ) attrs += ` weight="${ line.weight }"`;
-		if ( line.opacity != null ) attrs += ` opacity="${ line.opacity }"`;
-		if ( line.dashArray && line.dashArray.trim() )
+		}
+		if ( line.weight != null ) {
+			attrs += ` weight="${ line.weight }"`;
+		}
+		if ( line.opacity != null ) {
+			attrs += ` opacity="${ line.opacity }"`;
+		}
+		if ( line.dashArray && line.dashArray.trim() ) {
 			attrs += ` dasharray="${ line.dashArray.trim() }"`;
-		if ( line.classname && line.classname.trim() )
+		}
+		if ( line.classname && line.classname.trim() ) {
 			attrs += ` classname="${ line.classname.trim() }"`;
-		if ( line.fill ) attrs += ` fill="true"`;
-		if ( line.fillColor && line.fillColor.trim() )
+		}
+		if ( line.fill ) {
+			attrs += ` fill="true"`;
+		}
+		if ( line.fillColor && line.fillColor.trim() ) {
 			attrs += ` fillcolor="${ line.fillColor.trim() }"`;
-		if ( line.fillOpacity != null )
+		}
+		if ( line.fillOpacity != null ) {
 			attrs += ` fillopacity="${ line.fillOpacity }"`;
+		}
 		const popup = line.popup || '';
-		if ( line.visible && popup ) attrs += ` visible="1"`;
+		if ( line.visible && popup ) {
+			attrs += ` visible="1"`;
+		}
 		if ( popup ) {
 			out += `\n[${ tag }${ attrs }]${ popup }[/${ tag }]`;
 		} else {
@@ -157,29 +176,50 @@ describe( 'buildLineShortcodes', () => {
 // ── buildCircleShortcodes ─────────────────────────────────────────────────────
 
 function buildCircleShortcodes( circles ) {
-	if ( ! circles || circles.length === 0 ) return '';
+	if ( ! circles || circles.length === 0 ) {
+		return '';
+	}
 	let out = '';
 	for ( const circle of circles ) {
-		if ( circle.lat == null || circle.lng == null ) continue;
+		if ( circle.lat == null || circle.lng == null ) {
+			continue;
+		}
 		const r = circle.radius != null ? Number( circle.radius ) : 1000;
-		if ( r <= 0 ) continue;
+		if ( r <= 0 ) {
+			continue;
+		}
 		let attrs = ` lat="${ circle.lat }" lng="${ circle.lng }" radius="${ r }"`;
-		if ( circle.fitbounds ) attrs += ` fitbounds="true"`;
-		if ( circle.color && circle.color.trim() )
+		if ( circle.fitbounds ) {
+			attrs += ` fitbounds="true"`;
+		}
+		if ( circle.color && circle.color.trim() ) {
 			attrs += ` color="${ circle.color.trim() }"`;
-		if ( circle.weight != null ) attrs += ` weight="${ circle.weight }"`;
-		if ( circle.opacity != null ) attrs += ` opacity="${ circle.opacity }"`;
-		if ( circle.dashArray && circle.dashArray.trim() )
+		}
+		if ( circle.weight != null ) {
+			attrs += ` weight="${ circle.weight }"`;
+		}
+		if ( circle.opacity != null ) {
+			attrs += ` opacity="${ circle.opacity }"`;
+		}
+		if ( circle.dashArray && circle.dashArray.trim() ) {
 			attrs += ` dasharray="${ circle.dashArray.trim() }"`;
-		if ( circle.classname && circle.classname.trim() )
+		}
+		if ( circle.classname && circle.classname.trim() ) {
 			attrs += ` classname="${ circle.classname.trim() }"`;
-		if ( circle.fill ) attrs += ` fill="true"`;
-		if ( circle.fillColor && circle.fillColor.trim() )
+		}
+		if ( circle.fill ) {
+			attrs += ` fill="true"`;
+		}
+		if ( circle.fillColor && circle.fillColor.trim() ) {
 			attrs += ` fillcolor="${ circle.fillColor.trim() }"`;
-		if ( circle.fillOpacity != null )
+		}
+		if ( circle.fillOpacity != null ) {
 			attrs += ` fillopacity="${ circle.fillOpacity }"`;
+		}
 		const popup = circle.popup || '';
-		if ( circle.visible && popup ) attrs += ` visible="1"`;
+		if ( circle.visible && popup ) {
+			attrs += ` visible="1"`;
+		}
 		if ( popup ) {
 			out += `\n[leaflet-circle${ attrs }]${ popup }[/leaflet-circle]`;
 		} else {
@@ -288,42 +328,65 @@ const LAYER_TYPE_TAGS = {
 };
 
 function buildLayerShortcodes( layers ) {
-	if ( ! layers || layers.length === 0 ) return '';
+	if ( ! layers || layers.length === 0 ) {
+		return '';
+	}
 	let out = '';
 	for ( const layer of layers ) {
 		const src = ( layer.src || '' ).trim();
-		if ( ! src ) continue;
+		if ( ! src ) {
+			continue;
+		}
 		const tag = LAYER_TYPE_TAGS[ layer.type ] || LAYER_TYPE_TAGS.geojson;
 
 		let attrs = ` src="${ src }"`;
-		if ( layer.fitbounds ) attrs += ` fitbounds="true"`;
+		if ( layer.fitbounds ) {
+			attrs += ` fitbounds="true"`;
+		}
 
 		const sanitize = ( s ) =>
 			s.replace( /"/g, '&quot;' ).replace( /\]/g, '&#93;' );
-		if ( layer.popupText && layer.popupText.trim() )
+		if ( layer.popupText && layer.popupText.trim() ) {
 			attrs += ` popup_text="${ sanitize( layer.popupText.trim() ) }"`;
-		if ( layer.popupProperty && layer.popupProperty.trim() )
+		}
+		if ( layer.popupProperty && layer.popupProperty.trim() ) {
 			attrs += ` popup_property="${ sanitize(
 				layer.popupProperty.trim()
 			) }"`;
-		if ( layer.tableView ) attrs += ` table_view="1"`;
+		}
+		if ( layer.tableView ) {
+			attrs += ` table_view="1"`;
+		}
 
-		if ( layer.color && layer.color.trim() )
+		if ( layer.color && layer.color.trim() ) {
 			attrs += ` color="${ layer.color.trim() }"`;
-		if ( layer.weight != null ) attrs += ` weight="${ layer.weight }"`;
-		if ( layer.opacity != null ) attrs += ` opacity="${ layer.opacity }"`;
-		if ( layer.dashArray && layer.dashArray.trim() )
+		}
+		if ( layer.weight != null ) {
+			attrs += ` weight="${ layer.weight }"`;
+		}
+		if ( layer.opacity != null ) {
+			attrs += ` opacity="${ layer.opacity }"`;
+		}
+		if ( layer.dashArray && layer.dashArray.trim() ) {
 			attrs += ` dasharray="${ layer.dashArray.trim() }"`;
-		if ( layer.classname && layer.classname.trim() )
+		}
+		if ( layer.classname && layer.classname.trim() ) {
 			attrs += ` classname="${ layer.classname.trim() }"`;
-		if ( layer.fill ) attrs += ` fill="true"`;
-		if ( layer.fillColor && layer.fillColor.trim() )
+		}
+		if ( layer.fill ) {
+			attrs += ` fill="true"`;
+		}
+		if ( layer.fillColor && layer.fillColor.trim() ) {
 			attrs += ` fillcolor="${ layer.fillColor.trim() }"`;
-		if ( layer.fillOpacity != null )
+		}
+		if ( layer.fillOpacity != null ) {
 			attrs += ` fillopacity="${ layer.fillOpacity }"`;
+		}
 
 		if ( layer.useCustomIcon ) {
-			if ( layer.iconUrl ) attrs += ` iconurl="${ layer.iconUrl }"`;
+			if ( layer.iconUrl ) {
+				attrs += ` iconurl="${ layer.iconUrl }"`;
+			}
 			if (
 				layer.iconWidth != null &&
 				layer.iconHeight != null &&
@@ -332,10 +395,12 @@ function buildLayerShortcodes( layers ) {
 			) {
 				attrs += ` iconsize="${ layer.iconWidth },${ layer.iconHeight }"`;
 			}
-			if ( layer.iconAnchorX != null && layer.iconAnchorY != null )
+			if ( layer.iconAnchorX != null && layer.iconAnchorY != null ) {
 				attrs += ` iconanchor="${ layer.iconAnchorX },${ layer.iconAnchorY }"`;
-			if ( layer.popupAnchorX != null && layer.popupAnchorY != null )
+			}
+			if ( layer.popupAnchorX != null && layer.popupAnchorY != null ) {
 				attrs += ` popupanchor="${ layer.popupAnchorX },${ layer.popupAnchorY }"`;
+			}
 		}
 
 		out += `\n[${ tag }${ attrs } /]`;

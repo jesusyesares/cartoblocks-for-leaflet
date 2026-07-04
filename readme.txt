@@ -3,7 +3,7 @@ Contributors:      glycymeris
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.8
 Tested up to:      7.0
-Stable tag:        1.2.2
+Stable tag:        1.2.3
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -81,6 +81,22 @@ CartoBlocks for Leaflet adds a native Gutenberg block that wraps the [Leaflet Ma
 1. Upload the `cartoblocks-for-leaflet` folder to `/wp-content/plugins/`, or install the plugin through the WordPress plugins screen.
 2. Activate the plugin through the Plugins screen. If the [Leaflet Map](https://wordpress.org/plugins/leaflet-map/) plugin is not yet installed and active, WordPress prompts you to install and activate it first (it is a required dependency).
 3. In the block editor, search for "Map for Leaflet" and add it to your page or post.
+
+== Source Code ==
+
+The JavaScript and CSS files shipped in the `build/` directory of this plugin
+are compiled with webpack (via `@wordpress/scripts`): the JavaScript from the
+JSX sources and the CSS from the SCSS sources. The human-readable source code
+is publicly available in the plugin's development repository:
+
+https://github.com/jesusyesares/cartoblocks-for-leaflet
+
+The uncompiled sources (`.js` and `.scss`) live in the `src/` directory of
+that repository. To build the plugin from source:
+
+1. Clone the repository: `git clone https://github.com/jesusyesares/cartoblocks-for-leaflet.git`
+2. Install the dependencies: `npm install`
+3. Build the production files into `build/`: `npm run build`
 
 == External services ==
 
@@ -192,36 +208,41 @@ Yes. All user-facing strings are wrapped in `__()` with the `cartoblocks-for-lea
 6. Shortcode Viewer toolbar popover showing the generated shortcode.
 7. Frontend rendering — map with markers, lines, and a GeoJSON layer.
 
-== Changelog ==\
-\
-= 1.2.2 =\
-* Changed: The frontend no longer prints inline <script> tags. Map resize and image-map fit logic moved to the block's view script, enqueued via the WordPress enqueue API, per WordPress Plugin Review guidelines.\
-* Improved: Image-map fit now targets the correct map when multiple map blocks are on the same page.\
-\
-= 1.2.1 =\
-* Changed: Renamed the plugin to "CartoBlocks for Leaflet" (slug `cartoblocks-for-leaflet`) for a more distinctive name, per WordPress Plugin Review guidelines. Updated the Contributors list and plugin metadata.\
-* Changed: Moved the block to the Media category and gave its icon the Leaflet green accent.\
-\
-= 1.2.0 =\
-* Changed: Replaced the bundled TGM Plugin Activation library with WordPress 6.5+ native plugin dependencies (the "Requires Plugins" header). WordPress now guides you to install and activate the required Leaflet Map plugin before activation. Minimum WordPress version is 6.8.\
-* Changed: The editor preview iframe now enqueues its CSS/JS via the WordPress enqueue API instead of printing inline <style>/<script> tags, per WordPress Plugin Review guidelines.\
-* Removed: ~3,900 lines of vendored third-party code (TGM Plugin Activation).\
-\
-= 1.1.1 =\
-* i18n: Wrapped the remaining untranslated UI placeholder and added translator comments for two placeholder strings so all user-facing text is translation-ready. Regenerated the translation template (.pot). No change to plugin behaviour.\
-* Docs: Added a "Known Limitations" note documenting that GPX data layers sourced from the Media Library may not render (upstream Content-Type limitation).\
-\
-= 1.1.0 =\
-* New: Image and video overlay shortcodes ([leaflet-image-overlay] / [leaflet-video-overlay]) with drag-to-move and drag-to-resize handles in the editor preview.\
-* New: Overlay bounds auto-fill centred on the current map view; overlays update live in the editor without an iframe reload.\
-* Improved: Interaction toggles (dragging, keyboard, double-click zoom, etc.) now apply live in the preview.\
-* Fixed: Image-map drag and zoom now sync with the sidebar controls in both the editor preview and the frontend; width is passed to [leaflet-image].\
-* Fixed: Iframe no longer reloads mid-drag, which previously killed map panning.\
-* Hardened: ABSPATH guard added to the generated blocks-manifest.php; Nominatim external service disclosed in the readme.\
-\
-= 1.0.7 =\
-* Refactor: Internal modularization (no behaviour change). Plugin code is split into focused files under `includes/` so each feature has one home: shortcode builders, preview endpoint, geocoder, editor assets, file-type filters, TGM config. Main plugin file slimmed from 1450 to 95 lines; render.php from 614 to 105 lines. Frontend output is byte-identical to 1.0.6.\
-\
+== Changelog ==
+
+= 1.2.3 =
+* Added: "Source Code" section in the readme linking the public development repository and documenting how to build the compiled `build/` JavaScript and CSS from source, per WordPress Plugin Review guidelines. Added the Plugin URI header pointing to the same repository.
+* Fixed: The ABSPATH direct-access guard in the block render template now uses `exit`, matching the rest of the codebase.
+* Dev: Full ESLint/stylelint pass across the JavaScript and SCSS sources (formatting and code-quality only, no behaviour change); PHPStan clean. Continuous integration is green again.
+
+= 1.2.2 =
+* Changed: The frontend no longer prints inline <script> tags. Map resize and image-map fit logic moved to the block's view script, enqueued via the WordPress enqueue API, per WordPress Plugin Review guidelines.
+* Improved: Image-map fit now targets the correct map when multiple map blocks are on the same page.
+
+= 1.2.1 =
+* Changed: Renamed the plugin to "CartoBlocks for Leaflet" (slug `cartoblocks-for-leaflet`) for a more distinctive name, per WordPress Plugin Review guidelines. Updated the Contributors list and plugin metadata.
+* Changed: Moved the block to the Media category and gave its icon the Leaflet green accent.
+
+= 1.2.0 =
+* Changed: Replaced the bundled TGM Plugin Activation library with WordPress 6.5+ native plugin dependencies (the "Requires Plugins" header). WordPress now guides you to install and activate the required Leaflet Map plugin before activation. Minimum WordPress version is 6.8.
+* Changed: The editor preview iframe now enqueues its CSS/JS via the WordPress enqueue API instead of printing inline <style>/<script> tags, per WordPress Plugin Review guidelines.
+* Removed: ~3,900 lines of vendored third-party code (TGM Plugin Activation).
+
+= 1.1.1 =
+* i18n: Wrapped the remaining untranslated UI placeholder and added translator comments for two placeholder strings so all user-facing text is translation-ready. Regenerated the translation template (.pot). No change to plugin behaviour.
+* Docs: Added a "Known Limitations" note documenting that GPX data layers sourced from the Media Library may not render (upstream Content-Type limitation).
+
+= 1.1.0 =
+* New: Image and video overlay shortcodes ([leaflet-image-overlay] / [leaflet-video-overlay]) with drag-to-move and drag-to-resize handles in the editor preview.
+* New: Overlay bounds auto-fill centred on the current map view; overlays update live in the editor without an iframe reload.
+* Improved: Interaction toggles (dragging, keyboard, double-click zoom, etc.) now apply live in the preview.
+* Fixed: Image-map drag and zoom now sync with the sidebar controls in both the editor preview and the frontend; width is passed to [leaflet-image].
+* Fixed: Iframe no longer reloads mid-drag, which previously killed map panning.
+* Hardened: ABSPATH guard added to the generated blocks-manifest.php; Nominatim external service disclosed in the readme.
+
+= 1.0.7 =
+* Refactor: Internal modularization (no behaviour change). Plugin code is split into focused files under `includes/` so each feature has one home: shortcode builders, preview endpoint, geocoder, editor assets, file-type filters, TGM config. Main plugin file slimmed from 1450 to 95 lines; render.php from 614 to 105 lines. Frontend output is byte-identical to 1.0.6.
+
 = 1.0.6 =\
 * Improved: Replaced "Anchor position" dropdown selects with a visual 3×3 grid for marker icon, shadow, and data-layer icon anchors.
 
