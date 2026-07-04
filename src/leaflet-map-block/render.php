@@ -21,7 +21,7 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-	return;
+	exit; // Exit if accessed directly.
 }
 
 // Canonicalise input + build all shortcodes via shared helpers.
