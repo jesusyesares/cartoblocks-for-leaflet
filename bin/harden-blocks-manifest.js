@@ -14,14 +14,20 @@
 const fs = require( 'fs' );
 const path = require( 'path' );
 
-const manifestPath = path.join( __dirname, '..', 'build', 'blocks-manifest.php' );
+const manifestPath = path.join(
+	__dirname,
+	'..',
+	'build',
+	'blocks-manifest.php'
+);
 
 if ( ! fs.existsSync( manifestPath ) ) {
 	// Nothing to harden — build may not have produced a manifest.
 	process.exit( 0 );
 }
 
-const guard = "if ( ! defined( 'ABSPATH' ) ) {\n\texit; // Exit if accessed directly.\n}\n";
+const guard =
+	"if ( ! defined( 'ABSPATH' ) ) {\n\texit; // Exit if accessed directly.\n}\n";
 let contents = fs.readFileSync( manifestPath, 'utf8' );
 
 if ( contents.includes( "defined( 'ABSPATH' )" ) ) {
