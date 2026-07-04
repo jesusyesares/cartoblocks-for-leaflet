@@ -84,14 +84,15 @@ CartoBlocks for Leaflet adds a native Gutenberg block that wraps the [Leaflet Ma
 
 == Source Code ==
 
-The JavaScript files shipped in the `build/` directory of this plugin are
-compiled with webpack (via `@wordpress/scripts`). The human-readable source
-code is publicly available in the plugin's development repository:
+The JavaScript and CSS files shipped in the `build/` directory of this plugin
+are compiled with webpack (via `@wordpress/scripts`): the JavaScript from the
+JSX sources and the CSS from the SCSS sources. The human-readable source code
+is publicly available in the plugin's development repository:
 
 https://github.com/jesusyesares/cartoblocks-for-leaflet
 
-The uncompiled sources live in the `src/` directory of that repository. To
-build the plugin from source:
+The uncompiled sources (`.js` and `.scss`) live in the `src/` directory of
+that repository. To build the plugin from source:
 
 1. Clone the repository: `git clone https://github.com/jesusyesares/cartoblocks-for-leaflet.git`
 2. Install the dependencies: `npm install`

@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Canonicalise input + build all shortcodes via shared helpers.
-$bflm_attrs = bflm_normalise_map_attrs( is_array( $attributes ) ? $attributes : array() );
+$bflm_attrs = bflm_normalise_map_attrs( isset( $attributes ) && is_array( $attributes ) ? $attributes : array() );
 
 $bflm_marker_shortcodes  = bflm_build_marker_shortcodes(
 	isset( $bflm_attrs['markers'] ) && is_array( $bflm_attrs['markers'] ) ? $bflm_attrs['markers'] : array()
