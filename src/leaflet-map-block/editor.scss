@@ -41,6 +41,13 @@
 		gap: 3px;
 	}
 
+	&__dot {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: #1e1e1e;
+	}
+
 	&__cell {
 		width: 28px;
 		height: 28px;
@@ -54,14 +61,19 @@
 		padding: 0;
 		transition: background-color 80ms ease, border-color 80ms ease;
 
-		&:hover:not(:disabled) {
-			background: #e7eef5;
-			border-color: #2271b1;
-		}
-
 		&:focus-visible {
 			outline: 2px solid var(--wp-admin-theme-color, #2271b1);
 			outline-offset: 1px;
+		}
+
+		&:disabled {
+			opacity: 0.4;
+			cursor: not-allowed;
+		}
+
+		&:hover:not(:disabled) {
+			background: #e7eef5;
+			border-color: #2271b1;
 		}
 
 		&--active {
@@ -77,26 +89,15 @@
 				border-color: var(--wp-admin-theme-color-darker-10, #135e96);
 			}
 		}
-
-		&:disabled {
-			opacity: 0.4;
-			cursor: not-allowed;
-		}
-	}
-
-	&__dot {
-		width: 6px;
-		height: 6px;
-		border-radius: 50%;
-		background: #1e1e1e;
 	}
 }
 
 // Shortcode popover — shown when the toolbar shortcode toggle is active.
-// Rendered via a React portal outside the block's DOM subtree, so Gutenberg's
-// draggable="true" attribute on the block wrapper does not affect text selection
-// inside the popover.
+// Rendered via a React portal outside the block's DOM subtree, so
+// Gutenberg's draggable="true" attribute on the block wrapper does not
+// affect text selection inside the popover.
 .bflm-shortcode-popover {
+
 	&__inner {
 		padding: 12px;
 		min-width: 480px;

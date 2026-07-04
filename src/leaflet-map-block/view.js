@@ -20,7 +20,7 @@
  *    after a 50 ms timeout (needed so the map repaints after the block's CSS
  *    percentage-width has been applied by the browser).
  *
- * @package BlocksForLeafletMap
+ * @package
  */
 
 ( function () {
@@ -31,13 +31,17 @@
 	 * @return {Object|null} The Leaflet map instance, or null if not found.
 	 */
 	function findMapInWrapper( wrapper ) {
-		var plugin = window.WPLeafletMapPlugin;
+		const plugin = window.WPLeafletMapPlugin;
 		if ( ! plugin || ! plugin.maps ) {
 			return null;
 		}
-		for ( var i = 0; i < plugin.maps.length; i++ ) {
-			var map = plugin.maps[ i ];
-			if ( map && map.getContainer && wrapper.contains( map.getContainer() ) ) {
+		for ( let i = 0; i < plugin.maps.length; i++ ) {
+			const map = plugin.maps[ i ];
+			if (
+				map &&
+				map.getContainer &&
+				wrapper.contains( map.getContainer() )
+			) {
 				return map;
 			}
 		}
@@ -55,7 +59,7 @@
 	 * @param {number}      zoomOffset - The imageZoom attribute value (may be negative).
 	 */
 	function initImageMap( wrapper, zoomOffset ) {
-		var attempts = 0;
+		let attempts = 0;
 
 		/**
 		 * Attempt to fit the image map. Retries on a 100 ms interval for up to
@@ -64,7 +68,7 @@
 		 * @return {void}
 		 */
 		function fitImage() {
-			var map = findMapInWrapper( wrapper );
+			const map = findMapInWrapper( wrapper );
 			if ( ! map ) {
 				if ( 50 > ++attempts ) {
 					setTimeout( fitImage, 100 );
@@ -77,7 +81,7 @@
 			}
 
 			// Find the ImageOverlay layer (has getBounds + getElement).
-			var overlay = null;
+			let overlay = null;
 			map.eachLayer( function ( l ) {
 				if ( ! overlay && l.getBounds && l.getElement ) {
 					overlay = l;
@@ -91,7 +95,7 @@
 			}
 
 			// Wait until the image's natural dimensions are available.
-			var img = overlay.getElement();
+			const img = overlay.getElement();
 			if ( ! img || ! img.naturalWidth ) {
 				if ( 50 > ++attempts ) {
 					setTimeout( fitImage, 100 );
@@ -99,16 +103,16 @@
 				return;
 			}
 
-			var iw = img.naturalWidth;
-			var ih = img.naturalHeight;
-			var mw = map.getContainer().offsetWidth;
-			var mh = map.getContainer().offsetHeight;
+			const iw = img.naturalWidth;
+			const ih = img.naturalHeight;
+			const mw = map.getContainer().offsetWidth;
+			const mh = map.getContainer().offsetHeight;
 
 			// In L.CRS.Simple, bozdoz projects the image at projected_zoom = 1.
 			// Fit: 2^Z = 2*mw/iw → Z = log2(2*mw/iw).
-			var fitZoomX = Math.log( 2 * mw / iw ) / Math.LN2;
-			var fitZoomY = Math.log( 2 * mh / ih ) / Math.LN2;
-			var fitZoom  = Math.min( fitZoomX, fitZoomY );
+			const fitZoomX = Math.log( ( 2 * mw ) / iw ) / Math.LN2;
+			const fitZoomY = Math.log( ( 2 * mh ) / ih ) / Math.LN2;
+			const fitZoom = Math.min( fitZoomX, fitZoomY );
 
 			map.options.zoomSnap = 0;
 			map.setMinZoom( fitZoom + zoomOffset );
@@ -134,7 +138,7 @@
 	function initStandardMap( wrapper ) {
 		window.WPLeafletMapPlugin = window.WPLeafletMapPlugin || [];
 		window.WPLeafletMapPlugin.push( function () {
-			var map = findMapInWrapper( wrapper );
+			const map = findMapInWrapper( wrapper );
 			if ( map && map.invalidateSize ) {
 				setTimeout( function () {
 					map.invalidateSize();
@@ -152,11 +156,14 @@
 	 * @return {void}
 	 */
 	function initAll() {
-		var wrappers = document.querySelectorAll( '.bflm-leaflet-map-block' );
-		for ( var i = 0; i < wrappers.length; i++ ) {
-			var wrapper = wrappers[ i ];
+		const wrappers = document.querySelectorAll( '.bflm-leaflet-map-block' );
+		for ( let i = 0; i < wrappers.length; i++ ) {
+			const wrapper = wrappers[ i ];
 			if ( wrapper.hasAttribute( 'data-bflm-image-zoom' ) ) {
-				var zoomOffset = parseFloat( wrapper.getAttribute( 'data-bflm-image-zoom' ) ) || 0;
+				const zoomOffset =
+					parseFloat(
+						wrapper.getAttribute( 'data-bflm-image-zoom' )
+					) || 0;
 				initImageMap( wrapper, zoomOffset );
 			} else {
 				initStandardMap( wrapper );
@@ -172,4 +179,4 @@
 	} else {
 		initAll();
 	}
-}() );
+} )();
