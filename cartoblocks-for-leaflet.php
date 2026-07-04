@@ -1,6 +1,7 @@
 <?php
 /**
  * Plugin Name:       CartoBlocks for Leaflet
+ * Plugin URI:        https://github.com/jesusyesares/cartoblocks-for-leaflet
  * Description:       A dynamic Gutenberg block that wraps the Leaflet Map plugin shortcodes. Requires the "Leaflet Map" plugin to be installed and active.
  * Version:           1.2.2
  * Requires at least: 6.8

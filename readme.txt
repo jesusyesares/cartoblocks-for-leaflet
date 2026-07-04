@@ -82,6 +82,21 @@ CartoBlocks for Leaflet adds a native Gutenberg block that wraps the [Leaflet Ma
 2. Activate the plugin through the Plugins screen. If the [Leaflet Map](https://wordpress.org/plugins/leaflet-map/) plugin is not yet installed and active, WordPress prompts you to install and activate it first (it is a required dependency).
 3. In the block editor, search for "Map for Leaflet" and add it to your page or post.
 
+== Source Code ==
+
+The JavaScript files shipped in the `build/` directory of this plugin are
+compiled with webpack (via `@wordpress/scripts`). The human-readable source
+code is publicly available in the plugin's development repository:
+
+https://github.com/jesusyesares/cartoblocks-for-leaflet
+
+The uncompiled sources live in the `src/` directory of that repository. To
+build the plugin from source:
+
+1. Clone the repository: `git clone https://github.com/jesusyesares/cartoblocks-for-leaflet.git`
+2. Install the dependencies: `npm install`
+3. Build the production files into `build/`: `npm run build`
+
 == External services ==
 
 This plugin connects to one external service: the Nominatim geocoding API
