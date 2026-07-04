@@ -8,9 +8,9 @@ parameters:
         - src/leaflet-map-block/render.php
         - includes
     excludePaths:
-        - vendor
-        - node_modules
-        - build
+        - vendor (?)
+        - node_modules (?)
+        - build (?)
     scanFiles:
         - phpstan-stubs.php
     bootstrapFiles:
