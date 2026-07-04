@@ -27,7 +27,7 @@ converting its shortcodes into a single configurable Gutenberg block.
 - **Plugin slug:** `cartoblocks-for-leaflet` (display name "CartoBlocks for Leaflet"; renamed from "Blocks for Leaflet Map" / `blocks-for-leaflet-map` for the wp.org Plugin Review trademark concern)
 - **Block:** `cartoblocks-for-leaflet/leaflet-map-block` (inserter title "Map for Leaflet")
 - **Repo:** https://github.com/jesusyesares/cartoblocks-for-leaflet (renombrado desde blocks-for-leaflet-map; la URL vieja redirige)
-- **Current version:** 1.0.7 (released — internal modularization, v1.1.0 milestone)
+- **Current version:** 1.2.3 (released — Plugin Review compliance: public source repo link, ABSPATH exit guard, lint/CI green)
 - **Goal:** Public release, eventually WordPress.org submission
 - **Requires:** "Leaflet Map" plugin by bozdoz installed and active
 - **Build tooling:** `wp-scripts` (`npm run build`, `npm run plugin-zip`)
