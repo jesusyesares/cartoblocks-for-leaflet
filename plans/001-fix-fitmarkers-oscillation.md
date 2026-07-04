@@ -20,7 +20,7 @@
 - **Depends on**: none
 - **Category**: bug
 - **Planned at**: commit `313481a`, 2026-06-12
-- **Issue**: https://github.com/jesusyesares/blocks-for-leaflet-map/issues/23
+- **Issue**: https://github.com/jesusyesares/cartoblocks-for-leaflet/issues/23
 
 ## Why this matters
 

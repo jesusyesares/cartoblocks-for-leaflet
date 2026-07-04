@@ -75,7 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.2] - 2026-04-20
 
 ### Added
-- **SVG Marker** subsection per marker (contributes to [#14](https://github.com/jesusyesares/blocks-for-leaflet-map/issues/14)):
+- **SVG Marker** subsection per marker (contributes to [#14](https://github.com/jesusyesares/cartoblocks-for-leaflet/issues/14)):
   - Master **"Use SVG marker"** toggle (`useSvgMarker`). Mutually exclusive with "Use custom icon" — enabling one disables the other.
   - `ColorPicker` for `svgBackground` (circle fill color, default `#2b82cb`).
   - `TextControl` for `svgIconClass` (CSS icon class, e.g. Font Awesome; requires icon font active on the site).
@@ -85,7 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.1] - 2026-04-20
 
 ### Added
-- Per-marker **Custom Icon** subsection (contributes to [#14](https://github.com/jesusyesares/blocks-for-leaflet-map/issues/14)):
+- Per-marker **Custom Icon** subsection (contributes to [#14](https://github.com/jesusyesares/cartoblocks-for-leaflet/issues/14)):
   - Master **"Use custom icon"** toggle. Non-destructive: disabling it hides all icon fields but preserves the stored values so they are not lost if re-enabled.
   - **Icon image** selected via the WordPress Media Library (`MediaUpload`). Stores `iconurl` in the marker attributes and emits `iconurl=` in the `[leaflet-marker]` shortcode.
   - **Icon Size** (width × height in px) → `iconsize="W,H"`.
@@ -107,7 +107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.0] - 2026-04-20
 
 ### Added
-- Six per-marker controls in the Markers panel, grouped under a collapsible "Advanced" subsection inside each marker card (closes part of [#14](https://github.com/jesusyesares/blocks-for-leaflet-map/issues/14)):
+- Six per-marker controls in the Markers panel, grouped under a collapsible "Advanced" subsection inside each marker card (closes part of [#14](https://github.com/jesusyesares/cartoblocks-for-leaflet/issues/14)):
   - **Alt Text** — accessible alternative text for the marker image.
   - **Auto-open Popup** — opens the marker popup automatically on page load (`visible="1"`).
   - **Draggable** — allows visitors to drag the marker; the new position is logged to the browser console.
