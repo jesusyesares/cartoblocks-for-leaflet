@@ -54,3 +54,5 @@ CLAUDE.md
 .cursor/
 docs/
 plans/
+# Lint config
+.eslintrc.js
