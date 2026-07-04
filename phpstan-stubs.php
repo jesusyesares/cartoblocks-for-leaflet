@@ -16,3 +16,19 @@
  */
 
 define( 'BFLM_PLUGIN_DIR', __DIR__ . '/' );
+
+/**
+ * PHP 8.0 polyfill signature.
+ *
+ * WordPress core (>= 5.9, wp-includes/compat.php) polyfills str_ends_with()
+ * on PHP 7.4, and this plugin requires WordPress 6.8+, so the function is
+ * always available at runtime. Declared here only so PHPStan, which analyses
+ * against the plugin's PHP 7.4 platform requirement, recognises it.
+ *
+ * @param string $haystack The string to search in.
+ * @param string $needle   The substring to search for.
+ * @return bool Whether $haystack ends with $needle.
+ */
+function str_ends_with( $haystack, $needle ) {
+	return true;
+}
