@@ -3,7 +3,7 @@ Contributors:      glycymeris
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.8
 Tested up to:      7.0
-Stable tag:        1.2.3
+Stable tag:        1.2.4
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -12,7 +12,7 @@ A Gutenberg block that gives you a full visual editor for all Leaflet Map plugin
 
 == Description ==
 
-CartoBlocks for Leaflet adds a native Gutenberg block that wraps the [Leaflet Map](https://wordpress.org/plugins/leaflet-map/) plugin shortcodes. Configure your map visually in the block editor — the plugin generates the correct shortcodes automatically, and the frontend is rendered entirely by Leaflet Map.
+CartoBlocks for Leaflet adds a native Gutenberg block that wraps the [Leaflet Map](https://wordpress.org/plugins/leaflet-map/) plugin shortcodes. Configure your map visually in the block editor — the plugin generates the correct shortcodes automatically, and the frontend is **rendered entirely by Leaflet Map**.
 
 **Core map features:**
 
@@ -146,11 +146,13 @@ Workarounds: serve the GPX file from a host that sets an XML `Content-Type`
 (e.g. `application/gpx+xml`), or configure your web server to serve `.gpx` as
 XML. GeoJSON and KML layers are unaffected.
 
+Check out the source code and more details on [GitHub](https://github.com/jesusyesares/cartoblocks-for-leaflet)!
+
 == Frequently Asked Questions ==
 
 = Does this plugin replace the Leaflet Map plugin? =
 
-No. This plugin requires Leaflet Map to be installed and active. It provides a Gutenberg block interface for creating maps, but the actual map rendering on the frontend is handled entirely by Leaflet Map's shortcodes.
+No. Leaflet Map is wonderful. This plugin requires Leaflet Map to be installed and active. It provides a Gutenberg block interface for creating maps, but the actual map rendering on the frontend is handled entirely by Leaflet Map's shortcodes.
 
 = Can I use multiple map blocks on the same page? =
 
@@ -200,15 +202,14 @@ Yes. All user-facing strings are wrapped in `__()` with the `cartoblocks-for-lea
 
 == Screenshots ==
 
-1. Map block in the editor with the Location and Dimensions sidebar panels.
-2. Markers panel — adding a marker with custom icon and popup content.
-3. Data Layers panel — loading a GeoJSON file with style and popup configuration.
-4. Circles panel — 2-click draw mode active on the map preview.
-5. Tile Layer panel — WMS source toggle with URL, layer, and CRS fields.
-6. Shortcode Viewer toolbar popover showing the generated shortcode.
-7. Frontend rendering — map with markers, lines, and a GeoJSON layer.
+1. Map block with three markers added.
+2. Map block in the editor with a circle, a polygon, and three markers.
+3. Map block showing the Shortcode Viewer popover with the shortcodes Leaflet Map will use to render the map.
 
 == Changelog ==
+
+= 1.2.4 =
+* Docs: Refreshed the plugin description, FAQ, and screenshots for the WordPress.org plugin directory listing. No change to plugin behaviour.
 
 = 1.2.3 =
 * Added: "Source Code" section in the readme linking the public development repository and documenting how to build the compiled `build/` JavaScript and CSS from source, per WordPress Plugin Review guidelines. Added the Plugin URI header pointing to the same repository.
