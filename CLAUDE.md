@@ -128,7 +128,12 @@ All five locations must be updated on every release:
 - Third digit: bug fixes / improvements within a feature
 - Second digit: new shortcode feature added
 - 1.0.0: full feature parity with Leaflet Map plugin
-- No alpha/beta labels
+- **Beta pre-releases (from v1.2.5 onward):** development cycles ship betas
+  first, SemVer format `X.Y.Z-beta.N` (e.g. `1.2.5-beta.1`, tag `v1.2.5-beta.1`).
+  Betas are GitHub releases marked *pre-release* only — they must NEVER reach
+  WordPress.org SVN. `deploy.yml` triggers only on stable tags
+  (`v[0-9]+.[0-9]+.[0-9]+`) to enforce this. Stable release = drop the suffix
+  and publish normally (that fires the SVN deploy).
 
 ## Development Protocol
 Mandatory for every feature:
