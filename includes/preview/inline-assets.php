@@ -136,6 +136,39 @@ function bflm_preview_bridge_js(): string {
 	var MAX_ATTEMPTS       = 50;
 	var isProgrammaticMove = false;
 
+	// ── Editor reply channel (Playground-safe) ────────────────────────────────
+	// Outbound messages used to go to window.top on the assumption that the
+	// wp-admin editor page is the top browsing context. Inside WordPress
+	// Playground (wp.org "Live Preview") the whole site runs in nested iframes,
+	// so window.top is the Playground shell and messages sent there are lost.
+	// Instead, capture event.source from the first message the editor sends
+	// (edit.js posts bflm_editor_hello on iframe load) and reply to that
+	// window — correct at any nesting depth. window.top stays as the fallback
+	// until the handshake arrives, so the classic wp-admin case keeps working
+	// even if the hello never comes.
+	var editorWindow   = null;
+	var readyAnnounced = false;
+
+	function postToEditor( message ) {
+		( editorWindow || window.top ).postMessage( message, '*' );
+	}
+
+	// Registered immediately — NOT inside init() — so the editor's hello is not
+	// missed while init() is still polling for the Leaflet map instance.
+	window.addEventListener( 'message', function ( e ) {
+		if ( ! e.data || 'string' !== typeof e.data.type || e.data.blockId !== blockId || ! e.source ) {
+			return;
+		}
+		var firstContact = null === editorWindow;
+		editorWindow     = e.source;
+		// If the map announced readiness before the handshake (that message
+		// went to window.top and was lost in Playground), repeat it to the
+		// now-known editor window so draw-mode re-sync still works.
+		if ( firstContact && readyAnnounced ) {
+			postToEditor( { type: 'bflm_iframe_ready', blockId: blockId } );
+		}
+	} );
+
 	// ── Draw mode state ───────────────────────────────────────────────────────
 	// Holds the in-progress drawing overlays for click-to-draw mode.
 	// All drawing happens client-side; each click also posts bflm_draw_point
@@ -289,15 +322,14 @@ function bflm_preview_bridge_js(): string {
 			if ( circleDrawState.shape ) {
 				circleDrawState.shape.setLatLng( ll );
 			}
-			window.top.postMessage(
+			postToEditor(
 				{
 					type:        'bflm_draw_circle_center',
 					blockId:     blockId,
 					circleIndex: circleDrawState.circleIndex,
 					lat:         parseFloat( ll.lat.toFixed( 6 ) ),
 					lng:         parseFloat( ll.lng.toFixed( 6 ) ),
-				},
-				'*'
+				}
 			);
 		} );
 	}
@@ -343,9 +375,11 @@ function bflm_preview_bridge_js(): string {
 	 * Poll for the Leaflet Map plugin's map instance, then wire up
 	 * bidirectional postMessage communication with the editor frame.
 	 *
-	 * window.top is used (not window.parent) because this iframe is nested
-	 * two levels deep: outer admin frame → WP canvas iframe → this iframe.
-	 * window.top reaches the outer admin frame where edit.js listens.
+	 * Outbound messages go through postToEditor() (see top of file): the editor
+	 * window captured from the bflm_editor_hello handshake, with window.top as
+	 * the pre-handshake fallback. Nesting depth varies — two levels in classic
+	 * wp-admin (admin frame → WP canvas iframe → this iframe), deeper inside
+	 * WordPress Playground — so no fixed ancestor is assumed.
 	 *
 	 * '*' is used as the target origin for postMessage. Both this iframe and
 	 * the editor run on the same WordPress origin (admin-ajax.php / wp-admin),
@@ -403,10 +437,10 @@ function bflm_preview_bridge_js(): string {
 		// iframe mid-gesture (Gutenberg's isSelected flips false the moment
 		// focus crosses into this iframe's separate browsing context).
 		map.on( 'dragstart', function () {
-			window.top.postMessage( { type: 'bflm_map_drag_start', blockId: blockId }, '*' );
+			postToEditor( { type: 'bflm_map_drag_start', blockId: blockId } );
 		} );
 		map.on( 'dragend', function () {
-			window.top.postMessage( { type: 'bflm_map_drag_end', blockId: blockId }, '*' );
+			postToEditor( { type: 'bflm_map_drag_end', blockId: blockId } );
 		} );
 
 		// User pans / zooms → notify the editor. Image maps report through a
@@ -423,21 +457,19 @@ function bflm_preview_bridge_js(): string {
 				if ( 'number' !== typeof map.bflmFitZoom ) {
 					return;
 				}
-				window.top.postMessage(
+				postToEditor(
 					{
 						type:      'bflm_image_update',
 						blockId:   blockId,
 						imageX:    center.lat,
 						imageY:    center.lng,
 						imageZoom: map.getZoom() - map.bflmFitZoom,
-					},
-					'*'
+					}
 				);
 				return;
 			}
-			window.top.postMessage(
-				{ type: 'bflm_map_update', blockId: blockId, lat: center.lat, lng: center.lng, zoom: map.getZoom() },
-				'*'
+			postToEditor(
+				{ type: 'bflm_map_update', blockId: blockId, lat: center.lat, lng: center.lng, zoom: map.getZoom() }
 			);
 		} );
 
@@ -448,9 +480,8 @@ function bflm_preview_bridge_js(): string {
 			}
 			marker.on( 'dragend', function ( e ) {
 				var pos = e.target.getLatLng();
-				window.top.postMessage(
-					{ type: 'bflm_marker_update', blockId: blockId, index: i, lat: pos.lat, lng: pos.lng },
-					'*'
+				postToEditor(
+					{ type: 'bflm_marker_update', blockId: blockId, index: i, lat: pos.lat, lng: pos.lng }
 				);
 			} );
 		} );
@@ -464,9 +495,8 @@ function bflm_preview_bridge_js(): string {
 			}
 			marker.on( 'dragend', function ( e ) {
 				var pos = e.target.getLatLng();
-				window.top.postMessage(
-					{ type: 'bflm_linepoint_update', blockId: blockId, lineIndex: meta.lineIndex, pointIndex: meta.pointIndex, lat: pos.lat, lng: pos.lng },
-					'*'
+				postToEditor(
+					{ type: 'bflm_linepoint_update', blockId: blockId, lineIndex: meta.lineIndex, pointIndex: meta.pointIndex, lat: pos.lat, lng: pos.lng }
 				);
 			} );
 		} );
@@ -522,15 +552,14 @@ function bflm_preview_bridge_js(): string {
 			}
 
 			function postOverlayUpdate( bounds ) {
-				window.top.postMessage(
+				postToEditor(
 					{
 						type:         'bflm_overlay_update',
 						blockId:      blockId,
 						overlayIndex: overlayIndex,
 						sw:           bounds.getSouthWest().lat + ',' + bounds.getSouthWest().lng,
 						ne:           bounds.getNorthEast().lat + ',' + bounds.getNorthEast().lng,
-					},
-					'*'
+					}
 				);
 			}
 
@@ -841,9 +870,8 @@ function bflm_preview_bridge_js(): string {
 						[ [ clat, clng ], [ clat, clng ] ],
 						{ color: '#888', weight: 1, dashArray: '4,6', interactive: false }
 					).addTo( map );
-					window.top.postMessage(
-						{ type: 'bflm_draw_circle_center', blockId: blockId, circleIndex: circleDrawState.circleIndex, lat: clat, lng: clng },
-						'*'
+					postToEditor(
+						{ type: 'bflm_draw_circle_center', blockId: blockId, circleIndex: circleDrawState.circleIndex, lat: clat, lng: clng }
 					);
 				} else {
 					// Second click: fix radius, remove guide, make center draggable.
@@ -855,15 +883,13 @@ function bflm_preview_bridge_js(): string {
 					clearCircleGuideLine();
 					// Convert center pin to draggable handle for repositioning.
 					makeCenterDraggable( map );
-					window.top.postMessage(
-						{ type: 'bflm_draw_circle_radius', blockId: blockId, circleIndex: circleDrawState.circleIndex, radius: radius },
-						'*'
+					postToEditor(
+						{ type: 'bflm_draw_circle_radius', blockId: blockId, circleIndex: circleDrawState.circleIndex, radius: radius }
 					);
 					var ci = circleDrawState.circleIndex;
 					stopCircleDraw( map );
-					window.top.postMessage(
-						{ type: 'bflm_draw_circle_end_request', blockId: blockId, circleIndex: ci },
-						'*'
+					postToEditor(
+						{ type: 'bflm_draw_circle_end_request', blockId: blockId, circleIndex: ci }
 					);
 				}
 				return;
@@ -889,9 +915,8 @@ function bflm_preview_bridge_js(): string {
 				}
 
 				// Notify the editor so it can update block attributes + undo history.
-				window.top.postMessage(
-					{ type: 'bflm_draw_point', blockId: blockId, lineIndex: drawState.lineIndex, lat: lat, lng: lng },
-					'*'
+				postToEditor(
+					{ type: 'bflm_draw_point', blockId: blockId, lineIndex: drawState.lineIndex, lat: lat, lng: lng }
 				);
 			}, 250 );
 		} );
@@ -904,9 +929,8 @@ function bflm_preview_bridge_js(): string {
 			L.DomEvent.stopPropagation( e );
 			var li = drawState.lineIndex;
 			stopDraw( map );
-			window.top.postMessage(
-				{ type: 'bflm_draw_end_request', blockId: blockId, lineIndex: li },
-				'*'
+			postToEditor(
+				{ type: 'bflm_draw_end_request', blockId: blockId, lineIndex: li }
 			);
 		} );
 
@@ -992,9 +1016,11 @@ function bflm_preview_bridge_js(): string {
 		// Signal the editor that this iframe is ready (or has rebuilt).
 		// The editor uses this to re-send bflm_draw_start if a line was in draw
 		// mode when an attribute change triggered a full iframe reload.
-		window.top.postMessage(
-			{ type: 'bflm_iframe_ready', blockId: blockId },
-			'*'
+		// readyAnnounced lets the hello handshake handler (top of file) repeat
+		// this message if it fired before the editor window was known.
+		readyAnnounced = true;
+		postToEditor(
+			{ type: 'bflm_iframe_ready', blockId: blockId }
 		);
 	}
 
