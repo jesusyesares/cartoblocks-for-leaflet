@@ -3,7 +3,7 @@ Contributors:      glycymeris
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.8
 Tested up to:      7.0
-Stable tag:        1.2.4
+Stable tag:        1.2.5-beta.1
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -207,6 +207,10 @@ Yes. All user-facing strings are wrapped in `__()` with the `cartoblocks-for-lea
 3. Map block showing the Shortcode Viewer popover with the shortcodes Leaflet Map will use to render the map.
 
 == Changelog ==
+
+= 1.2.5-beta.1 =
+* Fixed: The editor map preview now syncs marker drags, circle and line drawing, and pan/zoom back to the block when WordPress itself runs inside nested iframes — e.g. the WordPress.org plugin directory "Live Preview" (WordPress Playground). Previously those interactions were silently lost and every marker kept its default coordinates.
+* Dev: Added a WordPress Playground blueprint for the plugin directory Live Preview (installs the required Leaflet Map plugin automatically) and a manual GitHub Actions workflow to update WordPress.org assets without a release.
 
 = 1.2.4 =
 * Docs: Refreshed the plugin description, FAQ, and screenshots for the WordPress.org plugin directory listing. No change to plugin behaviour.
