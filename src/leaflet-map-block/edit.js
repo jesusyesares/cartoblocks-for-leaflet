@@ -15,14 +15,21 @@
  *     └─ WP canvas iframe  (srcdoc, same-origin)
  *          └─ our preview iframe  (admin-ajax.php, same-origin)
  *
+ *   Inside WordPress Playground (wp.org "Live Preview") the whole hierarchy
+ *   above is itself nested in Playground's iframes, so the preview iframe
+ *   cannot assume the editor is window.top. On every iframe load the editor
+ *   sends a bflm_editor_hello handshake; the bridge replies to that message's
+ *   event.source from then on (window.top is only its pre-handshake fallback).
+ *
  * COMMUNICATION CHANNELS
  * ──────────────────────
  *   Outer → Preview  (iframeRef.current.contentWindow.postMessage)
+ *     type: 'bflm_editor_hello' — onLoad handshake → bridge captures reply target
  *     type: 'bflm_set_view'     — sidebar lat/lng/zoom change → map.setView()
  *     type: 'bflm_set_overlays' — overlays attribute change → live rebuild of
  *                                 image/video overlay layers, no iframe reload
  *
- *   Preview → Outer  (window.top.postMessage, received on window here)
+ *   Preview → Outer  (postToEditor() in the bridge, received on window here)
  *     type: 'bflm_map_update'       — user pan/zoom → update lat/lng/zoom attrs
  *     type: 'bflm_marker_update'    — marker drag   → update marker lat/lng attr
  *     type: 'bflm_linepoint_update' — line-point drag → update line point lat/lng
@@ -1862,7 +1869,9 @@ export default function Edit( {
 	// ── Incoming postMessages from the preview iframe ─────────────────────────
 	useEffect( () => {
 		/**
-		 * Handle postMessages sent by the preview iframe via window.top.
+		 * Handle postMessages sent by the preview iframe (via postToEditor()
+		 * in the bridge script — this window, discovered through the
+		 * bflm_editor_hello handshake, or window.top as its fallback).
 		 *
 		 * @param {MessageEvent} event Browser message event.
 		 */
@@ -8291,6 +8300,21 @@ export default function Edit( {
 						} }
 						sandbox="allow-scripts allow-same-origin"
 						title={ __( 'Map preview', 'cartoblocks-for-leaflet' ) }
+						onLoad={ () => {
+							// Handshake: tells the preview bridge which window
+							// to reply to. Inside WordPress Playground the
+							// editor is NOT window.top (the whole site runs in
+							// nested iframes), so the bridge answers to this
+							// message's event.source instead of assuming an
+							// ancestor (see bflm_preview_bridge_js).
+							iframeRef.current?.contentWindow?.postMessage(
+								{
+									type: 'bflm_editor_hello',
+									blockId: clientIdRef.current,
+								},
+								'*'
+							);
+						} }
 					/>
 					{ ! isSelected && ! isOverlayInteracting && (
 						<div
