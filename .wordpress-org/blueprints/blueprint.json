@@ -32,7 +32,7 @@
 		},
 		{
 			"step": "runPHP",
-			"code": "<?php require_once '/wordpress/wp-load.php'; wp_insert_post( array( 'import_id' => 100, 'post_title' => 'Map for Leaflet demo', 'post_status' => 'publish', 'post_type' => 'page', 'post_content' => '<!-- wp:cartoblocks-for-leaflet/leaflet-map-block /-->' ) ); update_user_meta( 1, 'wp_persisted_preferences', array( 'core/edit-post' => array( 'welcomeGuide' => false ), '_modified' => gmdate( 'c' ) ) );"
+			"code": "<?php require_once '/wordpress/wp-load.php'; wp_insert_post( array( 'import_id' => 100, 'post_title' => 'Map for Leaflet demo', 'post_status' => 'publish', 'post_type' => 'page', 'post_content' => '<!-- wp:cartoblocks-for-leaflet/leaflet-map-block {\"lat\":37.171671,\"lng\":-3.579268,\"zoom\":14,\"height\":\"440px\",\"zoomControl\":false,\"markers\":[{\"lat\":37.176321,\"lng\":-3.588581,\"title\":\"Marker 1\",\"content\":\"Marker 1\"},{\"lat\":37.161958,\"lng\":-3.596563,\"title\":\"Marker 2\",\"content\":\"Marker 2\"},{\"lat\":37.178099,\"lng\":-3.561459,\"title\":\"Marker 3\",\"content\":\"Marker 3\"}],\"circles\":[{\"lat\":37.171465,\"lng\":-3.578882,\"radius\":1554,\"fitbounds\":false,\"color\":\"#ff2121\",\"weight\":null,\"opacity\":null,\"dashArray\":\"\",\"classname\":\"\",\"fill\":true,\"fillColor\":\"#361f1f\",\"fillOpacity\":null,\"popup\":\"\",\"visible\":false}]} /-->' ) ); update_user_meta( 1, 'wp_persisted_preferences', array( 'core/edit-post' => array( 'welcomeGuide' => false ), '_modified' => gmdate( 'c' ) ) );"
 		}
 	]
 }
