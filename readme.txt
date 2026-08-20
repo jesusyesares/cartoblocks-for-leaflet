@@ -3,7 +3,7 @@ Contributors:      glycymeris
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.8
 Tested up to:      7.1
-Stable tag:        1.2.6
+Stable tag:        1.2.7
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -207,6 +207,9 @@ Yes. All user-facing strings are wrapped in `__()` with the `cartoblocks-for-lea
 3. Map block showing the Shortcode Viewer popover with the shortcodes Leaflet Map will use to render the map.
 
 == Changelog ==
+
+= 1.2.7 =
+* Dev: Repository housekeeping — moved audit notes and internal plans into docs/, removed the unused CHANGELOG.md, and consolidated CLAUDE.md into AGENTS.md. No functional changes to the plugin.
 
 = 1.2.6 =
 * Fixed: Map blocks created before the 1.2.1 rename (when the plugin was still "Blocks for Leaflet Map") could show WordPress's "Your site doesn't include support for this block" error in the editor, because their saved content still referenced the old block name. The plugin now automatically rewrites any leftover old block names to the current one, once per site, the first time an administrator visits wp-admin after updating.
