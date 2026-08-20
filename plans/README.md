@@ -53,6 +53,13 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
   `leaflet-ajax-geojson.js` expecting `responseXML`. Not a Blocks for
   Leaflet Map code bug. Documented as a "Known Limitations" note in
   readme.txt (shipped). Does not block WP.org submission.
+- WordPress 7.1 compatibility notice (WP.org compatibility email, 2026-08-20):
+  closed, no action needed. `readme.txt` "Tested up to" was already bumped to
+  7.1 in v1.2.6 (commit `f50b906`), with manual verification against the
+  fully iframed post editor and jQuery UI 1.14.2 noted in the changelog.
+  Confirmed live on wordpress.org on 2026-08-20: plugin page shows 1.2.6 /
+  Tested up to 7.1. The email's "7.0.4" listing was stale, reflecting the
+  directory not yet having picked up the already-shipped release.
 - v1.2.0 edit.js modularization (7457 lines → smaller modules): real and
   worth doing, but it's a large refactor that should happen AFTER the
   WP.org submission to keep submission scope tight and low-risk. Candidate
