@@ -43,8 +43,6 @@ phpstan-stubs.php
 # Source / dev files
 src/
 vendor/
-CHANGELOG.md
-AUDIT-*.md
 *.zip
 
 # AI
@@ -53,6 +51,5 @@ CLAUDE.md
 .claude/
 .cursor/
 docs/
-plans/
 # Lint config
 .eslintrc.js
