@@ -183,10 +183,12 @@ Excluded: `node_modules/`, `src/`, `.git/`, `.claude/`, `plans/`, config files, 
 - Full internationalisation required (all user-facing strings) — `.pot` regenerated
   at 1.0.7 but coverage audit (untranslated strings) still pending
 - Resolve any remaining Plugin Check warnings
-- Issue #27 (GPX from Media Library not rendering) — root cause is upstream
-  (Leaflet Map's `leaflet-ajax-geojson.js` / `Content-Type` for `.gpx`). Add a
-  "Known Limitations" note to `readme.txt` and/or file upstream at
-  bozdoz/wp-plugin-leaflet-map. Does not block submission.
+- ✅ Issue #27 (GPX from Media Library not rendering) — closed. Root cause is
+  upstream (Leaflet Map's `leaflet-ajax-geojson.js` relies on `xhr.responseXML`,
+  which the browser only populates when the server sends an XML `Content-Type`
+  for `.gpx`; not a CartoBlocks bug). Documented as a "Known Limitations"
+  section in `readme.txt`, with server-config workarounds. Does not block
+  submission.
 
 ## GitHub Project Management
 Issues and milestones are tracked via `gh` CLI.

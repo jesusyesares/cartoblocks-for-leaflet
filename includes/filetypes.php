@@ -15,6 +15,18 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Map the four data-layer extensions to their canonical MIME types.
  *
+ * Note on GPX specifically: this filter only controls WordPress's upload
+ * allowlist, not the Content-Type header the web server sends when later
+ * serving an already-uploaded .gpx file — that comes from the server's own
+ * MIME type table (nginx/Apache config), which this plugin cannot set.
+ * Leaflet Map's data-layer loader (`leaflet-ajax-geojson.js`) parses GPX/KML
+ * via `xhr.responseXML`, which browsers only populate when the response's
+ * Content-Type is XML-flavoured. Servers that don't map `.gpx` to an XML type
+ * (common — unlike the more established `.kml`) serve it as
+ * `application/octet-stream`, so `responseXML` stays null and the track
+ * silently fails to render. Not fixable from PHP; see the "Known Limitations"
+ * section in readme.txt (GitHub issue #27) for the server-config workaround.
+ *
  * @param array<string,string> $mimes Existing extension → MIME map.
  * @return array<string,string>
  */
