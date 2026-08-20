@@ -168,3 +168,4 @@ if ( ! function_exists( 'esc_attr' ) ) {
 // Load the files under test.
 require_once dirname( __DIR__ ) . '/includes/shortcodes/attrs.php';
 require_once dirname( __DIR__ ) . '/includes/preview/input.php';
+require_once dirname( __DIR__ ) . '/includes/migrations.php';
