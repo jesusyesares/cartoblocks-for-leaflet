@@ -3,7 +3,7 @@
  * Plugin Name:       CartoBlocks for Leaflet
  * Plugin URI:        https://github.com/jesusyesares/cartoblocks-for-leaflet
  * Description:       A dynamic Gutenberg block that wraps the Leaflet Map plugin shortcodes. Requires the "Leaflet Map" plugin to be installed and active.
- * Version:           1.2.5
+ * Version:           1.2.6-beta.1
  * Requires at least: 6.8
  * Requires PHP:      7.4
  * Requires Plugins:  leaflet-map
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-define( 'BFLM_VERSION', '1.2.5' );
+define( 'BFLM_VERSION', '1.2.6-beta.1' );
 define( 'BFLM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BFLM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BFLM_LEAFLET_MAP_PLUGIN', 'leaflet-map/leaflet-map.php' );
@@ -86,6 +86,7 @@ require_once BFLM_PLUGIN_DIR . 'includes/preview/template.php';
 require_once BFLM_PLUGIN_DIR . 'includes/preview/endpoint.php';
 require_once BFLM_PLUGIN_DIR . 'includes/editor-assets.php';
 require_once BFLM_PLUGIN_DIR . 'includes/geocoder.php';
+require_once BFLM_PLUGIN_DIR . 'includes/migrations.php';
 
 /**
  * Registers all blocks from the build manifest.
@@ -101,3 +102,105 @@ function bflm_register_blocks(): void {
 	);
 }
 add_action( 'init', 'bflm_register_blocks' );
+
+// ---------------------------------------------------------------------------
+// One-time migration of post_content still using the pre-1.2.1 block name
+// (see includes/migrations.php for the pure rewrite helper).
+// ---------------------------------------------------------------------------
+
+/**
+ * Finds posts still containing the pre-1.2.1 block name and rewrites them.
+ *
+ * Runs at most once per site: gated by the `bflm_legacy_block_migrated`
+ * option, so the LIKE query only ever executes on the first admin page load
+ * after this fix ships (and never again afterwards — on multisite, each
+ * site's own admin_init handles its own migration independently).
+ *
+ * @return void
+ */
+function bflm_migrate_legacy_block_names(): void {
+	if ( get_option( 'bflm_legacy_block_migrated' ) ) {
+		return;
+	}
+
+	global $wpdb;
+
+	$like = '%' . $wpdb->esc_like( 'wp:blocks-for-leaflet-map/leaflet-map-block' ) . '%';
+
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	$posts = $wpdb->get_results(
+		$wpdb->prepare(
+			"SELECT ID, post_content FROM {$wpdb->posts} WHERE post_content LIKE %s AND post_status != 'trash'",
+			$like
+		)
+	);
+
+	$migrated_count = 0;
+
+	foreach ( $posts as $post ) {
+		$rewritten = bflm_rewrite_legacy_block_markup( $post->post_content );
+
+		if ( $rewritten === $post->post_content ) {
+			continue;
+		}
+
+		wp_update_post(
+			array(
+				'ID'           => $post->ID,
+				'post_content' => $rewritten,
+			)
+		);
+
+		++$migrated_count;
+	}
+
+	update_option( 'bflm_legacy_block_migrated', true );
+
+	if ( $migrated_count > 0 ) {
+		set_transient( 'bflm_legacy_block_migrated_count', $migrated_count, DAY_IN_SECONDS );
+	}
+}
+
+/**
+ * Runs the legacy block-name migration for administrators, then shows a
+ * one-time admin notice reporting how many posts/pages were updated.
+ *
+ * @return void
+ */
+function bflm_migrate_legacy_block_names_maybe(): void {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+
+	bflm_migrate_legacy_block_names();
+
+	$count = get_transient( 'bflm_legacy_block_migrated_count' );
+
+	if ( false === $count ) {
+		return;
+	}
+
+	delete_transient( 'bflm_legacy_block_migrated_count' );
+
+	add_action(
+		'admin_notices',
+		static function () use ( $count ) {
+			printf(
+				'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
+				esc_html(
+					sprintf(
+						/* translators: %d: number of updated posts/pages. */
+						_n(
+							'CartoBlocks for Leaflet updated %d map block to the current block format.',
+							'CartoBlocks for Leaflet updated %d map blocks to the current block format.',
+							$count,
+							'cartoblocks-for-leaflet'
+						),
+						$count
+					)
+				)
+			);
+		}
+	);
+}
+add_action( 'admin_init', 'bflm_migrate_legacy_block_names_maybe' );
