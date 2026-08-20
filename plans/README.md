@@ -48,12 +48,11 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
   (`includes/shortcodes/marker.php`): false positive. `bflm_build_marker_shortcodes()`
   already guards with `if ( ! isset( $marker['lat'], $marker['lng'] ) ) { continue; }`
   before any cast. No action needed.
-- Issue #27 (GPX from Media Library not rendering): root cause is the
+- Issue #27 (GPX from Media Library not rendering): closed. Root cause is the
   server's `Content-Type` for `.gpx` files / upstream Leaflet Map's
   `leaflet-ajax-geojson.js` expecting `responseXML`. Not a Blocks for
-  Leaflet Map code bug. Recommended action (not planned here): add a "Known
-  Limitations" note to readme.txt and/or file an issue upstream at
-  bozdoz/wp-plugin-leaflet-map. Does not block WP.org submission.
+  Leaflet Map code bug. Documented as a "Known Limitations" note in
+  readme.txt (shipped). Does not block WP.org submission.
 - v1.2.0 edit.js modularization (7457 lines → smaller modules): real and
   worth doing, but it's a large refactor that should happen AFTER the
   WP.org submission to keep submission scope tight and low-risk. Candidate
