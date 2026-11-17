@@ -208,6 +208,9 @@ Yes. All user-facing strings are wrapped in `__()` with the `cartoblocks-for-lea
 
 == Changelog ==
 
+= Unreleased =
+* Fixed: Searching for an address in the block editor could fail with "Geocoding request failed" on the first try and work on a retry. The geocoder now waits up to 15 seconds for the OpenStreetMap Nominatim service instead of WordPress's default 5. Developers can change this with the `bflm_geocode_timeout` filter.
+
 = 1.2.7 =
 * Dev: Repository housekeeping — moved audit notes and internal plans into docs/, removed the unused CHANGELOG.md, and consolidated CLAUDE.md into AGENTS.md. No functional changes to the plugin.
 
