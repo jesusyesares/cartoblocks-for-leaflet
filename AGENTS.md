@@ -31,6 +31,12 @@ converting its shortcodes into a single configurable Gutenberg block.
 - **Goal:** Public release, eventually WordPress.org submission
 - **Requires:** "Leaflet Map" plugin by bozdoz installed and active
 - **Build tooling:** `wp-scripts` (`npm run build`, `npm run plugin-zip`)
+- **`build/` is git-ignored.** After a fresh clone, `git clean` or a branch switch, run
+  `npm run build` before testing: without `build/blocks-manifest.php` the block is
+  not registered at all (it vanishes from the inserter and `/` search) and WordPress
+  logs `WP_Block_Metadata_Registry::register_collection` "manifest file does not
+  exist" notices. This looks like a core-compatibility bug but is not.
+- **Tested up to:** WordPress 7.2 (verified against 7.2-RC1)
 - **Local dev environment:** Laravel Herd
 
 ## Architecture

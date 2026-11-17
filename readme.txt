@@ -2,7 +2,7 @@
 Contributors:      glycymeris
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.8
-Tested up to:      7.1
+Tested up to:      7.2
 Stable tag:        1.2.7
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
@@ -207,6 +207,10 @@ Yes. All user-facing strings are wrapped in `__()` with the `cartoblocks-for-lea
 3. Map block showing the Shortcode Viewer popover with the shortcodes Leaflet Map will use to render the map.
 
 == Changelog ==
+
+= Unreleased =
+* Verified: Tested against WordPress 7.2 (RC1) — slash-inserter search (`/cartoblocks`), editor map preview and settings sync, and frontend rendering all work with no console errors. None of the components or block-editor APIs deprecated in 7.2 are used.
+* Dev: `composer phpstan` now runs with a 1 GB memory limit; the default 512 MB was no longer enough with the current WordPress stubs.
 
 = 1.2.7 =
 * Dev: Repository housekeeping — moved audit notes and internal plans into docs/, removed the unused CHANGELOG.md, and consolidated CLAUDE.md into AGENTS.md. No functional changes to the plugin.
