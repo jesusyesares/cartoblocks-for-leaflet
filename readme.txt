@@ -2,7 +2,7 @@
 Contributors:      glycymeris
 Tags:              leaflet, map, openstreetmap, block, gutenberg
 Requires at least: 6.8
-Tested up to:      7.1
+Tested up to:      7.2
 Stable tag:        1.2.7
 Requires PHP:      7.4
 License:           GPL-2.0-or-later
@@ -209,6 +209,8 @@ Yes. All user-facing strings are wrapped in `__()` with the `cartoblocks-for-lea
 == Changelog ==
 
 = Unreleased =
+* Verified: Tested against WordPress 7.2 (RC1) — slash-inserter search (`/cartoblocks`), editor map preview and settings sync, and frontend rendering all work with no console errors. None of the components or block-editor APIs deprecated in 7.2 are used.
+* Dev: `composer phpstan` now runs with a 1 GB memory limit; the default 512 MB was no longer enough with the current WordPress stubs.
 * Fixed: Searching for an address in the block editor could fail with "Geocoding request failed" on the first try and work on a retry. The geocoder now waits up to 15 seconds for the OpenStreetMap Nominatim service instead of WordPress's default 5. Developers can change this with the `bflm_geocode_timeout` filter.
 
 = 1.2.7 =
