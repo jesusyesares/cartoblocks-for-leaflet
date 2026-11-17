@@ -17,7 +17,7 @@
 	"scripts": {
 		"lint": "phpcs",
 		"lint:fix": "phpcbf",
-		"phpstan": "phpstan analyse",
+		"phpstan": "phpstan analyse --memory-limit=1G",
 		"test": "phpunit"
 	}
 }
