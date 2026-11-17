@@ -48,6 +48,7 @@ cartoblocks-for-leaflet.php          ~95 lines, bootstrap only
 includes/
 ├── filetypes.php                    upload_mimes / wp_check_filetype_and_ext filters
 ├── geocoder.php                     bflm_geocode_address() + AJAX hook
+├── geocoder-request.php             bflm_geocode_request_args() / bflm_geocode_timeout() — pure, unit-tested
 ├── editor-assets.php                bflm_localise_editor_script() + hook
 ├── preview/
 │   ├── input.php                    bflm_preview_normalise_input() — pure $_GET sanitiser
@@ -82,6 +83,15 @@ Both `src/leaflet-map-block/render.php` (frontend) and
 `bflm_build_*_shortcodes()` helpers in `includes/shortcodes/`. Any new
 shortcode attribute must be added in one place — the corresponding builder
 file — never duplicated inline.
+
+### Geocoder request timeout
+`bflm_geocode_address()` builds its `wp_safe_remote_get()` arguments with
+`bflm_geocode_request_args()` (`includes/geocoder-request.php`), which sets a
+15 s timeout (`BFLM_GEOCODE_TIMEOUT`, filterable via `bflm_geocode_timeout`;
+values below 1 fall back to the default). WordPress's 5 s HTTP default was
+occasionally exceeded by the first Nominatim request after a quiet period
+(cURL error 28 → "Geocoding request failed" in the editor). The JS side has
+no client-side timeout of its own.
 
 ### Preview-endpoint security boundary
 Nonce verification lives in `includes/preview/endpoint.php` and runs **before**

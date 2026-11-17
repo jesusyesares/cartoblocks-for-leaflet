@@ -85,6 +85,7 @@ require_once BFLM_PLUGIN_DIR . 'includes/preview/inline-assets.php';
 require_once BFLM_PLUGIN_DIR . 'includes/preview/template.php';
 require_once BFLM_PLUGIN_DIR . 'includes/preview/endpoint.php';
 require_once BFLM_PLUGIN_DIR . 'includes/editor-assets.php';
+require_once BFLM_PLUGIN_DIR . 'includes/geocoder-request.php';
 require_once BFLM_PLUGIN_DIR . 'includes/geocoder.php';
 require_once BFLM_PLUGIN_DIR . 'includes/migrations.php';
 

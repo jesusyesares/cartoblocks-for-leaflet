@@ -66,12 +66,7 @@ function bflm_geocode_address(): void {
 
 	$response = wp_safe_remote_get(
 		$request_url,
-		array(
-			'user-agent' => $user_agent,
-			'headers'    => array(
-				'Accept-Language' => $accept_language,
-			),
-		)
+		bflm_geocode_request_args( $user_agent, $accept_language )
 	);
 
 	if ( is_wp_error( $response ) ) {

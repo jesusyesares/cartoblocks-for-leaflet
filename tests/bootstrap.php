@@ -165,7 +165,25 @@ if ( ! function_exists( 'esc_attr' ) ) {
 	}
 }
 
+/**
+ * Shim: apply_filters().
+ * Core behaviour: runs every callback hooked to $hook_name, by priority,
+ * passing the value through each. SIMPLIFICATION: callbacks are stored in
+ * the $GLOBALS['bflm_test_filters'] array (hook name => list of callables),
+ * run in insertion order with no priorities and only the first argument.
+ * Tests register and clear callbacks on that array directly.
+ */
+if ( ! function_exists( 'apply_filters' ) ) {
+	function apply_filters( $hook_name, $value ) {
+		foreach ( $GLOBALS['bflm_test_filters'][ $hook_name ] ?? array() as $callback ) {
+			$value = $callback( $value );
+		}
+		return $value;
+	}
+}
+
 // Load the files under test.
 require_once dirname( __DIR__ ) . '/includes/shortcodes/attrs.php';
 require_once dirname( __DIR__ ) . '/includes/preview/input.php';
 require_once dirname( __DIR__ ) . '/includes/migrations.php';
+require_once dirname( __DIR__ ) . '/includes/geocoder-request.php';
