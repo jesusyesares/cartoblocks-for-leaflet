@@ -51,5 +51,10 @@ CLAUDE.md
 .claude/
 .cursor/
 docs/
+# Local web-server temp dirs (created by Herd/nginx in the plugin folder)
+client_body_temp/
+fastcgi_temp/
+proxy_temp/
+
 # Lint config
 .eslintrc.js

@@ -27,7 +27,7 @@ converting its shortcodes into a single configurable Gutenberg block.
 - **Plugin slug:** `cartoblocks-for-leaflet` (display name "CartoBlocks for Leaflet"; renamed from "Blocks for Leaflet Map" / `blocks-for-leaflet-map` for the wp.org Plugin Review trademark concern)
 - **Block:** `cartoblocks-for-leaflet/leaflet-map-block` (inserter title "Map for Leaflet")
 - **Repo:** https://github.com/jesusyesares/cartoblocks-for-leaflet (renombrado desde blocks-for-leaflet-map; la URL vieja redirige)
-- **Current version:** 1.2.3 (released — Plugin Review compliance: public source repo link, ABSPATH exit guard, lint/CI green)
+- **Current version:** 1.2.8-beta1 (beta — WordPress 7.2 compatibility + geocoder timeout fix; latest stable 1.2.7)
 - **Goal:** Public release, eventually WordPress.org submission
 - **Requires:** "Leaflet Map" plugin by bozdoz installed and active
 - **Build tooling:** `wp-scripts` (`npm run build`, `npm run plugin-zip`)
@@ -145,7 +145,9 @@ All five locations must be updated on every release:
 - Second digit: new shortcode feature added
 - 1.0.0: full feature parity with Leaflet Map plugin
 - **Beta pre-releases (from v1.2.5 onward):** development cycles ship betas
-  first, SemVer format `X.Y.Z-beta.N` (e.g. `1.2.5-beta.1`, tag `v1.2.5-beta.1`).
+  first. From 1.2.8 they follow WordPress core's own style, `X.Y.Z-betaN`
+  with no dot (e.g. `1.2.8-beta1`, tag `v1.2.8-beta1`, like core's `7.2-beta1`);
+  1.2.5 and 1.2.6 used `X.Y.Z-beta.N`.
   Betas are GitHub releases marked *pre-release* only — they must NEVER reach
   WordPress.org SVN. `deploy.yml` triggers only on stable tags
   (`v[0-9]+.[0-9]+.[0-9]+`) to enforce this. Stable release = drop the suffix
